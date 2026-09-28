@@ -26,6 +26,10 @@ export async function recordProductionEntry(data: ProductionEntryFormValues) {
   if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Geçersiz üretim verisi.");
   const p = parsed.data;
 
+  // Boş seçimleri at; hiç lot seçilmediyse parametre gönderilmez
+  const selectedLots = Object.entries(p.raw_lots ?? {}).filter(([, lot]) => lot.trim() !== "");
+  const rawLots = selectedLots.length ? Object.fromEntries(selectedLots) : undefined;
+
   const { data: result, error } = await supabase.rpc("record_production_entry", {
     p_work_order_id: p.work_order_id,
     p_shift: p.shift,
@@ -40,6 +44,7 @@ export async function recordProductionEntry(data: ProductionEntryFormValues) {
     p_target_warehouse_id: p.target_warehouse_id || undefined,
     p_operator: p.operator || undefined,
     p_close_work_order: p.close_work_order,
+    p_raw_lots: rawLots,
   });
   if (error) throw new Error(error.message);
 
@@ -55,3 +60,22 @@ export async function closeWorkOrder(workOrderId: string) {
   if (error) throw new Error(error.message);
   revalidateProduction();
 }
+
+/** Hammadde depolarında bakiyesi olan reçine lotları (vardiya girişinde seçim için). */
+export async function getRawLots() {
+  const supabase = await createClient();
+  const [{ data: lots, error }, { data: warehouses, error: whError }] = await Promise.all([
+    supabase.from("v_stock_lot").select("product_id, warehouse_id, lot_no, qty, first_in_at").gt("qty", 0),
+    supabase.from("warehouses").select("id").eq("type", "raw"),
+  ]);
+  if (error) throw new Error("Lot stokları getirilirken hata oluştu: " + error.message);
+  if (whError) throw new Error("Depolar getirilirken hata oluştu: " + whError.message);
+
+  const rawIds = new Set(warehouses.map((w) => w.id));
+  return lots
+    .filter((l) => l.warehouse_id && rawIds.has(l.warehouse_id) && l.product_id && l.lot_no)
+    .map((l) => ({ productId: l.product_id!, lotNo: l.lot_no!, qty: Number(l.qty), firstInAt: l.first_in_at }))
+    .sort((a, b) => (a.firstInAt ?? "").localeCompare(b.firstInAt ?? "")); // FIFO: en eski önce
+}
+
+export type RawLot = Awaited<ReturnType<typeof getRawLots>>[number];

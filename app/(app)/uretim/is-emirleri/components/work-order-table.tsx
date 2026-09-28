@@ -14,7 +14,7 @@ import {
   bulkDeleteWorkOrders,
 } from "@/app/actions/work-orders";
 import { ProductionEntryModal } from "./production-entry-modal";
-import { closeWorkOrder } from "@/app/actions/production";
+import { closeWorkOrder, type RawLot } from "@/app/actions/production";
 import { formatTR } from "@/lib/format";
 
 import { getErrorMessage } from "@/lib/utils";
@@ -28,6 +28,7 @@ interface WorkOrderTableProps {
   scrapProducts: ProductRow[];
   targetWarehouses: WarehouseRow[];
   reasonCodes: ReasonCodeRow[];
+  rawLots: RawLot[];
 }
 
 const STATUS_LABELS: Record<
@@ -47,6 +48,7 @@ export function WorkOrderTable({
   scrapProducts,
   targetWarehouses,
   reasonCodes,
+  rawLots,
 }: WorkOrderTableProps) {
   const canWrite = usePermission("production:write");
   const router = useRouter();
@@ -235,6 +237,7 @@ export function WorkOrderTable({
         targetWarehouses={targetWarehouses}
         scrapReasons={reasonCodes.filter((r) => r.kind === "scrap" && r.active)}
         downtimeReasons={reasonCodes.filter((r) => r.kind === "downtime" && r.active)}
+        rawLots={rawLots}
       />
     </div>
   );

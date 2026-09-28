@@ -34,6 +34,7 @@ import {
 import { cn, getErrorMessage, one } from "@/lib/utils";
 import { formatTR } from "@/lib/format";
 import type { WorkOrderRow } from "@/app/actions/work-orders";
+import type { RawLot } from "@/app/actions/production";
 
 type Option = { id: string; code: string; name?: string; label?: string };
 
@@ -46,6 +47,8 @@ interface ProductionEntryModalProps {
   targetWarehouses: { id: string; name: string }[];
   scrapReasons: Option[];
   downtimeReasons: Option[];
+  /** Hammadde depolarındaki lotlar (FIFO sıralı) */
+  rawLots: RawLot[];
 }
 
 /** Sayı alanı: boş bırakılınca 0 (veya null) olur, NaN forma girmez. */
@@ -61,6 +64,7 @@ export function ProductionEntryModal({
   targetWarehouses,
   scrapReasons,
   downtimeReasons,
+  rawLots,
 }: ProductionEntryModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -100,6 +104,7 @@ export function ProductionEntryModal({
       actual_cycle_time_sec: inj?.cycle_time_sec ? Number(inj.cycle_time_sec) : null,
       target_warehouse_id: targetWarehouses[0]?.id ?? "",
       close_work_order: false,
+      raw_lots: {},
     });
   }, [workOrder, reset, targetWarehouses]);
 
@@ -108,6 +113,8 @@ export function ProductionEntryModal({
   const scrapKg = Number(watch("scrap_kg")) || 0;
   const downtime = Number(watch("downtime_min")) || 0;
   const scrapRate = used > 0 ? (scrapKg / used) * 100 : 0;
+  const bomItems = (one(workOrder?.bom)?.items ?? []).filter((i) => Number(i.ratio_pct) > 0);
+  const rawLotSelection = watch("raw_lots") ?? {};
   const unitWeight = produced > 0 ? Math.max(0, used - scrapKg) / produced : 0;
 
   const onSubmit = async (data: ProductionEntryFormValues) => {
@@ -211,6 +218,57 @@ export function ProductionEntryModal({
                 </SelectContent>
               </Select>
               {errors.target_warehouse_id && <p className="text-xs text-danger">{errors.target_warehouse_id.message}</p>}
+            </div>
+          )}
+
+          {/* Reçine lotları: kesin izlenebilirlik */}
+          {used > 0 && bomItems.length > 0 && (
+            <div className="space-y-3 rounded-md border border-border p-3">
+              <div>
+                <Label>Tüketilen Hammadde Lotları</Label>
+                <p className="text-xs text-muted-foreground">
+                  İsteğe bağlı; seçilirse bu vardiyanın ürünleri hangi reçine lotundan geldiğiyle kesin izlenir.
+                </p>
+              </div>
+              {bomItems.map((item) => {
+                const product = one(item.product);
+                const need = (used * Number(item.ratio_pct)) / 100;
+                const lots = rawLots.filter((l) => l.productId === item.component_product_id);
+                const selected = rawLotSelection[item.component_product_id] ?? "";
+                const selectedLot = lots.find((l) => l.lotNo === selected);
+                return (
+                  <div key={item.component_product_id} className="space-y-1">
+                    <div className="flex justify-between gap-2 text-xs">
+                      <span className="font-medium">{product?.code}</span>
+                      <span className="text-muted-foreground">Bu vardiya: {formatTR(need, 2)} kg</span>
+                    </div>
+                    <Select
+                      value={selected}
+                      onValueChange={(val) =>
+                        setValue("raw_lots", { ...rawLotSelection, [item.component_product_id]: val ?? "" })
+                      }
+                      disabled={lots.length === 0}
+                    >
+                      <SelectTrigger className={cn(selectedLot && selectedLot.qty < need && "border-danger")}>
+                        <SelectValue placeholder={lots.length === 0 ? "Lotlu stok yok" : "Lot seçilmedi"}>
+                          {selectedLot ? `${selectedLot.lotNo} (${formatTR(selectedLot.qty, 2)} kg)` : null}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Lot seçilmedi</SelectItem>
+                        {lots.map((l, i) => (
+                          <SelectItem key={l.lotNo} value={l.lotNo}>
+                            {l.lotNo} — {formatTR(l.qty, 2)} kg{i === 0 ? " (en eski)" : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedLot && selectedLot.qty < need && (
+                      <p className="text-xs text-danger">Bu lotta yeterli miktar yok ({formatTR(selectedLot.qty, 2)} kg).</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 

@@ -1157,6 +1157,16 @@ export type Database = {
         }
         Relationships: []
       }
+      v_stock_lot: {
+        Row: {
+          product_id: string | null
+          warehouse_id: string | null
+          lot_no: string | null
+          qty: number | null
+          first_in_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       app_role: {
@@ -1224,6 +1234,7 @@ export type Database = {
           p_target_warehouse_id?: string
           p_operator?: string
           p_close_work_order?: boolean
+          p_raw_lots?: Json
         }
         Returns: Json
       }

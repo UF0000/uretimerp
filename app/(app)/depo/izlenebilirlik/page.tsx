@@ -171,7 +171,20 @@ export default async function TraceabilityPage(props: { searchParams: Promise<{ 
                           <span className="font-medium">{c.product?.code}</span>{" "}
                           <span className="text-muted-foreground">{c.product?.name}</span>
                         </span>
-                        <span className="tabular-nums">{formatTR(Number(c.quantity), 2)} kg</span>
+                        <span className="flex items-center gap-2">
+                          {c.lot_no ? (
+                            <Link
+                              href={`/depo/izlenebilirlik?lot=${encodeURIComponent(c.lot_no)}`}
+                              className="font-mono text-xs underline-offset-2 hover:underline"
+                              title="Kesin reçine lotu"
+                            >
+                              {c.lot_no}
+                            </Link>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">lot kaydı yok</span>
+                          )}
+                          <span className="tabular-nums">{formatTR(Number(c.quantity), 2)} kg</span>
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -236,6 +249,53 @@ export default async function TraceabilityPage(props: { searchParams: Promise<{ 
               </CardContent>
             </Card>
           </div>
+
+          {/* İleriye (hammadde lotu): bu lottan üretilenler — geri çağırma listesi */}
+          {trace.usedInLots.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">İleriye: Bu Lottan Üretilen Lotlar</CardTitle>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-left text-muted-foreground">
+                    <tr className="border-b border-border">
+                      <th className="px-3 py-2 font-medium">Tarih</th>
+                      <th className="px-3 py-2 font-medium">Üretilen lot</th>
+                      <th className="px-3 py-2 font-medium">İş emri / Ürün</th>
+                      <th className="px-3 py-2 text-right font-medium">Bu lottan tüketilen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {trace.usedInLots.map((u, i) => (
+                      <tr key={`${u.lotNo}-${i}`} className="border-b border-border last:border-0">
+                        <td className="px-3 py-2 tabular-nums">{dateTime(u.createdAt)}</td>
+                        <td className="px-3 py-2">
+                          {u.lotNo ? (
+                            <Link
+                              href={`/depo/izlenebilirlik?lot=${encodeURIComponent(u.lotNo)}`}
+                              className="font-mono text-xs underline-offset-2 hover:underline"
+                            >
+                              {u.lotNo}
+                            </Link>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                        <td className="px-3 py-2">
+                          {u.workOrderNo} · {u.product?.code}
+                          <span className="block text-xs text-muted-foreground">
+                            {formatTR(u.producedQty, 0)} {u.product?.unit} üretildi
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatTR(u.quantity, 2)} kg</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+          )}
 
           {/* İleriye: hareketler */}
           <Card>

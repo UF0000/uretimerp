@@ -119,7 +119,7 @@ supabase/
 - [x] Kalite kontrol + NCR (`create_ncr`/`close_ncr`): reddedilen kontrolden NCR, karantina transferi, kök neden/düzeltici zorunlu, serbest bırak/imha; lot izlenebilirliğe bağlı. Karantina deposu ana veride tanımlanmalı
 
 **Faz 4 — Sağlamlaştırma**
-- [x] İzlenebilirlik `/depo/izlenebilirlik`: lot → iş emri/vardiya/tüketilen hammadde (`stock_movements.production_entry_id`), ileriye hareketler/QC/NCR. Reçine lotu tüketimde seçilmiyor → "olası lotlar" gösterilir
+- [x] İzlenebilirlik `/depo/izlenebilirlik`: lot → iş emri/vardiya/tüketilen hammadde; vardiya girişinde reçine lotu seçilirse kesin (`p_raw_lots`, `v_stock_lot`), seçilmezse "olası lotlar"; hammadde lotundan üretilen lotlar (geri çağırma)
 - [~] Dashboard var — fire raporu OEE sayfasındaki fire Pareto ile sınırlı
 - [x] RLS gözden geçirme: rol bazlı politikalar (`lib/permissions.ts` ile aynı), arayüzde rol bazlı gizleme
 - [ ] Dışa aktarım/yedek, mobil cila

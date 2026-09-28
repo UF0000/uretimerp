@@ -14,6 +14,7 @@ export async function getWorkOrders() {
       bom:boms(
         version,
         production_type,
+        items:bom_items(component_product_id, ratio_pct, product:products(code, name)),
         bom_injection(runner_sprue_weight_g, cavity_count, cycle_time_sec, scrap_product_id),
         bom_extrusion(scrap_product_id)
       ),

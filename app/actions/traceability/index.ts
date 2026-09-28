@@ -80,14 +80,14 @@ export async function getLotTrace(lotNo: string) {
   const { data: consumed } = entry
     ? await supabase
         .from("stock_movements")
-        .select("product_id, quantity, created_at, product:products(code, name, unit)")
+        .select("product_id, quantity, lot_no, created_at, product:products(code, name, unit)")
         .eq("production_entry_id", entry.id)
         .eq("direction", "out")
     : { data: [] };
 
-  // Olası reçine lotları: tüketilen hammaddenin, üretimden önce depoya giren lotlu girişleri
+  // Olası reçine lotları: sadece lotu kaydedilmemiş tüketimler için, üretimden önce giren lotlu girişler
   const productionTime = entry?.entry_time ?? null;
-  const rawIds = [...new Set((consumed ?? []).map((c) => c.product_id))];
+  const rawIds = [...new Set((consumed ?? []).filter((c) => !c.lot_no).map((c) => c.product_id))];
   const { data: candidates } =
     rawIds.length && productionTime
       ? await supabase
@@ -101,6 +101,20 @@ export async function getLotTrace(lotNo: string) {
           .order("created_at", { ascending: false })
           .limit(30)
       : { data: [] };
+
+  // İleriye (hammadde lotu): bu lottan tüketen vardiya girişleri ve ürettikleri lotlar
+  const { data: usedIn, error: usedInError } = await supabase
+    .from("stock_movements")
+    .select(`
+      quantity, created_at,
+      entry:production_entries(lot_no, produced_qty, work_order:work_orders(no, product:products(code, name, unit)))
+    `)
+    .eq("lot_no", lot)
+    .eq("direction", "out")
+    .not("production_entry_id", "is", null)
+    .is("reverses_id", null)
+    .order("created_at");
+  if (usedInError) throw new Error("Lot kullanımı getirilirken hata oluştu: " + usedInError.message);
 
   const reversedIds = new Set((movementsRes.data ?? []).map((m) => m.reverses_id).filter(Boolean));
 
@@ -128,6 +142,18 @@ export async function getLotTrace(lotNo: string) {
       document: one(m.document),
       isReversed: reversedIds.has(m.id),
     })),
+    usedInLots: (usedIn ?? []).map((u) => {
+      const e = one(u.entry);
+      const wo = one(e?.work_order);
+      return {
+        quantity: Number(u.quantity),
+        createdAt: u.created_at,
+        lotNo: e?.lot_no ?? null,
+        workOrderNo: wo?.no ?? null,
+        product: one(wo?.product) ?? null,
+        producedQty: Number(e?.produced_qty ?? 0),
+      };
+    }),
     qualityChecks: (qcRes.data ?? []).map((q) => ({ ...q, product: one(q.product) })),
     ncrs: ncrRes.data ?? [],
   };
