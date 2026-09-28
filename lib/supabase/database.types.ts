@@ -553,6 +553,9 @@ export type Database = {
           actual_cycle_time_sec: number | null
           operator: string | null
           entry_time: string | null
+          total_used_kg: number
+          lot_no: string | null
+          user_id: string | null
         }
         Insert: {
           id?: string
@@ -566,6 +569,9 @@ export type Database = {
           actual_cycle_time_sec?: number | null
           operator?: string | null
           entry_time?: string | null
+          total_used_kg?: number
+          lot_no?: string | null
+          user_id?: string | null
         }
         Update: {
           id?: string
@@ -579,6 +585,9 @@ export type Database = {
           actual_cycle_time_sec?: number | null
           operator?: string | null
           entry_time?: string | null
+          total_used_kg?: number
+          lot_no?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -593,6 +602,13 @@ export type Database = {
             columns: ["scrap_reason_code_id"]
             isOneToOne: false
             referencedRelation: "reason_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1066,18 +1082,11 @@ export type Database = {
         }
         Returns: undefined
       }
-      complete_work_order: {
+      close_work_order: {
         Args: {
           p_work_order_id: string
-          p_shift: Database["public"]["Enums"]["shift_type"]
-          p_produced_qty: number
-          p_total_used_kg: number
-          p_scrap_kg?: number
-          p_scrap_product_id?: string
-          p_target_warehouse_id?: string
-          p_operator?: string
         }
-        Returns: Json
+        Returns: undefined
       }
       delete_bom: {
         Args: {
@@ -1090,6 +1099,24 @@ export type Database = {
           roles: Database["public"]["Enums"]["user_role"][]
         }
         Returns: boolean
+      }
+      record_production_entry: {
+        Args: {
+          p_work_order_id: string
+          p_shift: Database["public"]["Enums"]["shift_type"]
+          p_produced_qty: number
+          p_total_used_kg: number
+          p_scrap_kg?: number
+          p_scrap_product_id?: string
+          p_scrap_reason_code_id?: string
+          p_downtime_min?: number
+          p_downtime_reason_code_id?: string
+          p_actual_cycle_time_sec?: number
+          p_target_warehouse_id?: string
+          p_operator?: string
+          p_close_work_order?: boolean
+        }
+        Returns: Json
       }
       reverse_stock_movements: {
         Args: {

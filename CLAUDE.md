@@ -110,8 +110,8 @@ supabase/
 
 **Faz 2 — MRP çekirdeği**
 - [~] Siparişler — net ihtiyaç (MRP) hesabı yok
-- [~] İş emri + üretim girişi — tek seferde kapanış; vardiya bazlı çoklu giriş, fire/duruş neden kodu, gerçek çevrim yok
-- [~] Üretim → stok + lot + kalıp atış sayacı (`complete_work_order`, atomik) — OEE yok
+- [x] İş emri + vardiya bazlı üretim girişi (`record_production_entry`): fire/duruş neden kodu zorunlu, gerçek çevrim, sadece duruşlu vardiya
+- [~] Üretim → stok + lot (vardiya başına) + kalıp atış sayacı, atomik — OEE hesabı/raporu yok
 
 **Faz 3 — Maliyet + Kalite**
 - [x] Maliyet: gerçek tüketimden hammadde, fire geri kazanımı, genel gider, plan/gerçekleşen (fiyatlar güncel kart fiyatı)
