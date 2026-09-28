@@ -54,6 +54,7 @@ export type Database = {
           kg_per_meter: number | null
           scrap_pct: number | null
           scrap_product_id: string | null
+          target_m_per_hour: number | null
         }
         Insert: {
           bom_id: string
@@ -61,6 +62,7 @@ export type Database = {
           kg_per_meter?: number | null
           scrap_pct?: number | null
           scrap_product_id?: string | null
+          target_m_per_hour?: number | null
         }
         Update: {
           bom_id?: string
@@ -68,6 +70,7 @@ export type Database = {
           kg_per_meter?: number | null
           scrap_pct?: number | null
           scrap_product_id?: string | null
+          target_m_per_hour?: number | null
         }
         Relationships: [
           {
@@ -268,6 +271,7 @@ export type Database = {
           overhead_pct: number
           usd_rate: number | null
           eur_rate: number | null
+          shift_minutes: number
         }
         Insert: {
           id?: string
@@ -276,6 +280,7 @@ export type Database = {
           overhead_pct?: number
           usd_rate?: number | null
           eur_rate?: number | null
+          shift_minutes?: number
         }
         Update: {
           id?: string
@@ -284,6 +289,7 @@ export type Database = {
           overhead_pct?: number
           usd_rate?: number | null
           eur_rate?: number | null
+          shift_minutes?: number
         }
         Relationships: []
       }
@@ -1062,6 +1068,31 @@ export type Database = {
       }
     }
     Views: {
+      v_oee_entries: {
+        Row: {
+          entry_id: string | null
+          work_order_id: string | null
+          work_order_no: string | null
+          product_id: string | null
+          entry_time: string | null
+          day: string | null
+          shift: Database["public"]["Enums"]["shift_type"] | null
+          production_type: Database["public"]["Enums"]["production_type"] | null
+          line_id: string | null
+          mold_id: string | null
+          planned_sec: number | null
+          run_sec: number | null
+          downtime_min: number | null
+          downtime_reason_code_id: string | null
+          scrap_kg: number | null
+          scrap_reason_code_id: string | null
+          produced_qty: number | null
+          total_kg: number | null
+          good_kg: number | null
+          ideal_sec: number | null
+        }
+        Relationships: []
+      }
       v_stock: {
         Row: {
           product_id: string | null

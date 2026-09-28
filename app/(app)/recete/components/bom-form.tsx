@@ -290,6 +290,20 @@ export function BomForm({ initialData, products, lines, molds }: BomFormProps) {
                     <Input type="number" step="0.001" {...register("extrusion.kg_per_meter", { valueAsNumber: true })} />
                   </div>
                   <div className="space-y-2">
+                    <Label>Hedef Hız (m/saat)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      placeholder="OEE performansı için"
+                      {...register("extrusion.target_m_per_hour", {
+                        setValueAs: (v: string) => (v === "" || v === null ? null : Number(v)),
+                      })}
+                    />
+                    {errors.extrusion?.target_m_per_hour && (
+                      <p className="text-xs text-danger">{errors.extrusion.target_m_per_hour.message}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
                     <Label>Hedef Fire Oranı (%)</Label>
                     <Input type="number" step="0.1" {...register("extrusion.scrap_pct", { valueAsNumber: true })} />
                   </div>

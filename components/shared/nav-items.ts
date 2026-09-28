@@ -19,6 +19,8 @@ export interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   /** Verilirse menüde sadece bu yetkiye sahip kullanıcılar görür */
   permission?: Permission;
+  /** Menü öğesinin aktif sayılacağı adres öneki (varsayılan: href) */
+  activePrefix?: string;
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -27,7 +29,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/recete", label: "Reçete / BOM", icon: ClipboardList },
   { href: "/depo", label: "Depo & Stok", icon: Warehouse },
   { href: "/siparisler", label: "Siparişler", icon: ShoppingCart },
-  { href: "/uretim/is-emirleri", label: "Üretim", icon: Factory },
+  { href: "/uretim/is-emirleri", label: "Üretim", icon: Factory, activePrefix: "/uretim" },
   { href: "/maliyet", label: "Maliyet", icon: Calculator },
   { href: "/kalite", label: "Kalite", icon: ShieldCheck },
   { href: "/yonetim", label: "Yönetim", icon: Settings, permission: "admin:all" },

@@ -13,6 +13,8 @@ export const bomExtrusionSchema = z.object({
   kg_per_meter: z.number().min(0).optional().nullable(),
   scrap_pct: z.number().min(0).max(100).optional().nullable(),
   scrap_product_id: z.string().optional().nullable(),
+  // OEE performansı için ideal üretim hızı
+  target_m_per_hour: z.number().positive("Hedef hız 0'dan büyük olmalıdır").optional().nullable(),
 });
 
 export const bomInjectionSchema = z.object({

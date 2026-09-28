@@ -37,7 +37,7 @@ export const MobileNav = () => {
         <nav className="py-3 px-2 space-y-1">
           {NAV_ITEMS.filter((item) => !item.permission || can(item.permission)).map((item) => {
             const isActive =
-              pathname === item.href || pathname.startsWith(`${item.href}/`);
+              pathname === (item.activePrefix ?? item.href) || pathname.startsWith(`${item.activePrefix ?? item.href}/`);
             const Icon = item.icon;
 
             return (
