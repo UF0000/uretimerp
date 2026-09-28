@@ -2,7 +2,8 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { GitBranch } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
-import { getStockOverview } from "@/app/actions/stock";
+import { getRegrindScrapByGrade, getStockOverview } from "@/app/actions/stock";
+import { RegrindScrapSummary } from "./components/regrind-scrap-summary";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { StockTable } from "./components/stock-table";
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default async function StockPage() {
-  const stockData = await getStockOverview();
+  const [stockData, regrindScrap] = await Promise.all([getStockOverview(), getRegrindScrapByGrade()]);
 
   return (
     <div className="space-y-6">
@@ -33,6 +34,8 @@ export default async function StockPage() {
           <StockTable data={stockData} />
         </CardContent>
       </Card>
+
+      <RegrindScrapSummary groups={regrindScrap} />
     </div>
   );
 }

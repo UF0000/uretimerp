@@ -106,7 +106,7 @@ supabase/
 - [x] Ana veri CRUD (ürün/hammadde/kalıp/hat/cari/depo/neden kodları) + Excel içe aktarım
 - [x] Reçete / BOM + versiyonlama (`save_bom`: kullanılmış reçete düzenlenince yeni versiyon)
 - [x] Stok defteri append-only (UPDATE/DELETE tetikleyiciyle yasak), iptal = ters kayıt, fiş iptali
-- [~] `v_stock` + kritik/min rozetleri — regrind/hurda grade ayrımı yok
+- [x] `v_stock` / `v_stock_lot` + kritik/min rozetleri; regrind/hurda grade = ayrı ürün kartı (material_grade), tipine göre regrind/hurda deposu, stok sayfasında grade özeti
 
 **Faz 2 — MRP çekirdeği**
 - [x] Siparişler + net ihtiyaç (`/siparisler/ihtiyac`, hesap `lib/mrp.ts`): mamul üretim ihtiyacı, iş emri açılmalı, hammadde/ticari mal net eksik — tek seviye reçete, birim ağırlık reçeteden

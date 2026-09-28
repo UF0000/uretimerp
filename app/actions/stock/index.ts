@@ -292,3 +292,37 @@ export async function cancelStockDocument(id: string) {
 export type StockMovementRow = Awaited<ReturnType<typeof getStockMovements>>[number];
 
 export type StockDocumentRow = Awaited<ReturnType<typeof getStockDocuments>>[number];
+
+/**
+ * Regrind ve hurda stokları grade (products.material_grade) bazında.
+ * Grade = ayrı ürün kartı; grade girilmemiş ürünler "Grade belirtilmemiş" altında toplanır.
+ */
+export async function getRegrindScrapByGrade() {
+  const supabase = await createClient();
+  const [{ data: products, error }, { data: stocks, error: stockError }] = await Promise.all([
+    supabase.from("products").select("id, code, name, type, material_grade").in("type", ["regrind", "scrap"]),
+    supabase.from("v_stock").select("product_id, qty"),
+  ]);
+  if (error) throw new Error("Regrind/hurda ürünleri getirilirken hata oluştu: " + error.message);
+  if (stockError) throw new Error("Stok verileri getirilirken hata oluştu: " + stockError.message);
+
+  const qtyByProduct = new Map<string, number>();
+  for (const s of stocks) {
+    if (s.product_id) qtyByProduct.set(s.product_id, (qtyByProduct.get(s.product_id) ?? 0) + Number(s.qty ?? 0));
+  }
+
+  const groups = new Map<string, { grade: string; regrindKg: number; scrapKg: number; products: { code: string; name: string; type: string; qty: number }[] }>();
+  for (const p of products) {
+    const qty = qtyByProduct.get(p.id) ?? 0;
+    if (qty === 0) continue;
+    const grade = p.material_grade?.trim() || "Grade belirtilmemiş";
+    const g = groups.get(grade) ?? { grade, regrindKg: 0, scrapKg: 0, products: [] };
+    if (p.type === "regrind") g.regrindKg += qty;
+    else g.scrapKg += qty;
+    g.products.push({ code: p.code, name: p.name, type: p.type, qty });
+    groups.set(grade, g);
+  }
+  return [...groups.values()].sort((a, b) => b.regrindKg + b.scrapKg - (a.regrindKg + a.scrapKg));
+}
+
+export type RegrindScrapGroup = Awaited<ReturnType<typeof getRegrindScrapByGrade>>[number];
