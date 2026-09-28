@@ -48,6 +48,8 @@ export function LineForm({ open, onOpenChange, initialData }: LineFormProps) {
       code: "",
       name: "",
       head_type: "",
+      line_type: "extrusion",
+      capacity_kg_per_hour: null,
       status: "active",
     },
   });
@@ -104,13 +106,45 @@ export function LineForm({ open, onOpenChange, initialData }: LineFormProps) {
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="head_type">Kafa Tipi</Label>
+              <Input id="head_type" {...register("head_type")} placeholder="Örn: 200mm" />
+            </div>
+            <div className="space-y-2">
+              <Label>Makine Türü</Label>
+              <Select
+                value={watch("line_type") ?? ""}
+                onValueChange={(val) => setValue("line_type", val as LineFormValues["line_type"])}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seçin">
+                    {watch("line_type") === "injection" ? "Enjeksiyon" : watch("line_type") === "extrusion" ? "Ekstrüder" : null}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="extrusion">Ekstrüder</SelectItem>
+                  <SelectItem value="injection">Enjeksiyon</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="space-y-2">
-            <Label htmlFor="head_type">Kafa Tipi</Label>
+            <Label htmlFor="capacity_kg_per_hour">Saatlik Kapasite (kg/saat)</Label>
             <Input
-              id="head_type"
-              {...register("head_type")}
-              placeholder="Örn: 200mm"
+              id="capacity_kg_per_hour"
+              type="number"
+              step="0.1"
+              placeholder="Örn: 345"
+              {...register("capacity_kg_per_hour", { setValueAs: (v: string) => (v === "" || v === null ? null : Number(v)) })}
+              className={errors.capacity_kg_per_hour ? "border-danger" : ""}
             />
+            {errors.capacity_kg_per_hour ? (
+              <p className="text-xs text-danger">{errors.capacity_kg_per_hour.message}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">Üretim analizinde kapasite verimi ve zaman kullanımı için.</p>
+            )}
           </div>
 
           <div className="space-y-2">

@@ -61,7 +61,8 @@ const toMetrics = (s: OeeSums): OeeMetrics => {
  */
 export async function getOeeReport(days: number) {
   const supabase = await createClient();
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  // Türkiye saatine göre gün sınırı
+  const since = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(new Date(Date.now() - days * 24 * 60 * 60 * 1000));
 
   const [entriesRes, linesRes, moldsRes, reasonsRes, paramsRes] = await Promise.all([
     supabase.from("v_oee_entries").select("*").gte("day", since).order("day"),

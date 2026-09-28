@@ -18,17 +18,17 @@ export default async function AppLayout({
 
   return (
     <RoleProvider role={userRole}>
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-screen overflow-hidden print:block print:h-auto print:overflow-visible">
         {/* Sol Yan Menü */}
         <Sidebar />
 
         {/* Ana İçerik Alanı */}
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-hidden print:overflow-visible">
           {/* Üst Bar */}
           <Topbar userName={userName} userRole={userRole} />
 
           {/* Sayfa İçeriği */}
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 print:overflow-visible print:p-0">
             {children}
           </main>
         </div>

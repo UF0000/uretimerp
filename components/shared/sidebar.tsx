@@ -23,7 +23,7 @@ export const Sidebar = () => {
   return (
     <aside
       className={cn(
-        "hidden md:flex flex-col border-r border-sidebar-border bg-sidebar",
+        "hidden md:flex flex-col border-r border-sidebar-border bg-sidebar print:hidden",
         "transition-all duration-300 ease-in-out",
         collapsed ? "w-[68px]" : "w-[240px]"
       )}

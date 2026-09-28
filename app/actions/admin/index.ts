@@ -46,6 +46,9 @@ const DEFAULT_PARAMETERS: ParametersFormValues = {
   usd_rate: 1,
   eur_rate: 1,
   shift_minutes: 720,
+  target_scrap_pct: 3,
+  overweight_tolerance_pct: 2.5,
+  target_oee_pct: 85,
 };
 
 export async function getParameters(): Promise<ParametersFormValues & { id: string | null }> {
@@ -62,6 +65,9 @@ export async function getParameters(): Promise<ParametersFormValues & { id: stri
     usd_rate: Number(data.usd_rate ?? 1),
     eur_rate: Number(data.eur_rate ?? 1),
     shift_minutes: Number(data.shift_minutes),
+    target_scrap_pct: Number(data.target_scrap_pct),
+    overweight_tolerance_pct: Number(data.overweight_tolerance_pct),
+    target_oee_pct: Number(data.target_oee_pct),
   };
 }
 
@@ -80,6 +86,7 @@ export async function saveParameters(values: ParametersFormValues) {
   revalidatePath("/yonetim");
   revalidatePath("/maliyet");
   revalidatePath("/uretim/oee");
+  revalidatePath("/uretim/analiz");
 }
 
 /** Dışa aktarılan tablolar: sayfa adı → sorgu. Hepsi RLS altında, yönetici yetkisiyle okunur. */

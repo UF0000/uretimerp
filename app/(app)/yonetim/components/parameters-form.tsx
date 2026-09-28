@@ -20,6 +20,9 @@ const FIELDS: { name: keyof ParametersFormValues; label: string; hint: string; s
   { name: "usd_rate", label: "USD kuru (₺)", hint: "USD fiyatlı malzemelerin TL karşılığı", step: "0.01" },
   { name: "eur_rate", label: "EUR kuru (₺)", hint: "EUR fiyatlı malzemelerin TL karşılığı", step: "0.01" },
   { name: "shift_minutes", label: "Vardiya süresi (dk)", hint: "OEE kullanılabilirlik hesabında planlı süre", step: "1" },
+  { name: "target_scrap_pct", label: "Fire hedefi (%)", hint: "Bu değerin üstü hedef dışı sayılır", step: "0.1" },
+  { name: "overweight_tolerance_pct", label: "Overweight toleransı (±%)", hint: "Metre/parça ağırlığı sapma sınırı", step: "0.1" },
+  { name: "target_oee_pct", label: "OEE hedefi (%)", hint: "Üretim analizinde OEE değerlendirmesi", step: "1" },
 ];
 
 export function ParametersForm({ initial }: { initial: ParametersFormValues }) {

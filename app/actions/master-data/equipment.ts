@@ -32,6 +32,8 @@ export async function saveLine(data: LineFormValues) {
         name: payload.name,
         head_type: payload.head_type || null,
         status: payload.status,
+        line_type: payload.line_type || null,
+        capacity_kg_per_hour: payload.capacity_kg_per_hour ?? null,
       })
       .eq("id", payload.id);
     if (error) throw new Error(error.message);
@@ -43,6 +45,8 @@ export async function saveLine(data: LineFormValues) {
         name: payload.name,
         head_type: payload.head_type || null,
         status: payload.status,
+        line_type: payload.line_type || null,
+        capacity_kg_per_hour: payload.capacity_kg_per_hour ?? null,
       }]);
     if (error) {
       if (error.code === '23505' || error.message.includes('unique')) {

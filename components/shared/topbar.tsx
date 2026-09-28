@@ -41,7 +41,7 @@ export const Topbar = ({ userName, userRole }: TopbarProps) => {
     : "?";
 
   return (
-    <header className="flex items-center justify-between h-16 px-4 md:px-6 border-b border-border bg-card">
+    <header className="flex items-center justify-between h-16 px-4 md:px-6 border-b border-border bg-card print:hidden">
       {/* Sol: Mobil menü + Sayfa alanı */}
       <div className="flex items-center gap-3">
         <MobileNav />

@@ -8,6 +8,9 @@ export const parametersSchema = z.object({
   usd_rate: z.number().positive("Kur 0'dan büyük olmalıdır"),
   eur_rate: z.number().positive("Kur 0'dan büyük olmalıdır"),
   shift_minutes: z.number().int("Tam sayı girin").min(60, "En az 60 dk").max(1440, "En fazla 1440 dk"),
+  target_scrap_pct: z.number().min(0, "Negatif olamaz").max(100, "En fazla %100"),
+  overweight_tolerance_pct: z.number().min(0, "Negatif olamaz").max(50, "En fazla %50"),
+  target_oee_pct: z.number().min(0, "Negatif olamaz").max(100, "En fazla %100"),
 });
 
 export type ParametersFormValues = z.infer<typeof parametersSchema>;

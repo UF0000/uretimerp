@@ -47,3 +47,9 @@ supabase/.branches/
 
 # İş verisi içeren Excel dosyaları repoya girmez
 *.xlsx
+
+# Kullanıcının paylaştığı ekran görüntüleri / raporlar (başka sistemin verisi) repoya girmez
+/*.png
+/*.jpg
+/*.jpeg
+/*.pdf

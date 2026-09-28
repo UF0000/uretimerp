@@ -112,6 +112,7 @@ supabase/
 - [x] Siparişler + net ihtiyaç (`/siparisler/ihtiyac`, hesap `lib/mrp.ts`): mamul üretim ihtiyacı, iş emri açılmalı, hammadde/ticari mal net eksik — tek seviye reçete, birim ağırlık reçeteden
 - [x] İş emri + vardiya bazlı üretim girişi (`record_production_entry`): fire/duruş neden kodu zorunlu, gerçek çevrim, sadece duruşlu vardiya
 - [x] Üretim → stok + lot (vardiya başına) + kalıp atış sayacı, atomik
+- [x] Üretim analizi `/uretim/analiz` (ekstrüder/enjeksiyon panosu, hesap `lib/production-analytics.ts`, `v_production_analytics`): fire/overweight/OEE/verim, hat kapasitesi (kg/sa) ile NŞA kapasite ve zaman kullanımı, vardiya karşılaştırması, iş emri bazında durum renkli grafikler, kontrol öncelikleri, PDF/Excel; hedefler Yönetim → Parametreler
 - [x] OEE raporu (`/uretim/oee`, `v_oee_entries`): makine/gün bazında, duruş ve fire Pareto; vardiya süresi `cost_parameters.shift_minutes`, ekstrüzyon performansı için reçetede hedef hız (m/saat)
 
 **Faz 3 — Maliyet + Kalite**

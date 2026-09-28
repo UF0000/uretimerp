@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { Gauge } from "lucide-react";
+import { BarChart3, Gauge } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { getWorkOrders } from "@/app/actions/work-orders";
 import { getProducts } from "@/app/actions/master-data/products";
@@ -34,10 +34,16 @@ export default async function WorkOrdersPage() {
         title="İş Emirleri (Üretim Planı)"
         description="Makinelerde üretimi planlanan ve devam eden iş emirlerinin takibi"
         actions={
-          <Link href="/uretim/oee" className={buttonVariants({ variant: "outline" })}>
-            <Gauge className="mr-2 h-4 w-4" />
-            OEE Raporu
-          </Link>
+          <>
+            <Link href="/uretim/analiz" className={buttonVariants({ variant: "outline" })}>
+              <BarChart3 className="mr-2 h-4 w-4" />
+              Üretim Analizi
+            </Link>
+            <Link href="/uretim/oee" className={buttonVariants({ variant: "outline" })}>
+              <Gauge className="mr-2 h-4 w-4" />
+              OEE Raporu
+            </Link>
+          </>
         }
       />
       

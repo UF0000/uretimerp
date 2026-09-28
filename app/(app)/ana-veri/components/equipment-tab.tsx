@@ -23,6 +23,7 @@ import { MoldForm } from "./mold-form";
 
 import { getErrorMessage } from "@/lib/utils";
 import { usePermission } from "@/components/shared/role-provider";
+import { formatTR } from "@/lib/format";
 const STATUS_LABELS: Record<string, string> = {
   active: "Aktif",
   maintenance: "Bakımda",
@@ -136,6 +137,16 @@ export function EquipmentTab({ lines, molds, products }: EquipmentTabProps) {
     },
     { accessorKey: "name", header: "Hat Adı" },
     { accessorKey: "head_type", header: "Kafa Tipi" },
+    {
+      accessorKey: "line_type",
+      header: "Tür",
+      cell: ({ row }) => (row.original.line_type === "injection" ? "Enjeksiyon" : row.original.line_type === "extrusion" ? "Ekstrüder" : "-"),
+    },
+    {
+      accessorKey: "capacity_kg_per_hour",
+      header: "Kapasite",
+      cell: ({ row }) => (row.original.capacity_kg_per_hour ? `${formatTR(Number(row.original.capacity_kg_per_hour), 0)} kg/sa` : <span className="text-muted-foreground">girilmemiş</span>),
+    },
     {
       accessorKey: "status",
       header: "Durum",

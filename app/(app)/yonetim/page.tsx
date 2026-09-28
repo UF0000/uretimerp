@@ -19,8 +19,8 @@ export const dynamic = "force-dynamic";
 export default async function ManagementPage() {
   const me = await requirePermission("admin:all");
   const [users, parameters] = await Promise.all([getUsers(), getParameters()]);
-  const { labor_per_unit, energy_per_unit, overhead_pct, usd_rate, eur_rate, shift_minutes } = parameters;
-  const parameterValues = { labor_per_unit, energy_per_unit, overhead_pct, usd_rate, eur_rate, shift_minutes };
+  const { id: _id, ...parameterValues } = parameters;
+  void _id;
 
   return (
     <div className="space-y-6">

@@ -278,6 +278,9 @@ export type Database = {
           usd_rate: number | null
           eur_rate: number | null
           shift_minutes: number
+          target_scrap_pct: number
+          overweight_tolerance_pct: number
+          target_oee_pct: number
         }
         Insert: {
           id?: string
@@ -287,6 +290,9 @@ export type Database = {
           usd_rate?: number | null
           eur_rate?: number | null
           shift_minutes?: number
+          target_scrap_pct?: number
+          overweight_tolerance_pct?: number
+          target_oee_pct?: number
         }
         Update: {
           id?: string
@@ -296,6 +302,9 @@ export type Database = {
           usd_rate?: number | null
           eur_rate?: number | null
           shift_minutes?: number
+          target_scrap_pct?: number
+          overweight_tolerance_pct?: number
+          target_oee_pct?: number
         }
         Relationships: []
       }
@@ -685,6 +694,8 @@ export type Database = {
           name: string
           head_type: string | null
           status: Database["public"]["Enums"]["equipment_status"]
+          capacity_kg_per_hour: number | null
+          line_type: Database["public"]["Enums"]["production_type"] | null
         }
         Insert: {
           id?: string
@@ -692,6 +703,8 @@ export type Database = {
           name: string
           head_type?: string | null
           status?: Database["public"]["Enums"]["equipment_status"]
+          capacity_kg_per_hour?: number | null
+          line_type?: Database["public"]["Enums"]["production_type"] | null
         }
         Update: {
           id?: string
@@ -699,6 +712,8 @@ export type Database = {
           name?: string
           head_type?: string | null
           status?: Database["public"]["Enums"]["equipment_status"]
+          capacity_kg_per_hour?: number | null
+          line_type?: Database["public"]["Enums"]["production_type"] | null
         }
         Relationships: []
       }
@@ -1152,6 +1167,40 @@ export type Database = {
           total_kg: number | null
           good_kg: number | null
           ideal_sec: number | null
+        }
+        Relationships: []
+      }
+      v_production_analytics: {
+        Row: {
+          entry_id: string | null
+          entry_time: string | null
+          day: string | null
+          shift: Database["public"]["Enums"]["shift_type"] | null
+          lot_no: string | null
+          work_order_id: string | null
+          work_order_no: string | null
+          product_id: string | null
+          product_code: string | null
+          product_name: string | null
+          product_unit: Database["public"]["Enums"]["unit_type"] | null
+          bom_id: string | null
+          bom_code: string | null
+          production_type: Database["public"]["Enums"]["production_type"] | null
+          line_id: string | null
+          mold_id: string | null
+          operator: string | null
+          produced_qty: number | null
+          used_kg: number | null
+          scrap_kg: number | null
+          good_kg: number | null
+          scrap_reason_code_id: string | null
+          downtime_min: number | null
+          downtime_reason_code_id: string | null
+          actual_cycle_time_sec: number | null
+          nominal_kg: number | null
+          planned_min: number | null
+          run_min: number | null
+          capacity_kg_per_hour: number | null
         }
         Relationships: []
       }
