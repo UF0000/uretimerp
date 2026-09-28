@@ -42,7 +42,7 @@ süresi / **OEE**, ve reçine lotundan mamule **parti izlenebilirliği** (soyağ
 - **Fonksiyonel bileşenler** ve arrow function kullan (modern React).
 - **TypeScript strict mode** — tip güvenliğinden ödün verme.
 - **Tailwind utility sınıfları** ile stil ver.
-- Tüm form doğrulamalarında **Zod** kullan.
+- Tüm form doğrulamalarında **Zod** kullan; `zod` yerine `@/lib/zod` içe aktar (Türkçe hata mesajları).
 - Varsayılan **Server Component**; etkileşim gerekiyorsa Client Component (`"use client"`).
 - Her tabloya **Supabase RLS** (satır düzeyi güvenlik) uygula.
 - **Stok yalnızca hareket kaydıyla değişir** (append-only ledger; bkz. Bölüm 6). Stok alanı elle güncellenmez.
@@ -116,7 +116,7 @@ supabase/
 
 **Faz 3 — Maliyet + Kalite**
 - [x] Maliyet: gerçek tüketimden hammadde, fire geri kazanımı, genel gider, plan/gerçekleşen (fiyatlar güncel kart fiyatı)
-- [~] Kalite kontrol kaydı var — NCR arayüzü ve lot bağlama yok
+- [x] Kalite kontrol + NCR (`create_ncr`/`close_ncr`): reddedilen kontrolden NCR, karantina transferi, kök neden/düzeltici zorunlu, serbest bırak/imha; lot izlenebilirliğe bağlı. Karantina deposu ana veride tanımlanmalı
 
 **Faz 4 — Sağlamlaştırma**
 - [x] İzlenebilirlik `/depo/izlenebilirlik`: lot → iş emri/vardiya/tüketilen hammadde (`stock_movements.production_entry_id`), ileriye hareketler/QC/NCR. Reçine lotu tüketimde seçilmiyor → "olası lotlar" gösterilir

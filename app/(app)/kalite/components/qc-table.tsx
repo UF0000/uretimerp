@@ -3,7 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
-import { Plus } from "lucide-react";
+import { Plus, FileWarning } from "lucide-react";
 
 import { DataTable } from "@/components/shared/data-table";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ import { usePermission } from "@/components/shared/role-provider";
 interface QCTableProps {
   data: QualityCheckRow[];
   onAdd: () => void;
+  onOpenNcr: (qc: QualityCheckRow) => void;
 }
 
 const QC_TYPES: Record<string, string> = {
@@ -39,7 +40,7 @@ const QC_RESULTS: Record<
   conditional: { label: "Şartlı Kabul", variant: "secondary" },
 };
 
-export function QCTable({ data, onAdd }: QCTableProps) {
+export function QCTable({ data, onAdd, onOpenNcr }: QCTableProps) {
   const canWrite = usePermission("quality:write");
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -108,6 +109,18 @@ export function QCTable({ data, onAdd }: QCTableProps) {
       cell: ({ row }) => <span>{row.original.checker?.name}</span>,
     },
     {
+      id: "actions",
+      header: "",
+      cell: ({ row }) =>
+        row.original.result === "reject" ? (
+          <div className="flex justify-end">
+            <Button size="sm" variant="outline" onClick={() => onOpenNcr(row.original)}>
+              <FileWarning className="mr-1 h-4 w-4" /> NCR Aç
+            </Button>
+          </div>
+        ) : null,
+    },
+    {
       accessorKey: "checked_at",
       header: "Tarih",
       cell: ({ row }) => (
@@ -134,7 +147,7 @@ export function QCTable({ data, onAdd }: QCTableProps) {
       </div>
 
       <DataTable
-        columns={columns}
+        columns={canWrite ? columns : columns.filter((c) => c.id !== "actions")}
         data={data}
         searchKey="product_code"
         searchPlaceholder="Ürün kodu ile ara..."

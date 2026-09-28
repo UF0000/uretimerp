@@ -401,6 +401,12 @@ export type Database = {
           corrective_action: string | null
           status: Database["public"]["Enums"]["ncr_status"]
           created_at: string | null
+          source_warehouse_id: string | null
+          quality_check_id: string | null
+          disposition: string | null
+          created_by: string | null
+          closed_at: string | null
+          closed_by: string | null
         }
         Insert: {
           id?: string
@@ -414,6 +420,12 @@ export type Database = {
           corrective_action?: string | null
           status?: Database["public"]["Enums"]["ncr_status"]
           created_at?: string | null
+          source_warehouse_id?: string | null
+          quality_check_id?: string | null
+          disposition?: string | null
+          created_by?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
         }
         Update: {
           id?: string
@@ -427,8 +439,28 @@ export type Database = {
           corrective_action?: string | null
           status?: Database["public"]["Enums"]["ncr_status"]
           created_at?: string | null
+          source_warehouse_id?: string | null
+          quality_check_id?: string | null
+          disposition?: string | null
+          created_by?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "ncr_closed_by_fkey"
+            columns: ["closed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ncr_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ncr_product_id_fkey"
             columns: ["product_id"]
@@ -437,8 +469,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ncr_quality_check_id_fkey"
+            columns: ["quality_check_id"]
+            isOneToOne: false
+            referencedRelation: "quality_checks"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "ncr_quarantine_warehouse_id_fkey"
             columns: ["quarantine_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ncr_source_warehouse_id_fkey"
+            columns: ["source_warehouse_id"]
             isOneToOne: false
             referencedRelation: "warehouses"
             referencedColumns: ["id"]
@@ -1123,11 +1169,33 @@ export type Database = {
         }
         Returns: undefined
       }
+      close_ncr: {
+        Args: {
+          p_id: string
+          p_root_cause: string
+          p_corrective_action: string
+          p_disposition?: string
+          p_release_warehouse_id?: string
+        }
+        Returns: undefined
+      }
       close_work_order: {
         Args: {
           p_work_order_id: string
         }
         Returns: undefined
+      }
+      create_ncr: {
+        Args: {
+          p_product_id: string
+          p_description: string
+          p_quantity: number
+          p_lot_no?: string
+          p_quality_check_id?: string
+          p_source_warehouse_id?: string
+          p_quarantine_warehouse_id?: string
+        }
+        Returns: Json
       }
       delete_bom: {
         Args: {

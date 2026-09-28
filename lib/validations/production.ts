@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/zod";
 
 /** Tek vardiyalık üretim girişi. Aynı kurallar veritabanında (record_production_entry) da denetlenir. */
 export const productionEntrySchema = z
