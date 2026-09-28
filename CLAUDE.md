@@ -82,7 +82,8 @@ lib/
   supabase/                  # client, server, middleware
   format.ts                  # formatTR() / parseTR() (nokta/virgül kuralı)
   stock.ts                   # getStock(), addStockMovement()  ← tek stok değiştirme yolu
-  auth.ts                    # rol kontrolü
+  auth.ts                    # oturum + requirePermission (sunucu)
+  permissions.ts             # rol → yetki matrisi (sunucu + tarayıcı)
 stores/                      # Zustand store'ları
 supabase/
   migrations/                # SQL şema + RLS politikaları
@@ -92,31 +93,34 @@ supabase/
 
 ## 5. Hafıza / Durum (Memory / Status)
 
-> Son güncelleme: 2026-07-03
+> Son güncelleme: 2026-09-28 — `[~]` = kısmen var, eksiği yanında yazılı.
 
 **Faz 0 — İskelet**
 - [x] Next.js + TS + Tailwind + shadcn kurulumu, klasör yapısı
 - [x] Tasarım token'ları + ortak layout (yan menü + üst bar)
 - [x] `format.ts` (nokta/virgül) ve `stock.ts` (getStock/addStockMovement) yardımcıları
-- [ ] Supabase bağlantısı, `.env.local`, Auth + middleware (kullanıcı Supabase projesi oluşturacak)
+- [x] Supabase bağlantısı, Auth + proxy; profil yoksa/pasifse uygulamaya giriş yok
+- [x] DB tipleri `lib/supabase/database.types.ts` (`npm run db:types`), migration CI
 
 **Faz 1 — Omurga**
-- [ ] Ana veri (ürün/hammadde/kalıp/hat/cari/depo/neden kodları) CRUD
-- [ ] Reçete / BOM + versiyonlama (ekstrüzyon + enjeksiyon formları, regrind/runner/sprue)
-- [ ] Stok hareket defteri + `v_stock` + kritik/min rozetleri (regrind/hurda grade ayrı)
+- [x] Ana veri CRUD (ürün/hammadde/kalıp/hat/cari/depo/neden kodları) + Excel içe aktarım
+- [x] Reçete / BOM + versiyonlama (`save_bom`: kullanılmış reçete düzenlenince yeni versiyon)
+- [x] Stok defteri append-only (UPDATE/DELETE tetikleyiciyle yasak), iptal = ters kayıt, fiş iptali
+- [~] `v_stock` + kritik/min rozetleri — regrind/hurda grade ayrımı yok
 
 **Faz 2 — MRP çekirdeği**
-- [ ] Siparişler + net ihtiyaç hesabı
-- [ ] İş emri + vardiya bazlı üretim girişi (fire/duruş neden kodları, gerçek çevrim)
-- [ ] Üretim → otomatik stok hareketleri + lot üretimi + kalıp atış sayacı/OEE
+- [~] Siparişler — net ihtiyaç (MRP) hesabı yok
+- [~] İş emri + üretim girişi — tek seferde kapanış; vardiya bazlı çoklu giriş, fire/duruş neden kodu, gerçek çevrim yok
+- [~] Üretim → stok + lot + kalıp atış sayacı (`complete_work_order`, atomik) — OEE yok
 
 **Faz 3 — Maliyet + Kalite**
-- [ ] Reçeteden maliyet + fire/regrind geri kazanım + planlanan/gerçekleşen rapor
-- [ ] Kalite kontrol (ISO 4435/EN 1852) + lot bağlama + NCR
+- [x] Maliyet: gerçek tüketimden hammadde, fire geri kazanımı, genel gider, plan/gerçekleşen (fiyatlar güncel kart fiyatı)
+- [~] Kalite kontrol kaydı var — NCR arayüzü ve lot bağlama yok
 
 **Faz 4 — Sağlamlaştırma**
-- [ ] Dashboard + izlenebilirlik/fire raporları
-- [ ] Dışa aktarım/yedek, RLS gözden geçirme, mobil cila
+- [~] Dashboard var — izlenebilirlik (soyağacı) ve fire raporları yok
+- [x] RLS gözden geçirme: rol bazlı politikalar (`lib/permissions.ts` ile aynı), arayüzde rol bazlı gizleme
+- [ ] Dışa aktarım/yedek, mobil cila
 
 **Alınan kararlar (kalıcı):**
 - Sektör: **plastik imalat** (ekstrüzyon + enjeksiyon).
