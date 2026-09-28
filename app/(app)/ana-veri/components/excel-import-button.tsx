@@ -20,7 +20,10 @@ interface ExcelImportButtonProps {
   sampleFormat: string;
 }
 
-export function ExcelImportButton({ onImport, sampleFormat }: ExcelImportButtonProps) {
+export function ExcelImportButton({
+  onImport,
+  sampleFormat,
+}: ExcelImportButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -39,7 +42,7 @@ export function ExcelImportButton({ onImport, sampleFormat }: ExcelImportButtonP
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
         const data = xlsx.utils.sheet_to_json<ExcelRow>(ws);
-        
+
         if (data.length === 0) {
           throw new Error("Excel dosyası boş veya okunamadı.");
         }
@@ -48,7 +51,9 @@ export function ExcelImportButton({ onImport, sampleFormat }: ExcelImportButtonP
         toast.success(`${importedCount} adet kayıt başarıyla içe aktarıldı!`);
         setIsOpen(false);
       } catch (err) {
-        toast.error("İçe Aktarım Hatası", { description: getErrorMessage(err) });
+        toast.error("İçe Aktarım Hatası", {
+          description: getErrorMessage(err),
+        });
       } finally {
         setIsImporting(false);
         if (fileInputRef.current) {
@@ -76,7 +81,8 @@ export function ExcelImportButton({ onImport, sampleFormat }: ExcelImportButtonP
           <DialogHeader>
             <DialogTitle>Excel&apos;den İçe Aktar</DialogTitle>
             <DialogDescription>
-              Excel (.xlsx, .xls) dosyanızı seçerek toplu veri yükleyebilirsiniz.
+              Excel (.xlsx, .xls) dosyanızı seçerek toplu veri
+              yükleyebilirsiniz.
             </DialogDescription>
           </DialogHeader>
 
@@ -90,7 +96,9 @@ export function ExcelImportButton({ onImport, sampleFormat }: ExcelImportButtonP
                 {sampleFormat}
               </p>
               <p className="mt-4 text-xs text-muted-foreground">
-                * Koyu renkli veya parantez içindeki ifadeler (örn: Kodu, Adi) Excel sütun başlıklarınız olmalıdır. Sütun adları birebir eşleşmelidir.
+                * Koyu renkli veya parantez içindeki ifadeler (örn: Kodu, Adi)
+                Excel sütun başlıklarınız olmalıdır. Sütun adları birebir
+                eşleşmelidir.
               </p>
             </div>
 
@@ -102,15 +110,20 @@ export function ExcelImportButton({ onImport, sampleFormat }: ExcelImportButtonP
                 ref={fileInputRef}
                 onChange={handleFileUpload}
               />
-              <Button 
+              <Button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImporting}
                 className="w-full"
               >
                 {isImporting ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Yükleniyor...</>
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />{" "}
+                    Yükleniyor...
+                  </>
                 ) : (
-                  <><Upload className="w-4 h-4 mr-2" /> Dosya Seç</>
+                  <>
+                    <Upload className="w-4 h-4 mr-2" /> Dosya Seç
+                  </>
                 )}
               </Button>
             </div>

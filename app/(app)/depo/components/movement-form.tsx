@@ -7,7 +7,10 @@ import { useRouter } from "next/navigation";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
-import { StockMovementFormValues, stockMovementSchema } from "@/lib/validations/stock";
+import {
+  StockMovementFormValues,
+  stockMovementSchema,
+} from "@/lib/validations/stock";
 import { saveStockMovement } from "@/app/actions/stock";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,7 +68,10 @@ export function MovementForm({ products, warehouses }: MovementFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-2xl mx-auto">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-6 max-w-2xl mx-auto"
+    >
       <div className="flex items-center justify-between">
         <Button type="button" variant="ghost" onClick={() => router.back()}>
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -78,11 +84,18 @@ export function MovementForm({ products, warehouses }: MovementFormProps) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>İşlem Yönü *</Label>
-              <Select 
-                value={watch("direction")} 
-                onValueChange={(val) => setValue("direction", val as StockMovementFormValues["direction"])}
+              <Select
+                value={watch("direction")}
+                onValueChange={(val) =>
+                  setValue(
+                    "direction",
+                    val as StockMovementFormValues["direction"],
+                  )
+                }
               >
-                <SelectTrigger className={errors.direction ? "border-danger" : ""}>
+                <SelectTrigger
+                  className={errors.direction ? "border-danger" : ""}
+                >
                   <SelectValue placeholder="Seçiniz">
                     {watch("direction") === "in" && "Stok Girişi (+)"}
                     {watch("direction") === "out" && "Stok Çıkışı (-)"}
@@ -94,25 +107,37 @@ export function MovementForm({ products, warehouses }: MovementFormProps) {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Hareket Tipi (Kaynak) *</Label>
-              <Select 
-                value={watch("source_type")} 
-                onValueChange={(val) => setValue("source_type", val as StockMovementFormValues["source_type"])}
+              <Select
+                value={watch("source_type")}
+                onValueChange={(val) =>
+                  setValue(
+                    "source_type",
+                    val as StockMovementFormValues["source_type"],
+                  )
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seçiniz">
-                    {watch("source_type") === "count" && "Sayım Farkı / Düzeltme"}
-                    {watch("source_type") === "purchase" && "Satınalma (Fatura/İrsaliye)"}
-                    {watch("source_type") === "transfer" && "Depolar Arası Transfer"}
+                    {watch("source_type") === "count" &&
+                      "Sayım Farkı / Düzeltme"}
+                    {watch("source_type") === "purchase" &&
+                      "Satınalma (Fatura/İrsaliye)"}
+                    {watch("source_type") === "transfer" &&
+                      "Depolar Arası Transfer"}
                     {watch("source_type") === "scrap" && "Fire / Hurda Çıkışı"}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="count">Sayım Farkı / Düzeltme</SelectItem>
-                  <SelectItem value="purchase">Satınalma (Fatura/İrsaliye)</SelectItem>
-                  <SelectItem value="transfer">Depolar Arası Transfer</SelectItem>
+                  <SelectItem value="purchase">
+                    Satınalma (Fatura/İrsaliye)
+                  </SelectItem>
+                  <SelectItem value="transfer">
+                    Depolar Arası Transfer
+                  </SelectItem>
                   <SelectItem value="scrap">Fire / Hurda Çıkışı</SelectItem>
                 </SelectContent>
               </Select>
@@ -124,15 +149,17 @@ export function MovementForm({ products, warehouses }: MovementFormProps) {
             <SearchableSelect
               value={watch("product_id")}
               onValueChange={(val) => setValue("product_id", val)}
-              options={products.map(p => ({ 
-                value: p.id, 
-                label: `${p.name} (${p.code})`, 
-                searchString: p.code 
+              options={products.map((p) => ({
+                value: p.id,
+                label: `${p.name} (${p.code})`,
+                searchString: p.code,
               }))}
               placeholder="Ürün seçiniz"
               className={errors.product_id ? "border-danger" : ""}
             />
-            {errors.product_id && <p className="text-xs text-danger">{errors.product_id.message}</p>}
+            {errors.product_id && (
+              <p className="text-xs text-danger">{errors.product_id.message}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -141,22 +168,31 @@ export function MovementForm({ products, warehouses }: MovementFormProps) {
               <SearchableSelect
                 value={watch("warehouse_id")}
                 onValueChange={(val) => setValue("warehouse_id", val)}
-                options={warehouses.map(w => ({ value: w.id, label: w.name }))}
+                options={warehouses.map((w) => ({
+                  value: w.id,
+                  label: w.name,
+                }))}
                 placeholder="Depo seçiniz"
                 className={errors.warehouse_id ? "border-danger" : ""}
               />
-              {errors.warehouse_id && <p className="text-xs text-danger">{errors.warehouse_id.message}</p>}
+              {errors.warehouse_id && (
+                <p className="text-xs text-danger">
+                  {errors.warehouse_id.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label>Miktar *</Label>
-              <Input 
-                type="number" 
-                step="0.001" 
-                {...register("quantity", { valueAsNumber: true })} 
+              <Input
+                type="number"
+                step="0.001"
+                {...register("quantity", { valueAsNumber: true })}
                 className={errors.quantity ? "border-danger" : ""}
               />
-              {errors.quantity && <p className="text-xs text-danger">{errors.quantity.message}</p>}
+              {errors.quantity && (
+                <p className="text-xs text-danger">{errors.quantity.message}</p>
+              )}
             </div>
           </div>
 
@@ -167,7 +203,12 @@ export function MovementForm({ products, warehouses }: MovementFormProps) {
 
           <div className="space-y-2">
             <Label>Açıklama</Label>
-            <Textarea {...register("note")} placeholder="İşlem detayı..." className="resize-none" rows={3} />
+            <Textarea
+              {...register("note")}
+              placeholder="İşlem detayı..."
+              className="resize-none"
+              rows={3}
+            />
           </div>
 
           <Button type="submit" className="w-full" disabled={isSubmitting}>

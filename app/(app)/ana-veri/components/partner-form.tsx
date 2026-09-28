@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PartnerFormValues, partnerSchema } from "@/lib/validations/master-data";
+import {
+  PartnerFormValues,
+  partnerSchema,
+} from "@/lib/validations/master-data";
 import { savePartner } from "@/app/actions/master-data/partners";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -32,7 +35,11 @@ interface PartnerFormProps {
   initialData?: PartnerFormValues;
 }
 
-export function PartnerForm({ open, onOpenChange, initialData }: PartnerFormProps) {
+export function PartnerForm({
+  open,
+  onOpenChange,
+  initialData,
+}: PartnerFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -72,21 +79,31 @@ export function PartnerForm({ open, onOpenChange, initialData }: PartnerFormProp
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{initialData ? "Cari Düzenle" : "Yeni Cari Ekle"}</DialogTitle>
+          <DialogTitle>
+            {initialData ? "Cari Düzenle" : "Yeni Cari Ekle"}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="name">Unvan / İsim *</Label>
-            <Input id="name" {...register("name")} className={errors.name ? "border-danger" : ""} />
-            {errors.name && <p className="text-xs text-danger">{errors.name.message}</p>}
+            <Input
+              id="name"
+              {...register("name")}
+              className={errors.name ? "border-danger" : ""}
+            />
+            {errors.name && (
+              <p className="text-xs text-danger">{errors.name.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
             <Label>Tip *</Label>
-            <Select 
-              value={watchType} 
-              onValueChange={(val) => setValue("type", val as PartnerFormValues["type"])}
+            <Select
+              value={watchType}
+              onValueChange={(val) =>
+                setValue("type", val as PartnerFormValues["type"])
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Seçiniz">
@@ -112,11 +129,17 @@ export function PartnerForm({ open, onOpenChange, initialData }: PartnerFormProp
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               İptal
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Kaydet
             </Button>
           </div>

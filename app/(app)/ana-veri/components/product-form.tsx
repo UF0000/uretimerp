@@ -4,7 +4,11 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { saveProduct } from "@/app/actions/master-data/products";
-import { ProductFormValues, ProductFormInput, productSchema } from "@/lib/validations/master-data";
+import {
+  ProductFormValues,
+  ProductFormInput,
+  productSchema,
+} from "@/lib/validations/master-data";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -32,7 +36,11 @@ interface ProductFormProps {
   initialData?: ProductFormInput;
 }
 
-export function ProductForm({ open, onOpenChange, initialData }: ProductFormProps) {
+export function ProductForm({
+  open,
+  onOpenChange,
+  initialData,
+}: ProductFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -76,30 +84,46 @@ export function ProductForm({ open, onOpenChange, initialData }: ProductFormProp
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{initialData ? "Ürün Düzenle" : "Yeni Ürün Ekle"}</DialogTitle>
+          <DialogTitle>
+            {initialData ? "Ürün Düzenle" : "Yeni Ürün Ekle"}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="code">Kodu *</Label>
-              <Input id="code" {...register("code")} className={errors.code ? "border-danger" : ""} />
-              {errors.code && <p className="text-xs text-danger">{errors.code.message}</p>}
+              <Input
+                id="code"
+                {...register("code")}
+                className={errors.code ? "border-danger" : ""}
+              />
+              {errors.code && (
+                <p className="text-xs text-danger">{errors.code.message}</p>
+              )}
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="name">Adı *</Label>
-              <Input id="name" {...register("name")} className={errors.name ? "border-danger" : ""} />
-              {errors.name && <p className="text-xs text-danger">{errors.name.message}</p>}
+              <Input
+                id="name"
+                {...register("name")}
+                className={errors.name ? "border-danger" : ""}
+              />
+              {errors.name && (
+                <p className="text-xs text-danger">{errors.name.message}</p>
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Tip *</Label>
-              <Select 
-                value={watchType} 
-                onValueChange={(val) => setValue("type", val as ProductFormInput["type"])}
+              <Select
+                value={watchType}
+                onValueChange={(val) =>
+                  setValue("type", val as ProductFormInput["type"])
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seçiniz">
@@ -119,12 +143,14 @@ export function ProductForm({ open, onOpenChange, initialData }: ProductFormProp
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Birim *</Label>
-              <Select 
-                value={watch("unit")} 
-                onValueChange={(val) => setValue("unit", val as ProductFormInput["unit"])}
+              <Select
+                value={watch("unit")}
+                onValueChange={(val) =>
+                  setValue("unit", val as ProductFormInput["unit"])
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seçiniz">
@@ -145,13 +171,14 @@ export function ProductForm({ open, onOpenChange, initialData }: ProductFormProp
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Kategori</Label>
-              <Select 
-                value={watch("category") || ""} 
+              <Select
+                value={watch("category") || ""}
                 onValueChange={(val) => setValue("category", val ?? "")}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Kategori Seçiniz">
-                    {watch("category") === "baglanti_parcasi" && "Bağlantı Parçası"}
+                    {watch("category") === "baglanti_parcasi" &&
+                      "Bağlantı Parçası"}
                     {watch("category") === "boru" && "Boru"}
                     {watch("category") === "hammadde" && "Hammadde"}
                     {watch("category") === "sarf_malzeme" && "Sarf Malzeme"}
@@ -161,7 +188,9 @@ export function ProductForm({ open, onOpenChange, initialData }: ProductFormProp
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="baglanti_parcasi">Bağlantı Parçası</SelectItem>
+                  <SelectItem value="baglanti_parcasi">
+                    Bağlantı Parçası
+                  </SelectItem>
                   <SelectItem value="boru">Boru</SelectItem>
                   <SelectItem value="hammadde">Hammadde</SelectItem>
                   <SelectItem value="sarf_malzeme">Sarf Malzeme</SelectItem>
@@ -171,11 +200,17 @@ export function ProductForm({ open, onOpenChange, initialData }: ProductFormProp
                 </SelectContent>
               </Select>
             </div>
-            
-            {(watchType === "raw" || watchType === "regrind" || watchType === "scrap") && (
+
+            {(watchType === "raw" ||
+              watchType === "regrind" ||
+              watchType === "scrap") && (
               <div className="space-y-2">
                 <Label htmlFor="material_grade">Malzeme Grade</Label>
-                <Input id="material_grade" {...register("material_grade")} placeholder="Örn: PE100" />
+                <Input
+                  id="material_grade"
+                  {...register("material_grade")}
+                  placeholder="Örn: PE100"
+                />
               </div>
             )}
           </div>
@@ -183,31 +218,37 @@ export function ProductForm({ open, onOpenChange, initialData }: ProductFormProp
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="min_stock">Min. Stok (Uyarı)</Label>
-              <Input 
-                id="min_stock" 
-                type="number" 
+              <Input
+                id="min_stock"
+                type="number"
                 step="any"
-                {...register("min_stock", { valueAsNumber: true })} 
+                {...register("min_stock", { valueAsNumber: true })}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="critical_stock">Kritik Stok (Acil)</Label>
-              <Input 
-                id="critical_stock" 
-                type="number" 
+              <Input
+                id="critical_stock"
+                type="number"
                 step="any"
-                {...register("critical_stock", { valueAsNumber: true })} 
+                {...register("critical_stock", { valueAsNumber: true })}
               />
             </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               İptal
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Kaydet
             </Button>
           </div>

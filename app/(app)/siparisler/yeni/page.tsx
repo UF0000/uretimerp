@@ -4,12 +4,14 @@ import { getPartners } from "@/app/actions/master-data/partners";
 import { PageHeader } from "@/components/shared/page-header";
 import { OrderForm } from "../components/order-form";
 
+import { requirePermission } from "@/lib/auth";
 export const metadata: Metadata = {
   title: "Yeni Sipariş Oluştur",
   description: "Sisteme yeni müşteri siparişi ekle",
 };
 
 export default async function NewOrderPage() {
+  await requirePermission("order:write");
   const [products, partners] = await Promise.all([
     getProducts(),
     getPartners(),

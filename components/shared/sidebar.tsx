@@ -11,11 +11,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { NAV_ITEMS } from "@/components/shared/nav-items";
+import { useCan } from "@/components/shared/role-provider";
 
 // ─── Sidebar Bileşeni ──────────────────────────────
 
 export const Sidebar = () => {
   const pathname = usePathname();
+  const can = useCan();
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -40,7 +42,7 @@ export const Sidebar = () => {
 
       {/* Navigasyon */}
       <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS.filter((item) => !item.permission || can(item.permission)).map((item) => {
           const isActive =
             pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;

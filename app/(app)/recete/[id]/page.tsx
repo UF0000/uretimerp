@@ -5,12 +5,14 @@ import { getBomById } from "@/app/actions/bom";
 import { PageHeader } from "@/components/shared/page-header";
 import { BomForm } from "../components/bom-form";
 
+import { requirePermission } from "@/lib/auth";
 export const metadata: Metadata = {
   title: "Reçete Düzenle",
   description: "Üretim reçetesini düzenle",
 };
 
 export default async function EditBomPage(props: { params: Promise<{ id: string }> }) {
+  await requirePermission("master-data:write");
   const params = await props.params;
   const [products, lines, molds, bom] = await Promise.all([
     getProducts(),

@@ -9,10 +9,14 @@ import { DataTable } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ReasonCodeFormValues } from "@/lib/validations/master-data";
-import { deleteReasonCode, bulkDeleteReasonCodes } from "@/app/actions/master-data/reason-codes";
+import {
+  deleteReasonCode,
+  bulkDeleteReasonCodes,
+} from "@/app/actions/master-data/reason-codes";
 import { ReasonCodeForm } from "./reason-code-form";
 
 import { getErrorMessage } from "@/lib/utils";
+import { usePermission } from "@/components/shared/role-provider";
 const KIND_LABELS: Record<string, string> = {
   downtime: "Duruş",
   scrap: "Fire",
@@ -23,8 +27,11 @@ interface ReasonCodesTabProps {
 }
 
 export function ReasonCodesTab({ data }: ReasonCodesTabProps) {
+  const canWrite = usePermission("master-data:write");
   const [formOpen, setFormOpen] = useState(false);
-  const [editingCode, setEditingCode] = useState<ReasonCodeFormValues | undefined>(undefined);
+  const [editingCode, setEditingCode] = useState<
+    ReasonCodeFormValues | undefined
+  >(undefined);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleEdit = (code: ReasonCodeFormValues) => {
@@ -53,9 +60,14 @@ export function ReasonCodesTab({ data }: ReasonCodesTabProps) {
       setIsDeleting(true);
       toast.loading("Kodlar siliniyor...", { id: "bulk-delete-reason-codes" });
       await bulkDeleteReasonCodes(ids);
-      toast.success(`${ids.length} adet kod başarıyla silindi.`, { id: "bulk-delete-reason-codes" });
+      toast.success(`${ids.length} adet kod başarıyla silindi.`, {
+        id: "bulk-delete-reason-codes",
+      });
     } catch (error) {
-      toast.error("Toplu silme başarısız", { id: "bulk-delete-reason-codes", description: getErrorMessage(error) });
+      toast.error("Toplu silme başarısız", {
+        id: "bulk-delete-reason-codes",
+        description: getErrorMessage(error),
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -77,7 +89,9 @@ export function ReasonCodesTab({ data }: ReasonCodesTabProps) {
     {
       accessorKey: "code",
       header: "Kod",
-      cell: ({ row }) => <span className="font-semibold">{row.getValue("code")}</span>,
+      cell: ({ row }) => (
+        <span className="font-semibold">{row.getValue("code")}</span>
+      ),
     },
     {
       accessorKey: "label",
@@ -90,10 +104,18 @@ export function ReasonCodesTab({ data }: ReasonCodesTabProps) {
         const item = row.original;
         return (
           <div className="flex items-center justify-end gap-2">
-            <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleEdit(item)}
+            >
               <Edit2 className="w-4 h-4 text-muted-foreground" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => item.id && handleDelete(item.id)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => item.id && handleDelete(item.id)}
+            >
               <Trash2 className="w-4 h-4 text-danger" />
             </Button>
           </div>
@@ -111,26 +133,28 @@ export function ReasonCodesTab({ data }: ReasonCodesTabProps) {
             Üretim duruş ve fire sebepleri
           </p>
         </div>
-        <Button onClick={handleAdd}>
-          <Plus className="w-4 h-4 mr-2" />
-          Yeni Ekle
-        </Button>
+        {canWrite && (
+          <Button onClick={handleAdd}>
+            <Plus className="w-4 h-4 mr-2" />
+            Yeni Ekle
+          </Button>
+        )}
       </div>
 
-      <DataTable 
-        columns={columns} 
-        data={data} 
-        searchKey="label" 
-        searchPlaceholder="Açıklama ara..." 
-        onDeleteSelected={handleBulkDelete}
+      <DataTable
+        columns={canWrite ? columns : columns.filter((c) => c.id !== "actions")}
+        data={data}
+        searchKey="label"
+        searchPlaceholder="Açıklama ara..."
+        onDeleteSelected={canWrite ? handleBulkDelete : undefined}
         isDeleting={isDeleting}
       />
 
       {formOpen && (
-        <ReasonCodeForm 
-          open={formOpen} 
-          onOpenChange={setFormOpen} 
-          initialData={editingCode} 
+        <ReasonCodeForm
+          open={formOpen}
+          onOpenChange={setFormOpen}
+          initialData={editingCode}
         />
       )}
     </div>

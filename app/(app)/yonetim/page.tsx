@@ -4,12 +4,14 @@ import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 
+import { requirePermission } from "@/lib/auth";
 export const metadata: Metadata = {
   title: "Yönetim",
   description: "Kullanıcı, rol ve sistem ayarları yönetimi",
 };
 
-export default function ManagementPage() {
+export default async function ManagementPage() {
+  await requirePermission("admin:all");
   return (
     <div className="space-y-6">
       <PageHeader

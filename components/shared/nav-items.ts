@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Settings,
 } from "lucide-react";
+import type { Permission } from "@/lib/permissions";
 
 // ─── Navigasyon öğeleri (sidebar + mobil menü ortak) ───
 
@@ -16,6 +17,8 @@ export interface NavItem {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  /** Verilirse menüde sadece bu yetkiye sahip kullanıcılar görür */
+  permission?: Permission;
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -27,5 +30,5 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/uretim/is-emirleri", label: "Üretim", icon: Factory },
   { href: "/maliyet", label: "Maliyet", icon: Calculator },
   { href: "/kalite", label: "Kalite", icon: ShieldCheck },
-  { href: "/yonetim", label: "Yönetim", icon: Settings },
+  { href: "/yonetim", label: "Yönetim", icon: Settings, permission: "admin:all" },
 ];

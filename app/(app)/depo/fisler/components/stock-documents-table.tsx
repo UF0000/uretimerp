@@ -14,6 +14,7 @@ import { cancelStockDocument } from "@/app/actions/stock";
 
 import type { StockDocumentRow } from "@/app/actions/stock";
 import { getErrorMessage } from "@/lib/utils";
+import { usePermission } from "@/components/shared/role-provider";
 const TYPE_LABELS: Record<string, string> = {
   in_purchase: "Satınalma Girişi",
   in_production: "Üretimden Giriş",
@@ -37,10 +38,15 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 export function StockDocumentsTable({ data }: { data: StockDocumentRow[] }) {
+  const canWrite = usePermission("stock:write");
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleCancel = async (id: string, no: string) => {
-    if (confirm(`${no} numaralı fiş iptal edilecek. Fişteki tüm hareketler ters kayıtla geri alınır; fiş ve hareketler silinmez, geçmişte "İptal" olarak görünür. Devam edilsin mi?`)) {
+    if (
+      confirm(
+        `${no} numaralı fiş iptal edilecek. Fişteki tüm hareketler ters kayıtla geri alınır; fiş ve hareketler silinmez, geçmişte "İptal" olarak görünür. Devam edilsin mi?`,
+      )
+    ) {
       try {
         setIsDeleting(true);
         await cancelStockDocument(id);
@@ -59,10 +65,18 @@ export function StockDocumentsTable({ data }: { data: StockDocumentRow[] }) {
       header: "Fiş No",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          <span className={row.original.cancelled_at ? "font-medium text-muted-foreground line-through" : "font-medium"}>
+          <span
+            className={
+              row.original.cancelled_at
+                ? "font-medium text-muted-foreground line-through"
+                : "font-medium"
+            }
+          >
             {row.getValue("no")}
           </span>
-          {row.original.cancelled_at && <Badge variant="secondary">İptal</Badge>}
+          {row.original.cancelled_at && (
+            <Badge variant="secondary">İptal</Badge>
+          )}
         </div>
       ),
     },
@@ -95,15 +109,23 @@ export function StockDocumentsTable({ data }: { data: StockDocumentRow[] }) {
         if (doc.type === "transfer") {
           return (
             <span className="text-sm">
-              <span className="text-danger font-medium">{doc.source?.name}</span>
+              <span className="text-danger font-medium">
+                {doc.source?.name}
+              </span>
               {" ➔ "}
-              <span className="text-success font-medium">{doc.target?.name}</span>
+              <span className="text-success font-medium">
+                {doc.target?.name}
+              </span>
             </span>
           );
         } else if (doc.type.startsWith("in_")) {
-          return <span className="text-success font-medium">{doc.target?.name}</span>;
+          return (
+            <span className="text-success font-medium">{doc.target?.name}</span>
+          );
         } else {
-          return <span className="text-danger font-medium">{doc.source?.name}</span>;
+          return (
+            <span className="text-danger font-medium">{doc.source?.name}</span>
+          );
         }
       },
     },
@@ -141,7 +163,7 @@ export function StockDocumentsTable({ data }: { data: StockDocumentRow[] }) {
 
   return (
     <DataTable
-      columns={columns}
+      columns={canWrite ? columns : columns.filter((c) => c.id !== "actions")}
       data={data}
       searchKey="no"
       searchPlaceholder="Fiş No ile ara..."

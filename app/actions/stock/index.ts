@@ -8,7 +8,8 @@ import {
   stockDocumentSchema,
   StockDocumentFormValues,
 } from "@/lib/validations/stock";
-import { getCurrentUser, hasPermission } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
 import type { Enums, TablesInsert } from "@/lib/supabase/database.types";
 
 export async function getStockOverview() {

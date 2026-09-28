@@ -126,3 +126,7 @@ supabase/
 - Regrind/hurda grade bazlı ve ayrı depoda; soyağacıyla izlenir.
 - Muhasebe kapsam dışı.
 - Tema rengi kullanıcı tarafından sonradan belirlenecek (`--brand`).
+- **Şema değişikliği yalnızca migration ile:** `supabase/migrations/<YYYYMMDDHHMMSS>_ad.sql`
+  yazılır, `main`'e push edilince GitHub Actions (`supabase-migrations.yml`) canlıya uygular.
+  Supabase panelinden elle tablo/politika değiştirilmez. Şema değişince `npm run db:types`.
+- Repo: github.com/UF0000/uretimerp (private). Secret'lar GitHub Actions'ta; `.env.local` repoya girmez.

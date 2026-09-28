@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/shared/sidebar";
 import { Topbar } from "@/components/shared/topbar";
 import { getCurrentUser } from "@/lib/auth";
+import { RoleProvider } from "@/components/shared/role-provider";
 
 export default async function AppLayout({
   children,
@@ -16,20 +17,22 @@ export default async function AppLayout({
   const userRole = user.role;
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sol Yan Menü */}
-      <Sidebar />
+    <RoleProvider role={userRole}>
+      <div className="flex h-screen overflow-hidden">
+        {/* Sol Yan Menü */}
+        <Sidebar />
 
-      {/* Ana İçerik Alanı */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Üst Bar */}
-        <Topbar userName={userName} userRole={userRole} />
+        {/* Ana İçerik Alanı */}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {/* Üst Bar */}
+          <Topbar userName={userName} userRole={userRole} />
 
-        {/* Sayfa İçeriği */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-          {children}
-        </main>
+          {/* Sayfa İçeriği */}
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </RoleProvider>
   );
 }

@@ -6,12 +6,14 @@ import { getOrders } from "@/app/actions/orders";
 import { PageHeader } from "@/components/shared/page-header";
 import { WorkOrderForm } from "../components/work-order-form";
 
+import { requirePermission } from "@/lib/auth";
 export const metadata: Metadata = {
   title: "Yeni İş Emri (Üretim Planla)",
   description: "Sisteme yeni üretim iş emri ekle",
 };
 
 export default async function NewWorkOrderPage() {
+  await requirePermission("production:write");
   const [products, boms, lines, molds, orders] = await Promise.all([
     getProducts(),
     getBoms(),

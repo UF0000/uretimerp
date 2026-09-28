@@ -1,13 +1,11 @@
 /**
- * Rol kontrolü yardımcıları.
- * Supabase profiles tablosundaki role alanına göre yetki kontrolü yapar.
+ * Sunucu tarafı oturum ve rol yardımcıları.
+ * Rol → yetki matrisi lib/permissions.ts içindedir (tarayıcıda da kullanılır).
  */
 
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-
-// ─── Tipler ────────────────────────────────────────
-
-export type UserRole = "operator" | "warehouse" | "quality" | "admin";
+import { hasPermission, type Permission, type UserRole } from "@/lib/permissions";
 
 export interface UserProfile {
   id: string;
@@ -17,35 +15,9 @@ export interface UserProfile {
   active: boolean;
 }
 
-// ─── Rol matrisi ───────────────────────────────────
-
-const ROLE_PERMISSIONS: Record<string, UserRole[]> = {
-  // Üretim girişi
-  "production:write": ["operator", "admin"],
-
-  // Stok hareketi
-  "stock:write": ["warehouse", "admin"],
-
-  // Kalite / NCR
-  "quality:write": ["quality", "admin"],
-
-  // Ana veri / Reçete — herkes okuyabilir, sadece admin yazabilir
-  "master-data:read": ["operator", "warehouse", "quality", "admin"],
-  "master-data:write": ["admin"],
-
-  // Sipariş
-  "order:read": ["operator", "warehouse", "admin"],
-  "order:write": ["admin"],
-
-  // Yönetim / silme
-  "admin:all": ["admin"],
-};
-
-// ─── Fonksiyonlar ──────────────────────────────────
-
 /**
  * Giriş yapmış kullanıcının profil bilgilerini getirir.
- * @returns Kullanıcı profili veya null
+ * @returns Aktif kullanıcı profili veya null
  */
 export const getCurrentUser = async (): Promise<UserProfile | null> => {
   const supabase = await createClient();
@@ -64,25 +36,16 @@ export const getCurrentUser = async (): Promise<UserProfile | null> => {
 
   if (!profile || !profile.active) return null;
 
-  return profile as UserProfile;
+  return profile;
 };
 
 /**
- * Kullanıcının belirli bir yetkiye sahip olup olmadığını kontrol eder.
- * @param permission - Kontrol edilecek yetki (örn. "production:write")
- * @param userRole - Kullanıcının rolü
- * @returns Yetkili ise true
+ * Sayfa koruması: kullanıcı yetkili değilse "yetkisiz" sayfasına yönlendirir.
+ * Server Component'lerin başında çağrılır.
  */
-export const hasPermission = (
-  permission: string,
-  userRole: UserRole
-): boolean => {
-  const allowedRoles = ROLE_PERMISSIONS[permission];
-  if (!allowedRoles) return false;
-  return allowedRoles.includes(userRole);
+export const requirePermission = async (permission: Permission): Promise<UserProfile> => {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  if (!hasPermission(permission, user.role)) redirect("/yetkisiz");
+  return user;
 };
-
-/**
- * Kullanıcının admin olup olmadığını kontrol eder.
- */
-export const isAdmin = (role: UserRole): boolean => role === "admin";

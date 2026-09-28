@@ -9,10 +9,14 @@ import { DataTable } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { WarehouseFormValues } from "@/lib/validations/master-data";
-import { deleteWarehouse, bulkDeleteWarehouses } from "@/app/actions/master-data/warehouses";
+import {
+  deleteWarehouse,
+  bulkDeleteWarehouses,
+} from "@/app/actions/master-data/warehouses";
 import { WarehouseForm } from "./warehouse-form";
 
 import { getErrorMessage } from "@/lib/utils";
+import { usePermission } from "@/components/shared/role-provider";
 const TYPE_LABELS: Record<string, string> = {
   raw: "Hammadde",
   finished: "Mamul",
@@ -21,7 +25,10 @@ const TYPE_LABELS: Record<string, string> = {
   quarantine: "Karantina",
 };
 
-const TYPE_VARIANTS: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
+const TYPE_VARIANTS: Record<
+  string,
+  "default" | "secondary" | "outline" | "destructive"
+> = {
   finished: "default",
   raw: "secondary",
   regrind: "outline",
@@ -34,8 +41,11 @@ interface WarehousesTabProps {
 }
 
 export function WarehousesTab({ data }: WarehousesTabProps) {
+  const canWrite = usePermission("master-data:write");
   const [formOpen, setFormOpen] = useState(false);
-  const [editingWarehouse, setEditingWarehouse] = useState<WarehouseFormValues | undefined>(undefined);
+  const [editingWarehouse, setEditingWarehouse] = useState<
+    WarehouseFormValues | undefined
+  >(undefined);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleEdit = (warehouse: WarehouseFormValues) => {
@@ -49,7 +59,11 @@ export function WarehousesTab({ data }: WarehousesTabProps) {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Bu depoyu silmek istediğinize emin misiniz? (Bağlı stok hareketi varsa silinemez)")) {
+    if (
+      confirm(
+        "Bu depoyu silmek istediğinize emin misiniz? (Bağlı stok hareketi varsa silinemez)",
+      )
+    ) {
       try {
         await deleteWarehouse(id);
         toast.success("Depo başarıyla silindi.");
@@ -64,9 +78,14 @@ export function WarehousesTab({ data }: WarehousesTabProps) {
       setIsDeleting(true);
       toast.loading("Depolar siliniyor...", { id: "bulk-delete-warehouses" });
       await bulkDeleteWarehouses(ids);
-      toast.success(`${ids.length} adet depo başarıyla silindi.`, { id: "bulk-delete-warehouses" });
+      toast.success(`${ids.length} adet depo başarıyla silindi.`, {
+        id: "bulk-delete-warehouses",
+      });
     } catch (error) {
-      toast.error("Toplu silme başarısız", { id: "bulk-delete-warehouses", description: getErrorMessage(error) });
+      toast.error("Toplu silme başarısız", {
+        id: "bulk-delete-warehouses",
+        description: getErrorMessage(error),
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -76,7 +95,9 @@ export function WarehousesTab({ data }: WarehousesTabProps) {
     {
       accessorKey: "name",
       header: "Depo Adı",
-      cell: ({ row }) => <span className="font-medium">{row.getValue("name")}</span>,
+      cell: ({ row }) => (
+        <span className="font-medium">{row.getValue("name")}</span>
+      ),
     },
     {
       accessorKey: "type",
@@ -97,10 +118,18 @@ export function WarehousesTab({ data }: WarehousesTabProps) {
         const warehouse = row.original;
         return (
           <div className="flex items-center justify-end gap-2">
-            <Button variant="ghost" size="icon" onClick={() => handleEdit(warehouse)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleEdit(warehouse)}
+            >
               <Edit2 className="w-4 h-4 text-muted-foreground" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => warehouse.id && handleDelete(warehouse.id)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => warehouse.id && handleDelete(warehouse.id)}
+            >
               <Trash2 className="w-4 h-4 text-danger" />
             </Button>
           </div>
@@ -118,26 +147,28 @@ export function WarehousesTab({ data }: WarehousesTabProps) {
             Stok hareketlerinin izlendiği lokasyon tanımlamaları
           </p>
         </div>
-        <Button onClick={handleAdd}>
-          <Plus className="w-4 h-4 mr-2" />
-          Yeni Ekle
-        </Button>
+        {canWrite && (
+          <Button onClick={handleAdd}>
+            <Plus className="w-4 h-4 mr-2" />
+            Yeni Ekle
+          </Button>
+        )}
       </div>
 
-      <DataTable 
-        columns={columns} 
-        data={data} 
-        searchKey="name" 
-        searchPlaceholder="Depo ara..." 
-        onDeleteSelected={handleBulkDelete}
+      <DataTable
+        columns={canWrite ? columns : columns.filter((c) => c.id !== "actions")}
+        data={data}
+        searchKey="name"
+        searchPlaceholder="Depo ara..."
+        onDeleteSelected={canWrite ? handleBulkDelete : undefined}
         isDeleting={isDeleting}
       />
 
       {formOpen && (
-        <WarehouseForm 
-          open={formOpen} 
-          onOpenChange={setFormOpen} 
-          initialData={editingWarehouse} 
+        <WarehouseForm
+          open={formOpen}
+          onOpenChange={setFormOpen}
+          initialData={editingWarehouse}
         />
       )}
     </div>

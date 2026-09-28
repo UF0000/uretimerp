@@ -72,34 +72,54 @@ export function LineForm({ open, onOpenChange, initialData }: LineFormProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{initialData ? "Hat Düzenle" : "Yeni Hat Ekle"}</DialogTitle>
+          <DialogTitle>
+            {initialData ? "Hat Düzenle" : "Yeni Hat Ekle"}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="code">Hat Kodu *</Label>
-              <Input id="code" {...register("code")} className={errors.code ? "border-danger" : ""} />
-              {errors.code && <p className="text-xs text-danger">{errors.code.message}</p>}
+              <Input
+                id="code"
+                {...register("code")}
+                className={errors.code ? "border-danger" : ""}
+              />
+              {errors.code && (
+                <p className="text-xs text-danger">{errors.code.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="name">Hat Adı *</Label>
-              <Input id="name" {...register("name")} className={errors.name ? "border-danger" : ""} />
-              {errors.name && <p className="text-xs text-danger">{errors.name.message}</p>}
+              <Input
+                id="name"
+                {...register("name")}
+                className={errors.name ? "border-danger" : ""}
+              />
+              {errors.name && (
+                <p className="text-xs text-danger">{errors.name.message}</p>
+              )}
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="head_type">Kafa Tipi</Label>
-            <Input id="head_type" {...register("head_type")} placeholder="Örn: 200mm" />
+            <Input
+              id="head_type"
+              {...register("head_type")}
+              placeholder="Örn: 200mm"
+            />
           </div>
 
           <div className="space-y-2">
             <Label>Durum *</Label>
-            <Select 
-              value={watchStatus} 
-              onValueChange={(val) => setValue("status", val as LineFormValues["status"])}
+            <Select
+              value={watchStatus}
+              onValueChange={(val) =>
+                setValue("status", val as LineFormValues["status"])
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Seçiniz">
@@ -117,11 +137,17 @@ export function LineForm({ open, onOpenChange, initialData }: LineFormProps) {
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               İptal
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Kaydet
             </Button>
           </div>

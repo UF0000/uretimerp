@@ -7,11 +7,13 @@ import { cn } from "@/lib/utils";
 import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { NAV_ITEMS } from "@/components/shared/nav-items";
+import { useCan } from "@/components/shared/role-provider";
 
 // ─── Mobil Navigasyon (Sheet) ──────────────────────
 
 export const MobileNav = () => {
   const pathname = usePathname();
+  const can = useCan();
   const [open, setOpen] = useState(false);
 
   return (
@@ -33,7 +35,7 @@ export const MobileNav = () => {
 
         {/* Navigasyon */}
         <nav className="py-3 px-2 space-y-1">
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((item) => !item.permission || can(item.permission)).map((item) => {
             const isActive =
               pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;

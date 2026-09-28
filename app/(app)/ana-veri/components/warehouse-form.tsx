@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { WarehouseFormValues, warehouseSchema } from "@/lib/validations/master-data";
+import {
+  WarehouseFormValues,
+  warehouseSchema,
+} from "@/lib/validations/master-data";
 import { saveWarehouse } from "@/app/actions/master-data/warehouses";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -32,7 +35,11 @@ interface WarehouseFormProps {
   initialData?: WarehouseFormValues;
 }
 
-export function WarehouseForm({ open, onOpenChange, initialData }: WarehouseFormProps) {
+export function WarehouseForm({
+  open,
+  onOpenChange,
+  initialData,
+}: WarehouseFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -70,21 +77,31 @@ export function WarehouseForm({ open, onOpenChange, initialData }: WarehouseForm
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{initialData ? "Depo Düzenle" : "Yeni Depo Ekle"}</DialogTitle>
+          <DialogTitle>
+            {initialData ? "Depo Düzenle" : "Yeni Depo Ekle"}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="name">Depo Adı *</Label>
-            <Input id="name" {...register("name")} className={errors.name ? "border-danger" : ""} />
-            {errors.name && <p className="text-xs text-danger">{errors.name.message}</p>}
+            <Input
+              id="name"
+              {...register("name")}
+              className={errors.name ? "border-danger" : ""}
+            />
+            {errors.name && (
+              <p className="text-xs text-danger">{errors.name.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
             <Label>Depo Tipi *</Label>
-            <Select 
-              value={watchType} 
-              onValueChange={(val) => setValue("type", val as WarehouseFormValues["type"])}
+            <Select
+              value={watchType}
+              onValueChange={(val) =>
+                setValue("type", val as WarehouseFormValues["type"])
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Seçiniz">
@@ -106,11 +123,17 @@ export function WarehouseForm({ open, onOpenChange, initialData }: WarehouseForm
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               İptal
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Kaydet
             </Button>
           </div>

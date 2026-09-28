@@ -12,12 +12,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ROLE_LABELS, type UserRole } from "@/lib/permissions";
 
 // ─── Topbar Bileşeni ───────────────────────────────
 
 interface TopbarProps {
   userName?: string;
-  userRole?: string;
+  userRole?: UserRole;
 }
 
 export const Topbar = ({ userName, userRole }: TopbarProps) => {
@@ -38,13 +39,6 @@ export const Topbar = ({ userName, userRole }: TopbarProps) => {
         .toUpperCase()
         .slice(0, 2)
     : "?";
-
-  const roleLabels: Record<string, string> = {
-    admin: "Yönetici",
-    operator: "Operatör",
-    warehouse: "Depocu",
-    quality: "Kalite",
-  };
 
   return (
     <header className="flex items-center justify-between h-16 px-4 md:px-6 border-b border-border bg-card">
@@ -67,7 +61,7 @@ export const Topbar = ({ userName, userRole }: TopbarProps) => {
                   {userName ?? "Kullanıcı"}
                 </span>
                 <span className="text-xs text-muted-foreground leading-tight">
-                  {userRole ? roleLabels[userRole] ?? userRole : ""}
+                  {userRole ? ROLE_LABELS[userRole] ?? userRole : ""}
                 </span>
               </div>
           </DropdownMenuTrigger>

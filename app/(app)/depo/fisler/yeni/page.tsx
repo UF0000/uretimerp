@@ -2,9 +2,11 @@ import { getProducts } from "@/app/actions/master-data/products";
 import { getWarehouses } from "@/app/actions/master-data/warehouses";
 import { StockDocumentForm } from "../components/stock-document-form";
 
+import { requirePermission } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 export default async function NewStockDocumentPage() {
+  await requirePermission("stock:write");
   const [products, warehouses] = await Promise.all([
     getProducts(),
     getWarehouses(),

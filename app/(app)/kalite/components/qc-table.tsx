@@ -15,6 +15,7 @@ import { toast } from "sonner";
 
 import { getErrorMessage } from "@/lib/utils";
 import type { QualityCheckRow } from "@/app/actions/quality";
+import { usePermission } from "@/components/shared/role-provider";
 interface QCTableProps {
   data: QualityCheckRow[];
   onAdd: () => void;
@@ -26,13 +27,20 @@ const QC_TYPES: Record<string, string> = {
   final: "Son Kontrol",
 };
 
-const QC_RESULTS: Record<string, { label: string; variant: "default" | "destructive" | "secondary" | "outline" }> = {
+const QC_RESULTS: Record<
+  string,
+  {
+    label: string;
+    variant: "default" | "destructive" | "secondary" | "outline";
+  }
+> = {
   accept: { label: "Kabul", variant: "default" },
   reject: { label: "Red", variant: "destructive" },
   conditional: { label: "Şartlı Kabul", variant: "secondary" },
 };
 
 export function QCTable({ data, onAdd }: QCTableProps) {
+  const canWrite = usePermission("quality:write");
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleBulkDelete = async (ids: string[]) => {
@@ -40,9 +48,15 @@ export function QCTable({ data, onAdd }: QCTableProps) {
       setIsDeleting(true);
       toast.loading("Kontroller siliniyor...", { id: "bulk-delete-qc" });
       await bulkDeleteQualityChecks(ids);
-      toast.success(`${ids.length} adet kalite kontrol kaydı başarıyla silindi.`, { id: "bulk-delete-qc" });
+      toast.success(
+        `${ids.length} adet kalite kontrol kaydı başarıyla silindi.`,
+        { id: "bulk-delete-qc" },
+      );
     } catch (error) {
-      toast.error("Toplu silme başarısız", { id: "bulk-delete-qc", description: getErrorMessage(error) });
+      toast.error("Toplu silme başarısız", {
+        id: "bulk-delete-qc",
+        description: getErrorMessage(error),
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -61,7 +75,9 @@ export function QCTable({ data, onAdd }: QCTableProps) {
       cell: ({ row }) => (
         <div>
           <div className="font-semibold">{row.original.product?.code}</div>
-          <div className="text-xs text-muted-foreground">{row.original.product?.name}</div>
+          <div className="text-xs text-muted-foreground">
+            {row.original.product?.name}
+          </div>
         </div>
       ),
     },
@@ -70,7 +86,9 @@ export function QCTable({ data, onAdd }: QCTableProps) {
       header: "İş Emri / Lot",
       cell: ({ row }) => (
         <div className="text-sm">
-          {row.original.work_order?.no ? `İş Emri: ${row.original.work_order?.no}` : ""}
+          {row.original.work_order?.no
+            ? `İş Emri: ${row.original.work_order?.no}`
+            : ""}
           {row.original.lot_no ? ` Lot: ${row.original.lot_no}` : ""}
         </div>
       ),
@@ -94,7 +112,11 @@ export function QCTable({ data, onAdd }: QCTableProps) {
       header: "Tarih",
       cell: ({ row }) => (
         <span className="text-sm">
-          {row.original.checked_at ? format(new Date(row.original.checked_at), "dd MMM yyyy HH:mm", { locale: tr }) : ""}
+          {row.original.checked_at
+            ? format(new Date(row.original.checked_at), "dd MMM yyyy HH:mm", {
+                locale: tr,
+              })
+            : ""}
         </span>
       ),
     },
@@ -103,18 +125,20 @@ export function QCTable({ data, onAdd }: QCTableProps) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={onAdd}>
-          <Plus className="w-4 h-4 mr-2" />
-          Yeni Kontrol Ekle
-        </Button>
+        {canWrite && (
+          <Button onClick={onAdd}>
+            <Plus className="w-4 h-4 mr-2" />
+            Yeni Kontrol Ekle
+          </Button>
+        )}
       </div>
 
-      <DataTable 
-        columns={columns} 
-        data={data} 
+      <DataTable
+        columns={columns}
+        data={data}
         searchKey="product_code"
-        searchPlaceholder="Ürün kodu ile ara..." 
-        onDeleteSelected={handleBulkDelete}
+        searchPlaceholder="Ürün kodu ile ara..."
+        onDeleteSelected={canWrite ? handleBulkDelete : undefined}
         isDeleting={isDeleting}
       />
     </div>

@@ -9,10 +9,14 @@ import { DataTable } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PartnerFormValues } from "@/lib/validations/master-data";
-import { deletePartner, bulkDeletePartners } from "@/app/actions/master-data/partners";
+import {
+  deletePartner,
+  bulkDeletePartners,
+} from "@/app/actions/master-data/partners";
 import { PartnerForm } from "./partner-form";
 
 import { getErrorMessage } from "@/lib/utils";
+import { usePermission } from "@/components/shared/role-provider";
 const TYPE_LABELS: Record<string, string> = {
   customer: "Müşteri",
   supplier: "Tedarikçi",
@@ -23,8 +27,11 @@ interface PartnersTabProps {
 }
 
 export function PartnersTab({ data }: PartnersTabProps) {
+  const canWrite = usePermission("master-data:write");
   const [formOpen, setFormOpen] = useState(false);
-  const [editingPartner, setEditingPartner] = useState<PartnerFormValues | undefined>(undefined);
+  const [editingPartner, setEditingPartner] = useState<
+    PartnerFormValues | undefined
+  >(undefined);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleEdit = (partner: PartnerFormValues) => {
@@ -53,9 +60,14 @@ export function PartnersTab({ data }: PartnersTabProps) {
       setIsDeleting(true);
       toast.loading("Cariler siliniyor...", { id: "bulk-delete-partners" });
       await bulkDeletePartners(ids);
-      toast.success(`${ids.length} adet cari başarıyla silindi.`, { id: "bulk-delete-partners" });
+      toast.success(`${ids.length} adet cari başarıyla silindi.`, {
+        id: "bulk-delete-partners",
+      });
     } catch (error) {
-      toast.error("Toplu silme başarısız", { id: "bulk-delete-partners", description: getErrorMessage(error) });
+      toast.error("Toplu silme başarısız", {
+        id: "bulk-delete-partners",
+        description: getErrorMessage(error),
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -65,7 +77,9 @@ export function PartnersTab({ data }: PartnersTabProps) {
     {
       accessorKey: "name",
       header: "Cari Unvan",
-      cell: ({ row }) => <span className="font-medium">{row.getValue("name")}</span>,
+      cell: ({ row }) => (
+        <span className="font-medium">{row.getValue("name")}</span>
+      ),
     },
     {
       accessorKey: "type",
@@ -94,10 +108,18 @@ export function PartnersTab({ data }: PartnersTabProps) {
         const partner = row.original;
         return (
           <div className="flex items-center justify-end gap-2">
-            <Button variant="ghost" size="icon" onClick={() => handleEdit(partner)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleEdit(partner)}
+            >
               <Edit2 className="w-4 h-4 text-muted-foreground" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => partner.id && handleDelete(partner.id)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => partner.id && handleDelete(partner.id)}
+            >
               <Trash2 className="w-4 h-4 text-danger" />
             </Button>
           </div>
@@ -115,26 +137,28 @@ export function PartnersTab({ data }: PartnersTabProps) {
             Müşteri ve tedarikçi tanımlamaları
           </p>
         </div>
-        <Button onClick={handleAdd}>
-          <Plus className="w-4 h-4 mr-2" />
-          Yeni Ekle
-        </Button>
+        {canWrite && (
+          <Button onClick={handleAdd}>
+            <Plus className="w-4 h-4 mr-2" />
+            Yeni Ekle
+          </Button>
+        )}
       </div>
 
-      <DataTable 
-        columns={columns} 
-        data={data} 
-        searchKey="name" 
-        searchPlaceholder="Cari ara..." 
-        onDeleteSelected={handleBulkDelete}
+      <DataTable
+        columns={canWrite ? columns : columns.filter((c) => c.id !== "actions")}
+        data={data}
+        searchKey="name"
+        searchPlaceholder="Cari ara..."
+        onDeleteSelected={canWrite ? handleBulkDelete : undefined}
         isDeleting={isDeleting}
       />
 
       {formOpen && (
-        <PartnerForm 
-          open={formOpen} 
-          onOpenChange={setFormOpen} 
-          initialData={editingPartner} 
+        <PartnerForm
+          open={formOpen}
+          onOpenChange={setFormOpen}
+          initialData={editingPartner}
         />
       )}
     </div>
