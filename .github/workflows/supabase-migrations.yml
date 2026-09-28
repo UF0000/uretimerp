@@ -1,0 +1,39 @@
+# main dalına supabase/migrations/ altında değişiklik gönderildiğinde,
+# henüz uygulanmamış migration'ları canlı Supabase veritabanına uygular.
+# Gerekli repository secret'ları: SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, SUPABASE_PROJECT_ID
+name: Supabase migrations
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
+  workflow_dispatch: # Actions sekmesinden elle de çalıştırılabilir
+
+# Aynı anda iki migration çalışması olmasın
+concurrency:
+  group: supabase-migrations
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Projeye bağlan
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+
+      - name: Uygulanacak migration'lar
+        run: supabase migration list
+
+      - name: Migration'ları uygula
+        run: supabase db push

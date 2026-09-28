@@ -1,0 +1,31 @@
+import {
+  LayoutDashboard,
+  Database,
+  ClipboardList,
+  Warehouse,
+  ShoppingCart,
+  Factory,
+  Calculator,
+  ShieldCheck,
+  Settings,
+} from "lucide-react";
+
+// ─── Navigasyon öğeleri (sidebar + mobil menü ortak) ───
+
+export interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+export const NAV_ITEMS: NavItem[] = [
+  { href: "/dashboard", label: "Panel", icon: LayoutDashboard },
+  { href: "/ana-veri", label: "Ana Veri", icon: Database },
+  { href: "/recete", label: "Reçete / BOM", icon: ClipboardList },
+  { href: "/depo", label: "Depo & Stok", icon: Warehouse },
+  { href: "/siparisler", label: "Siparişler", icon: ShoppingCart },
+  { href: "/uretim/is-emirleri", label: "Üretim", icon: Factory },
+  { href: "/maliyet", label: "Maliyet", icon: Calculator },
+  { href: "/kalite", label: "Kalite", icon: ShieldCheck },
+  { href: "/yonetim", label: "Yönetim", icon: Settings },
+];

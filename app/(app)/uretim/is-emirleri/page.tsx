@@ -1,0 +1,38 @@
+import { Metadata } from "next";
+import { getWorkOrders } from "@/app/actions/work-orders";
+import { getProducts } from "@/app/actions/master-data/products";
+import { getWarehouses } from "@/app/actions/master-data/warehouses";
+import { PageHeader } from "@/components/shared/page-header";
+import { Card, CardContent } from "@/components/ui/card";
+import { WorkOrderTable } from "./components/work-order-table";
+
+export const metadata: Metadata = {
+  title: "İş Emirleri",
+  description: "Üretim planlama ve iş emri yönetimi",
+};
+
+export default async function WorkOrdersPage() {
+  const [workOrders, products, warehouses] = await Promise.all([
+    getWorkOrders(),
+    getProducts(),
+    getWarehouses(),
+  ]);
+
+  const scrapProducts = products.filter((p) => p.type === "scrap" || p.type === "regrind");
+  const targetWarehouses = warehouses.filter((w) => w.type === "finished");
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="İş Emirleri (Üretim Planı)"
+        description="Makinelerde üretimi planlanan ve devam eden iş emirlerinin takibi"
+      />
+      
+      <Card>
+        <CardContent className="pt-6">
+          <WorkOrderTable data={workOrders} scrapProducts={scrapProducts} targetWarehouses={targetWarehouses} />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
