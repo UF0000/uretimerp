@@ -61,12 +61,12 @@ export async function closeWorkOrder(workOrderId: string) {
   revalidateProduction();
 }
 
-/** Hammadde depolarında bakiyesi olan reçine lotları (vardiya girişinde seçim için). */
+/** Hammadde ve regrind depolarında bakiyesi olan lotlar (vardiya girişinde seçim için). */
 export async function getRawLots() {
   const supabase = await createClient();
   const [{ data: lots, error }, { data: warehouses, error: whError }] = await Promise.all([
     supabase.from("v_stock_lot").select("product_id, warehouse_id, lot_no, qty, first_in_at").gt("qty", 0),
-    supabase.from("warehouses").select("id").eq("type", "raw"),
+    supabase.from("warehouses").select("id").in("type", ["raw", "regrind"]),
   ]);
   if (error) throw new Error("Lot stokları getirilirken hata oluştu: " + error.message);
   if (whError) throw new Error("Depolar getirilirken hata oluştu: " + whError.message);
