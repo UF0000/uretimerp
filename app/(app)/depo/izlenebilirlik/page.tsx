@@ -112,7 +112,7 @@ export default async function TraceabilityPage(props: { searchParams: Promise<{ 
               <Field label="İş emri">{trace.workOrder?.no ?? "Üretim dışı lot (ör. satınalma)"}</Field>
               <Field label="Reçete">
                 {trace.workOrder?.bom
-                  ? `v${trace.workOrder.bom.version} · ${trace.workOrder.bom.production_type === "injection" ? "Enjeksiyon" : "Ekstrüzyon"}`
+                  ? `${trace.workOrder.bom.code} v${trace.workOrder.bom.version} · ${trace.workOrder.bom.name}`
                   : "-"}
               </Field>
               <Field label="Hat / Kalıp">

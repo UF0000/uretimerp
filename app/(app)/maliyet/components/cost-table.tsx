@@ -27,8 +27,8 @@ export function CostTable({ data }: CostTableProps) {
       cell: ({ row }) => (
         <div>
           <div className="font-semibold">{row.original.no}</div>
-          {row.original.bomVersion !== null && (
-            <div className="text-xs text-muted-foreground">Reçete v{row.original.bomVersion}</div>
+          {row.original.bomLabel && (
+            <div className="text-xs text-muted-foreground">{row.original.bomLabel}</div>
           )}
         </div>
       ),

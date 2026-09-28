@@ -137,14 +137,14 @@ export function WorkOrderForm({ products, boms, lines, molds, orders }: WorkOrde
               >
                 <SelectTrigger className={errors.bom_id ? "border-danger" : ""}>
                   <SelectValue placeholder={filteredBoms.length === 0 ? "Bu ürüne ait aktif reçete yok" : "Reçete seçiniz"}>
-                    {selectedBom
-                      ? `v${selectedBom.version} - ${selectedBom.production_type === "extrusion" ? "Ekstrüzyon" : "Enjeksiyon"}`
-                      : null}
+                    {selectedBom ? `${selectedBom.code} v${selectedBom.version} · ${selectedBom.name}` : null}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {filteredBoms.map(b => (
-                    <SelectItem key={b.id} value={b.id}>v{b.version} - {b.production_type === 'extrusion' ? 'Ekstrüzyon' : 'Enjeksiyon'}</SelectItem>
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.code} v{b.version} · {b.name} ({b.production_type === "extrusion" ? "Ekstrüzyon" : "Enjeksiyon"})
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

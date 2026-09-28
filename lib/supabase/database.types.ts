@@ -232,6 +232,8 @@ export type Database = {
           regrind_pct: number | null
           notes: string | null
           created_at: string | null
+          code: string
+          name: string
         }
         Insert: {
           id?: string
@@ -242,6 +244,8 @@ export type Database = {
           regrind_pct?: number | null
           notes?: string | null
           created_at?: string | null
+          code: string
+          name: string
         }
         Update: {
           id?: string
@@ -252,6 +256,8 @@ export type Database = {
           regrind_pct?: number | null
           notes?: string | null
           created_at?: string | null
+          code?: string
+          name?: string
         }
         Relationships: [
           {

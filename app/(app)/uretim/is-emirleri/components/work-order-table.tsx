@@ -17,7 +17,7 @@ import { ProductionEntryModal } from "./production-entry-modal";
 import { closeWorkOrder, type RawLot } from "@/app/actions/production";
 import { formatTR } from "@/lib/format";
 
-import { getErrorMessage } from "@/lib/utils";
+import { getErrorMessage, one } from "@/lib/utils";
 import type { WorkOrderRow } from "@/app/actions/work-orders";
 import type { ProductRow } from "@/app/actions/master-data/products";
 import type { WarehouseRow } from "@/app/actions/master-data/warehouses";
@@ -148,6 +148,11 @@ export function WorkOrderTable({
           <div className="text-xs text-muted-foreground">
             {row.original.product?.name}
           </div>
+          {one(row.original.bom) && (
+            <div className="text-xs text-muted-foreground">
+              {one(row.original.bom)!.code} v{one(row.original.bom)!.version}
+            </div>
+          )}
         </div>
       ),
     },

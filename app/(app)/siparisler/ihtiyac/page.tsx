@@ -107,7 +107,7 @@ export default async function MrpPage() {
                     <td className="px-3 py-2">
                       <div className="font-medium">{f.product.code}</div>
                       <div className="text-xs text-muted-foreground">
-                        {f.product.name} · Reçete v{f.bomVersion}
+                        {f.product.name} · {f.bomCode} v{f.bomVersion}
                       </div>
                     </td>
                     <td className="px-3 py-2 tabular-nums">{date(f.earliestDue)}</td>

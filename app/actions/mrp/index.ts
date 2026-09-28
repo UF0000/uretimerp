@@ -28,7 +28,7 @@ export async function getMrpReport() {
     supabase
       .from("boms")
       .select(`
-        product_id, version, production_type,
+        product_id, code, version, production_type, created_at,
         items:bom_items(component_product_id, ratio_pct),
         injection:bom_injection(product_weight_g, runner_sprue_weight_g, cavity_count),
         extrusion:bom_extrusion(kg_per_meter, scrap_pct)
@@ -70,13 +70,17 @@ export async function getMrpReport() {
     if (remaining > 0) sumInto(openWorkOrders, wo.product_id, remaining);
   }
 
-  // Ürün başına en yüksek versiyonlu aktif reçete
+  // Ürün başına en son oluşturulan aktif reçete (farklı kodlu reçetelerde versiyon karşılaştırılamaz)
   const boms = new Map<string, MrpBom>();
-  for (const b of (bomsRes.data ?? []).sort((a, z) => a.version - z.version)) {
+  const activeCount = new Map<string, number>();
+  for (const b of bomsRes.data ?? []) activeCount.set(b.product_id, (activeCount.get(b.product_id) ?? 0) + 1);
+  for (const b of (bomsRes.data ?? []).sort((a, z) => (a.created_at ?? "").localeCompare(z.created_at ?? ""))) {
     const inj = one(b.injection);
     const ext = one(b.extrusion);
     boms.set(b.product_id, {
+      code: b.code,
       version: b.version,
+      otherActiveCount: (activeCount.get(b.product_id) ?? 1) - 1,
       productionType: b.production_type,
       kgPerUnit: bomKgPerUnit({
         productionType: b.production_type,

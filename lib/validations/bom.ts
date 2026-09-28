@@ -35,6 +35,9 @@ export const bomParameterSchema = z.object({
 export const bomSchema = z.object({
   id: z.string().optional(),
   product_id: z.string().min(1, "Üretilecek ürün seçimi zorunludur"),
+  /** Boş bırakılırsa RCT-#### otomatik verilir; mevcut reçetede değiştirilemez */
+  code: z.string().trim().max(30, "En fazla 30 karakter").optional().nullable(),
+  name: z.string().trim().min(3, "Reçete adı zorunludur (en az 3 karakter)").max(120, "En fazla 120 karakter"),
   version: z.number().min(1).default(1),
   active: z.boolean().default(true),
   production_type: z.enum(["extrusion", "injection"]),

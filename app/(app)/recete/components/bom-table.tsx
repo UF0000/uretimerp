@@ -136,21 +136,28 @@ export function BomTable({ data }: BomTableProps) {
 
   const columns: ColumnDef<BomRow>[] = [
     {
-      accessorKey: "product.code",
-      header: "Ürün Kodu",
+      id: "recipe",
+      // Arama: reçete kodu, adı ve ürün kodu/adı birlikte
+      accessorFn: (b) => `${b.code} ${b.name} ${b.product?.code ?? ""} ${b.product?.name ?? ""}`,
+      header: "Reçete",
       cell: ({ row }) => (
-        <span className="font-semibold">{row.original.product?.code}</span>
+        <div>
+          <div className="font-semibold">
+            {row.original.code} <span className="font-normal text-muted-foreground">v{row.original.version}</span>
+          </div>
+          <div className="text-sm">{row.original.name}</div>
+        </div>
       ),
     },
     {
-      accessorKey: "product.name",
-      header: "Ürün Adı",
-      cell: ({ row }) => row.original.product?.name,
-    },
-    {
-      accessorKey: "version",
-      header: "Versiyon",
-      cell: ({ row }) => `v${row.getValue("version")}`,
+      id: "product",
+      header: "Ürün",
+      cell: ({ row }) => (
+        <div>
+          <div className="font-medium">{row.original.product?.code}</div>
+          <div className="text-xs text-muted-foreground">{row.original.product?.name}</div>
+        </div>
+      ),
     },
     {
       accessorKey: "production_type",
@@ -256,8 +263,8 @@ export function BomTable({ data }: BomTableProps) {
               canWrite ? columns : columns.filter((c) => c.id !== "actions")
             }
             data={activeBoms}
-            searchKey="product_name"
-            searchPlaceholder="Ürün ara..."
+            searchKey="recipe"
+            searchPlaceholder="Reçete kodu, adı veya ürün ara..."
             onDeleteSelected={canWrite ? handleBulkDelete : undefined}
             isDeleting={isDeleting}
           />
@@ -269,8 +276,8 @@ export function BomTable({ data }: BomTableProps) {
               canWrite ? columns : columns.filter((c) => c.id !== "actions")
             }
             data={passiveBoms}
-            searchKey="product_name"
-            searchPlaceholder="Ürün ara..."
+            searchKey="recipe"
+            searchPlaceholder="Reçete kodu, adı veya ürün ara..."
             onDeleteSelected={canWrite ? handleBulkDelete : undefined}
             isDeleting={isDeleting}
           />

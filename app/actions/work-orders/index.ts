@@ -12,6 +12,8 @@ export async function getWorkOrders() {
       *,
       product:products(name, code, unit),
       bom:boms(
+        code,
+        name,
         version,
         production_type,
         items:bom_items(component_product_id, ratio_pct, product:products(code, name)),

@@ -25,7 +25,7 @@ export async function getCompletedWorkOrdersForCosting() {
         id, no, planned_qty, status, finished_at,
         product:products!product_id(id, code, name, unit),
         bom:boms(
-          id, version, production_type,
+          id, code, name, version, production_type,
           items:bom_items(
             ratio_pct,
             component:products!component_product_id(unit_cost, currency)
@@ -116,6 +116,7 @@ export async function getCompletedWorkOrdersForCosting() {
       finished_at: wo.finished_at,
       product: one(wo.product),
       bomVersion: bom?.version ?? null,
+      bomLabel: bom ? `${bom.code} v${bom.version} · ${bom.name}` : null,
       metrics: {
         produced,
         scrapKg,

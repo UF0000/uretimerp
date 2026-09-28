@@ -19,7 +19,10 @@ export interface MrpProduct {
 }
 
 export interface MrpBom {
+  code: string;
   version: number;
+  /** Ürünün birden çok aktif reçetesi varsa diğerlerinin sayısı (uyarı için) */
+  otherActiveCount?: number;
   productionType: "extrusion" | "injection";
   /** Bir birim mamul için harcanan hammadde (kg); reçetede ağırlık yoksa null */
   kgPerUnit: number | null;
@@ -47,6 +50,7 @@ export interface MrpFinishedRow {
   toSchedule: number;
   plannedProduction: number;
   bomVersion: number | null;
+  bomCode: string | null;
   kgPerUnit: number | null;
   warning: string | null;
 }
@@ -99,6 +103,9 @@ export function computeMrp(input: MrpInput): { finished: MrpFinishedRow[]; mater
     const ratioSum = bom.items.reduce((s, i) => s + (i.ratioPct ?? 0), 0);
 
     let warning: string | null = null;
+    if (bom.otherActiveCount) {
+      warning = `Bu ürünün ${bom.otherActiveCount + 1} aktif reçetesi var; en son oluşturulan (${bom.code}) kullanıldı.`;
+    }
     if (plannedProduction > 0 && bom.kgPerUnit === null) {
       warning = "Reçetede birim ağırlık yok (enjeksiyon: parça ağırlığı, ekstrüzyon: kg/m); hammadde hesaplanamadı.";
     } else if (plannedProduction > 0 && Math.abs(ratioSum - 100) > 0.5) {
@@ -126,6 +133,7 @@ export function computeMrp(input: MrpInput): { finished: MrpFinishedRow[]; mater
       toSchedule: Math.max(0, netProduction - wo),
       plannedProduction,
       bomVersion: bom.version,
+      bomCode: bom.code,
       kgPerUnit: bom.kgPerUnit,
       warning,
     });

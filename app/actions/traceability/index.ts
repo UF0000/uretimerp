@@ -71,7 +71,7 @@ export async function getLotTrace(lotNo: string) {
   const { data: workOrder } = workOrderId
     ? await supabase
         .from("work_orders")
-        .select("no, planned_qty, status, bom:boms(version, production_type), line:production_lines(name, code), mold:molds(name, code)")
+        .select("no, planned_qty, status, bom:boms(code, name, version, production_type), line:production_lines(name, code), mold:molds(name, code)")
         .eq("id", workOrderId)
         .maybeSingle()
     : { data: null };

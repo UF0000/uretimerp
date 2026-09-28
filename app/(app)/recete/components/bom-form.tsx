@@ -62,6 +62,8 @@ export function BomForm({ initialData, products, lines, molds }: BomFormProps) {
     resolver: zodResolver(bomSchema),
     defaultValues: initialData || {
       product_id: "",
+      code: "",
+      name: "",
       version: 1,
       active: true,
       production_type: "extrusion",
@@ -142,11 +144,11 @@ export function BomForm({ initialData, products, lines, molds }: BomFormProps) {
       setIsSubmitting(true);
       const result = await saveBom(data);
       if (result.newVersion) {
-        toast.success(`Yeni versiyon oluşturuldu: v${result.version}`, {
+        toast.success(`Yeni versiyon oluşturuldu: ${result.code} v${result.version}`, {
           description: "Eski versiyon üretimde kullanıldığı için korunup pasife alındı.",
         });
       } else {
-        toast.success(initialData ? "Reçete güncellendi" : `Reçete oluşturuldu (v${result.version})`);
+        toast.success(initialData ? `${result.code} güncellendi` : `Reçete oluşturuldu: ${result.code} v${result.version}`);
       }
       router.push("/recete");
       router.refresh();
@@ -180,12 +182,46 @@ export function BomForm({ initialData, products, lines, molds }: BomFormProps) {
               <CardTitle className="text-lg">Reçete Üst Bilgileri</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-1 space-y-2">
+                  <Label>Reçete Kodu</Label>
+                  <Input
+                    {...register("code")}
+                    disabled={Boolean(initialData)}
+                    placeholder="Otomatik"
+                    className="uppercase"
+                  />
+                </div>
+                <div className="col-span-2 space-y-2">
+                  <Label>Reçete Adı *</Label>
+                  <Input
+                    {...register("name")}
+                    placeholder="Örn. PE100 Ø20 siyah — standart"
+                    className={errors.name ? "border-danger" : ""}
+                  />
+                </div>
+              </div>
+              {errors.name ? (
+                <p className="-mt-2 text-xs text-danger">{errors.name.message}</p>
+              ) : (
+                !initialData && (
+                  <p className="-mt-2 text-xs text-muted-foreground">
+                    Kod boş bırakılırsa RCT-0001 biçiminde otomatik verilir. Yeni versiyonlar aynı kodu taşır.
+                  </p>
+                )
+              )}
+
               <div className="space-y-2">
                 <Label>Üretilecek Ürün *</Label>
                 <SearchableSelect
                   value={watch("product_id")}
                   onValueChange={(val) => {
                     setValue("product_id", val);
+                    // Ad boşsa ürün adını öner
+                    if (!getValues("name")) {
+                      const p = products.find((x) => x.id === val);
+                      if (p) setValue("name", p.name, { shouldValidate: true });
+                    }
                     
                     // Eğer ürün seçildiğinde bu ürüne bağlı bir kalıp varsa otomatik seç ve verilerini doldur
                     const matchingMold = molds.find(m => m.product_id === val);
@@ -211,7 +247,7 @@ export function BomForm({ initialData, products, lines, molds }: BomFormProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Versiyon</Label>
-                  <Input value={initialData ? `v${initialData.version}` : "Kayıtta atanır"} readOnly disabled />
+                  <Input value={initialData ? `${initialData.code ?? ""} v${initialData.version}` : "Kayıtta atanır"} readOnly disabled />
                   {initialData && (
                     <p className="text-xs text-muted-foreground">
                       Üretimde kullanıldıysa kaydedince yeni versiyon açılır; eskisi korunur.

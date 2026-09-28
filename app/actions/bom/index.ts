@@ -63,6 +63,8 @@ export async function saveBom(data: BomFormValues) {
     p_bom: {
       id: payload.id ?? null,
       product_id: payload.product_id,
+      code: payload.id ? null : payload.code || null,
+      name: payload.name,
       active: payload.active,
       production_type: payload.production_type,
       regrind_pct: payload.regrind_pct ?? null,
@@ -81,8 +83,8 @@ export async function saveBom(data: BomFormValues) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/recete");
-  const r = result as { id: string; version: number; new_version: boolean };
-  return { id: r.id, version: r.version, newVersion: r.new_version };
+  const r = result as { id: string; code: string; version: number; new_version: boolean };
+  return { id: r.id, code: r.code, version: r.version, newVersion: r.new_version };
 }
 
 export async function deleteBom(id: string) {
