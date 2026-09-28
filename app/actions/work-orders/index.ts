@@ -14,12 +14,13 @@ export async function getWorkOrders() {
       bom:boms(
         version,
         production_type,
-        bom_injection(runner_sprue_weight_g, cavity_count, scrap_product_id),
+        bom_injection(runner_sprue_weight_g, cavity_count, cycle_time_sec, scrap_product_id),
         bom_extrusion(scrap_product_id)
       ),
       line:production_lines(name),
       mold:molds(name),
-      order:orders(no)
+      order:orders(no),
+      entries:production_entries(produced_qty, scrap_qty, downtime_min)
     `)
     .order("started_at", { ascending: false, nullsFirst: true })
     .order("id", { ascending: false });

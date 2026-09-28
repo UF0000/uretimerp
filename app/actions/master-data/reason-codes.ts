@@ -64,3 +64,5 @@ export async function bulkDeleteReasonCodes(ids: string[]) {
   if (error) throw new Error("Toplu silme başarısız: Bağlı kayıtlar olabilir.");
   revalidatePath("/ana-veri");
 }
+
+export type ReasonCodeRow = Awaited<ReturnType<typeof getReasonCodes>>[number];

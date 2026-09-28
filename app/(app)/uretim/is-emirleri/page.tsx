@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { getWorkOrders } from "@/app/actions/work-orders";
 import { getProducts } from "@/app/actions/master-data/products";
 import { getWarehouses } from "@/app/actions/master-data/warehouses";
+import { getReasonCodes } from "@/app/actions/master-data/reason-codes";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { WorkOrderTable } from "./components/work-order-table";
@@ -12,10 +13,11 @@ export const metadata: Metadata = {
 };
 
 export default async function WorkOrdersPage() {
-  const [workOrders, products, warehouses] = await Promise.all([
+  const [workOrders, products, warehouses, reasonCodes] = await Promise.all([
     getWorkOrders(),
     getProducts(),
     getWarehouses(),
+    getReasonCodes(),
   ]);
 
   const scrapProducts = products.filter((p) => p.type === "scrap" || p.type === "regrind");
@@ -30,7 +32,7 @@ export default async function WorkOrdersPage() {
       
       <Card>
         <CardContent className="pt-6">
-          <WorkOrderTable data={workOrders} scrapProducts={scrapProducts} targetWarehouses={targetWarehouses} />
+          <WorkOrderTable data={workOrders} scrapProducts={scrapProducts} targetWarehouses={targetWarehouses} reasonCodes={reasonCodes} />
         </CardContent>
       </Card>
     </div>

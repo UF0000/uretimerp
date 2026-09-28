@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Play, Plus, CheckCircle2 } from "lucide-react";
+import { Play, Plus, ClipboardPlus, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -13,17 +13,21 @@ import {
   startWorkOrder,
   bulkDeleteWorkOrders,
 } from "@/app/actions/work-orders";
-import { ProductionCompletionModal } from "./production-completion-modal";
+import { ProductionEntryModal } from "./production-entry-modal";
+import { closeWorkOrder } from "@/app/actions/production";
+import { formatTR } from "@/lib/format";
 
 import { getErrorMessage } from "@/lib/utils";
 import type { WorkOrderRow } from "@/app/actions/work-orders";
 import type { ProductRow } from "@/app/actions/master-data/products";
 import type { WarehouseRow } from "@/app/actions/master-data/warehouses";
+import type { ReasonCodeRow } from "@/app/actions/master-data/reason-codes";
 import { usePermission } from "@/components/shared/role-provider";
 interface WorkOrderTableProps {
   data: WorkOrderRow[];
   scrapProducts: ProductRow[];
   targetWarehouses: WarehouseRow[];
+  reasonCodes: ReasonCodeRow[];
 }
 
 const STATUS_LABELS: Record<
@@ -42,6 +46,7 @@ export function WorkOrderTable({
   data,
   scrapProducts,
   targetWarehouses,
+  reasonCodes,
 }: WorkOrderTableProps) {
   const canWrite = usePermission("production:write");
   const router = useRouter();
@@ -83,6 +88,16 @@ export function WorkOrderTable({
     }
   };
 
+  const handleClose = async (item: WorkOrderRow) => {
+    if (!confirm(`${item.no} kapatılacak. Kapatılan iş emrine yeni vardiya girişi yapılamaz. Devam edilsin mi?`)) return;
+    try {
+      await closeWorkOrder(item.id);
+      toast.success("İş emri kapatıldı.");
+    } catch (error) {
+      toast.error("Kapatılamadı", { description: getErrorMessage(error) });
+    }
+  };
+
   const handleOpenCompletion = (item: WorkOrderRow) => {
     setSelectedWorkOrder(item);
     setCompletionModalOpen(true);
@@ -110,13 +125,32 @@ export function WorkOrderTable({
     },
     {
       accessorKey: "planned_qty",
-      header: "Planlanan",
-      cell: ({ row }) => (
-        <span className="font-mono">
-          {Number(row.original.planned_qty).toLocaleString("tr-TR")}{" "}
-          {row.original.product?.unit}
-        </span>
-      ),
+      header: "Üretilen / Planlanan",
+      cell: ({ row }) => {
+        const planned = Number(row.original.planned_qty);
+        const entries = row.original.entries ?? [];
+        const produced = entries.reduce((s, e) => s + Number(e.produced_qty || 0), 0);
+        const downtime = entries.reduce((s, e) => s + Number(e.downtime_min || 0), 0);
+        const pct = planned > 0 ? Math.min(100, (produced / planned) * 100) : 0;
+        return (
+          <div className="min-w-40 space-y-1">
+            <div className="font-mono text-sm">
+              {formatTR(produced, 0)} / {formatTR(planned, 0)} {row.original.product?.unit}
+            </div>
+            <progress
+              value={pct}
+              max={100}
+              aria-label="Üretim ilerlemesi"
+              className="h-1.5 w-full overflow-hidden rounded-full [&::-moz-progress-bar]:bg-primary [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:bg-primary"
+            />
+            {entries.length > 0 && (
+              <div className="text-xs text-muted-foreground">
+                {entries.length} vardiya{downtime > 0 ? ` · ${formatTR(downtime, 0)} dk duruş` : ""}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
       id: "machine",
@@ -150,17 +184,18 @@ export function WorkOrderTable({
         return (
           <div className="flex items-center justify-end gap-2">
             {item.status === "planned" && (
-              <Button size="sm" onClick={() => handleStart(item.id)}>
+              <Button size="sm" variant="outline" onClick={() => handleStart(item.id)}>
                 <Play className="w-4 h-4 mr-1" /> Başlat
               </Button>
             )}
-            {item.status === "in_progress" && (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => handleOpenCompletion(item)}
-              >
-                <CheckCircle2 className="w-4 h-4 mr-1" /> Bitir
+            {item.status !== "done" && (
+              <Button size="sm" onClick={() => handleOpenCompletion(item)}>
+                <ClipboardPlus className="w-4 h-4 mr-1" /> Üretim Gir
+              </Button>
+            )}
+            {item.status === "in_progress" && (item.entries?.length ?? 0) > 0 && (
+              <Button size="sm" variant="secondary" onClick={() => handleClose(item)}>
+                <Lock className="w-4 h-4 mr-1" /> Kapat
               </Button>
             )}
           </div>
@@ -189,7 +224,7 @@ export function WorkOrderTable({
         isDeleting={isDeleting}
       />
 
-      <ProductionCompletionModal
+      <ProductionEntryModal
         isOpen={completionModalOpen}
         onClose={() => {
           setCompletionModalOpen(false);
@@ -198,6 +233,8 @@ export function WorkOrderTable({
         workOrder={selectedWorkOrder}
         scrapProducts={scrapProducts}
         targetWarehouses={targetWarehouses}
+        scrapReasons={reasonCodes.filter((r) => r.kind === "scrap" && r.active)}
+        downtimeReasons={reasonCodes.filter((r) => r.kind === "downtime" && r.active)}
       />
     </div>
   );
