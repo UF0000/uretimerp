@@ -1,4 +1,7 @@
 import { Metadata } from "next";
+import Link from "next/link";
+import { ListChecks } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { getOrders } from "@/app/actions/orders";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,6 +20,12 @@ export default async function OrdersPage() {
       <PageHeader
         title="Siparişler"
         description="Müşterilerden gelen üretim veya sevkiyat siparişlerinin listesi"
+        actions={
+          <Link href="/siparisler/ihtiyac" className={buttonVariants({ variant: "outline" })}>
+            <ListChecks className="mr-2 h-4 w-4" />
+            Net İhtiyaç (MRP)
+          </Link>
+        }
       />
       
       <Card>

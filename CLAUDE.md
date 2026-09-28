@@ -109,7 +109,7 @@ supabase/
 - [~] `v_stock` + kritik/min rozetleri — regrind/hurda grade ayrımı yok
 
 **Faz 2 — MRP çekirdeği**
-- [~] Siparişler — net ihtiyaç (MRP) hesabı yok
+- [x] Siparişler + net ihtiyaç (`/siparisler/ihtiyac`, hesap `lib/mrp.ts`): mamul üretim ihtiyacı, iş emri açılmalı, hammadde/ticari mal net eksik — tek seviye reçete, birim ağırlık reçeteden
 - [x] İş emri + vardiya bazlı üretim girişi (`record_production_entry`): fire/duruş neden kodu zorunlu, gerçek çevrim, sadece duruşlu vardiya
 - [x] Üretim → stok + lot (vardiya başına) + kalıp atış sayacı, atomik
 - [x] OEE raporu (`/uretim/oee`, `v_oee_entries`): makine/gün bazında, duruş ve fire Pareto; vardiya süresi `cost_parameters.shift_minutes`, ekstrüzyon performansı için reçetede hedef hız (m/saat)
