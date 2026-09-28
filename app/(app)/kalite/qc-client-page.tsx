@@ -37,7 +37,7 @@ export function QCClientPage({ data, ncrs, products, workOrders, warehouses }: Q
   return (
     <>
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="mb-4">
+        <TabsList className="mb-4 max-w-full justify-start overflow-x-auto">
           <TabsTrigger value="checks">Kontroller</TabsTrigger>
           <TabsTrigger value="ncr">
             Uygunsuzluklar (NCR){openNcrCount > 0 ? ` · ${openNcrCount} açık` : ""}

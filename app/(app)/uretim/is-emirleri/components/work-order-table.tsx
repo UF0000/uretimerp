@@ -105,12 +105,38 @@ export function WorkOrderTable({
     setCompletionModalOpen(true);
   };
 
+  /** İşlem butonları; dar ekranda iş emri no altında da gösterilir (tablo sağa kaymadan erişilsin) */
+  const renderActions = (item: WorkOrderRow, align: string) => (
+    <div className={`flex flex-wrap items-center gap-2 ${align}`}>
+      {item.status === "planned" && (
+        <Button size="sm" variant="outline" onClick={() => handleStart(item.id)}>
+          <Play className="w-4 h-4 mr-1" /> Başlat
+        </Button>
+      )}
+      {item.status !== "done" && (
+        <Button size="sm" onClick={() => handleOpenCompletion(item)}>
+          <ClipboardPlus className="w-4 h-4 mr-1" /> Üretim Gir
+        </Button>
+      )}
+      {item.status === "in_progress" && (item.entries?.length ?? 0) > 0 && (
+        <Button size="sm" variant="secondary" onClick={() => handleClose(item)}>
+          <Lock className="w-4 h-4 mr-1" /> Kapat
+        </Button>
+      )}
+    </div>
+  );
+
   const columns: ColumnDef<WorkOrderRow>[] = [
     {
       accessorKey: "no",
       header: "İş Emri No",
       cell: ({ row }) => (
-        <span className="font-semibold">{row.original.no}</span>
+        <div>
+          <span className="font-semibold">{row.original.no}</span>
+          {canWrite && row.original.status !== "done" && (
+            <div className="mt-2 sm:hidden">{renderActions(row.original, "justify-start")}</div>
+          )}
+        </div>
       ),
     },
     {
@@ -180,29 +206,7 @@ export function WorkOrderTable({
     {
       id: "actions",
       header: "İşlemler",
-      cell: ({ row }) => {
-        const item = row.original;
-
-        return (
-          <div className="flex items-center justify-end gap-2">
-            {item.status === "planned" && (
-              <Button size="sm" variant="outline" onClick={() => handleStart(item.id)}>
-                <Play className="w-4 h-4 mr-1" /> Başlat
-              </Button>
-            )}
-            {item.status !== "done" && (
-              <Button size="sm" onClick={() => handleOpenCompletion(item)}>
-                <ClipboardPlus className="w-4 h-4 mr-1" /> Üretim Gir
-              </Button>
-            )}
-            {item.status === "in_progress" && (item.entries?.length ?? 0) > 0 && (
-              <Button size="sm" variant="secondary" onClick={() => handleClose(item)}>
-                <Lock className="w-4 h-4 mr-1" /> Kapat
-              </Button>
-            )}
-          </div>
-        );
-      },
+      cell: ({ row }) => renderActions(row.original, "justify-end"),
     },
   ];
 

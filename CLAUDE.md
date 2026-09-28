@@ -123,7 +123,7 @@ supabase/
 - [~] Dashboard var — fire raporu OEE sayfasındaki fire Pareto ile sınırlı
 - [x] RLS gözden geçirme: rol bazlı politikalar (`lib/permissions.ts` ile aynı), arayüzde rol bazlı gizleme
 - [x] Yönetim: kullanıcı rol/aktiflik (son aktif yönetici DB'de korunur), parametreler (maliyet, kur, vardiya süresi), Excel yedeği (19 tablo)
-- [ ] Mobil cila
+- [x] Mobil: 375 px'te sayfa taşması yok (13 sayfa ölçüldü), sekmeler kaydırılabilir, tablo sayfalaması dar ekrana uygun, iş emri butonları mobilde no altında
 
 **Alınan kararlar (kalıcı):**
 - Sektör: **plastik imalat** (ekstrüzyon + enjeksiyon).

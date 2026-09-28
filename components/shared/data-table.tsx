@@ -119,7 +119,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         {searchKey ? (
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -200,11 +200,11 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
       {!disablePagination && (
-        <div className="flex items-center justify-between py-2">
+        <div className="flex flex-col gap-2 py-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-muted-foreground">
             Toplam {table.getFilteredRowModel().rows.length} kayıttan {(table.getState().pagination.pageIndex * table.getState().pagination.pageSize) + 1} - {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, table.getFilteredRowModel().rows.length)} arası gösteriliyor.
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center justify-between gap-2 sm:justify-end">
             <Button
               variant="outline"
               size="sm"
@@ -214,7 +214,11 @@ export function DataTable<TData, TValue>({
               Önceki
             </Button>
             
-            <div className="flex items-center gap-1">
+            {/* Dar ekranda numaralar yerine "3 / 9" */}
+            <span className="text-sm tabular-nums text-muted-foreground sm:hidden">
+              {table.getState().pagination.pageIndex + 1} / {Math.max(1, table.getPageCount())}
+            </span>
+            <div className="hidden items-center gap-1 sm:flex">
               {Array.from({ length: table.getPageCount() }, (_, i) => i).map(pageIndex => {
                 const currentPage = table.getState().pagination.pageIndex;
                 const isNear = Math.abs(pageIndex - currentPage) <= 1;

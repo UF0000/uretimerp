@@ -37,7 +37,7 @@ export default async function MasterDataPage() {
       />
       
       <Tabs defaultValue="products" className="w-full">
-        <TabsList className="mb-4">
+        <TabsList className="mb-4 max-w-full justify-start overflow-x-auto">
           <TabsTrigger value="products">Ürünler & Hammaddeler</TabsTrigger>
           <TabsTrigger value="equipment">Kalıp & Hatlar</TabsTrigger>
           <TabsTrigger value="partners">Cariler</TabsTrigger>

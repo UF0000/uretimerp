@@ -28,7 +28,7 @@ export default async function ManagementPage() {
       <Card>
         <CardContent className="pt-6">
           <Tabs defaultValue="users" className="w-full">
-            <TabsList className="mb-4">
+            <TabsList className="mb-4 max-w-full justify-start overflow-x-auto">
               <TabsTrigger value="users">Kullanıcılar ve Roller</TabsTrigger>
               <TabsTrigger value="parameters">Parametreler</TabsTrigger>
               <TabsTrigger value="export">Dışa Aktarım / Yedek</TabsTrigger>
