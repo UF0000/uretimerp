@@ -901,6 +901,7 @@ export type Database = {
           note: string | null
           document_id: string | null
           reverses_id: string | null
+          production_entry_id: string | null
         }
         Insert: {
           id?: string
@@ -916,6 +917,7 @@ export type Database = {
           note?: string | null
           document_id?: string | null
           reverses_id?: string | null
+          production_entry_id?: string | null
         }
         Update: {
           id?: string
@@ -931,6 +933,7 @@ export type Database = {
           note?: string | null
           document_id?: string | null
           reverses_id?: string | null
+          production_entry_id?: string | null
         }
         Relationships: [
           {
@@ -945,6 +948,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_production_entry_id_fkey"
+            columns: ["production_entry_id"]
+            isOneToOne: false
+            referencedRelation: "production_entries"
             referencedColumns: ["id"]
           },
           {

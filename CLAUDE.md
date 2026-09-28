@@ -119,7 +119,8 @@ supabase/
 - [~] Kalite kontrol kaydı var — NCR arayüzü ve lot bağlama yok
 
 **Faz 4 — Sağlamlaştırma**
-- [~] Dashboard var — izlenebilirlik (soyağacı) ve fire raporları yok
+- [x] İzlenebilirlik `/depo/izlenebilirlik`: lot → iş emri/vardiya/tüketilen hammadde (`stock_movements.production_entry_id`), ileriye hareketler/QC/NCR. Reçine lotu tüketimde seçilmiyor → "olası lotlar" gösterilir
+- [~] Dashboard var — fire raporu OEE sayfasındaki fire Pareto ile sınırlı
 - [x] RLS gözden geçirme: rol bazlı politikalar (`lib/permissions.ts` ile aynı), arayüzde rol bazlı gizleme
 - [ ] Dışa aktarım/yedek, mobil cila
 
