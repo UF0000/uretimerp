@@ -122,7 +122,8 @@ supabase/
 - [x] İzlenebilirlik `/depo/izlenebilirlik`: lot → iş emri/vardiya/tüketilen hammadde; vardiya girişinde reçine lotu seçilirse kesin (`p_raw_lots`, `v_stock_lot`), seçilmezse "olası lotlar"; hammadde lotundan üretilen lotlar (geri çağırma)
 - [~] Dashboard var — fire raporu OEE sayfasındaki fire Pareto ile sınırlı
 - [x] RLS gözden geçirme: rol bazlı politikalar (`lib/permissions.ts` ile aynı), arayüzde rol bazlı gizleme
-- [ ] Dışa aktarım/yedek, mobil cila
+- [x] Yönetim: kullanıcı rol/aktiflik (son aktif yönetici DB'de korunur), parametreler (maliyet, kur, vardiya süresi), Excel yedeği (19 tablo)
+- [ ] Mobil cila
 
 **Alınan kararlar (kalıcı):**
 - Sektör: **plastik imalat** (ekstrüzyon + enjeksiyon).

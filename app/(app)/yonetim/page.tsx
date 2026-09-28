@@ -1,30 +1,48 @@
 import type { Metadata } from "next";
-import { Settings } from "lucide-react";
-import { PageHeader } from "@/components/shared/page-header";
-import { EmptyState } from "@/components/shared/empty-state";
-import { Card, CardContent } from "@/components/ui/card";
 
+import { getParameters, getUsers } from "@/app/actions/admin";
 import { requirePermission } from "@/lib/auth";
+import { PageHeader } from "@/components/shared/page-header";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UsersPanel } from "./components/users-panel";
+import { ParametersForm } from "./components/parameters-form";
+import { ExportPanel } from "./components/export-panel";
+
 export const metadata: Metadata = {
   title: "Yönetim",
-  description: "Kullanıcı, rol ve sistem ayarları yönetimi",
+  description: "Kullanıcı rolleri, sistem parametreleri ve dışa aktarım",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function ManagementPage() {
-  await requirePermission("admin:all");
+  const me = await requirePermission("admin:all");
+  const [users, parameters] = await Promise.all([getUsers(), getParameters()]);
+  const { labor_per_unit, energy_per_unit, overhead_pct, usd_rate, eur_rate, shift_minutes } = parameters;
+  const parameterValues = { labor_per_unit, energy_per_unit, overhead_pct, usd_rate, eur_rate, shift_minutes };
+
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Yönetim"
-        description="Sistem genel ayarları ve kullanıcı yetkilendirme"
-      />
+      <PageHeader title="Yönetim" description="Kullanıcı rolleri, maliyet/üretim parametreleri ve veri dışa aktarımı" />
       <Card>
         <CardContent className="pt-6">
-          <EmptyState
-            icon={Settings}
-            title="Yönetim Modülü"
-            description="Bu modül henüz yapım aşamasındadır. Kullanıcı rolleri, loglar ve maliyet parametreleri burada yer alacaktır."
-          />
+          <Tabs defaultValue="users" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="users">Kullanıcılar ve Roller</TabsTrigger>
+              <TabsTrigger value="parameters">Parametreler</TabsTrigger>
+              <TabsTrigger value="export">Dışa Aktarım / Yedek</TabsTrigger>
+            </TabsList>
+            <TabsContent value="users" className="m-0">
+              <UsersPanel users={users} currentUserId={me.id} />
+            </TabsContent>
+            <TabsContent value="parameters" className="m-0">
+              <ParametersForm initial={parameterValues} />
+            </TabsContent>
+            <TabsContent value="export" className="m-0">
+              <ExportPanel />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
