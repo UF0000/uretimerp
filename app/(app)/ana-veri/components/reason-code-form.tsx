@@ -33,12 +33,15 @@ interface ReasonCodeFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialData?: ReasonCodeFormValues;
+  /** Yeni kayıtta seçili gelecek tür */
+  defaultKind?: ReasonCodeFormValues["kind"];
 }
 
 export function ReasonCodeForm({
   open,
   onOpenChange,
   initialData,
+  defaultKind = "downtime",
 }: ReasonCodeFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -52,7 +55,7 @@ export function ReasonCodeForm({
   } = useForm<ReasonCodeFormValues>({
     resolver: zodResolver(reasonCodeSchema),
     defaultValues: initialData || {
-      kind: "downtime",
+      kind: defaultKind,
       code: "",
       label: "",
     },

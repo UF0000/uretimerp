@@ -7,20 +7,18 @@ import { toast } from "sonner";
 
 import { DataTable } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ReasonCodeFormValues } from "@/lib/validations/master-data";
-import {
-  deleteReasonCode,
-  bulkDeleteReasonCodes,
-} from "@/app/actions/master-data/reason-codes";
+import { deleteReasonCode, bulkDeleteReasonCodes } from "@/app/actions/master-data/reason-codes";
 import { ReasonCodeForm } from "./reason-code-form";
-
-import { getErrorMessage } from "@/lib/utils";
+import { cn, getErrorMessage } from "@/lib/utils";
 import { usePermission } from "@/components/shared/role-provider";
-const KIND_LABELS: Record<string, string> = {
-  downtime: "Duruş",
-  scrap: "Fire",
-};
+
+type Kind = ReasonCodeFormValues["kind"];
+
+const KINDS: { kind: Kind; title: string; description: string; accent: string }[] = [
+  { kind: "scrap", title: "Fire nedenleri", description: "Vardiya girişinde fire için seçilir", accent: "border-t-danger" },
+  { kind: "downtime", title: "Duruş nedenleri", description: "Vardiya girişinde duruş için seçilir", accent: "border-t-warning" },
+];
 
 interface ReasonCodesTabProps {
   data: ReasonCodeFormValues[];
@@ -29,9 +27,8 @@ interface ReasonCodesTabProps {
 export function ReasonCodesTab({ data }: ReasonCodesTabProps) {
   const canWrite = usePermission("master-data:write");
   const [formOpen, setFormOpen] = useState(false);
-  const [editingCode, setEditingCode] = useState<
-    ReasonCodeFormValues | undefined
-  >(undefined);
+  const [editingCode, setEditingCode] = useState<ReasonCodeFormValues | undefined>(undefined);
+  const [newKind, setNewKind] = useState<Kind>("scrap");
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleEdit = (code: ReasonCodeFormValues) => {
@@ -39,8 +36,9 @@ export function ReasonCodesTab({ data }: ReasonCodesTabProps) {
     setFormOpen(true);
   };
 
-  const handleAdd = () => {
+  const handleAdd = (kind: Kind) => {
     setEditingCode(undefined);
+    setNewKind(kind);
     setFormOpen(true);
   };
 
@@ -60,14 +58,9 @@ export function ReasonCodesTab({ data }: ReasonCodesTabProps) {
       setIsDeleting(true);
       toast.loading("Kodlar siliniyor...", { id: "bulk-delete-reason-codes" });
       await bulkDeleteReasonCodes(ids);
-      toast.success(`${ids.length} adet kod başarıyla silindi.`, {
-        id: "bulk-delete-reason-codes",
-      });
+      toast.success(`${ids.length} adet kod başarıyla silindi.`, { id: "bulk-delete-reason-codes" });
     } catch (error) {
-      toast.error("Toplu silme başarısız", {
-        id: "bulk-delete-reason-codes",
-        description: getErrorMessage(error),
-      });
+      toast.error("Toplu silme başarısız", { id: "bulk-delete-reason-codes", description: getErrorMessage(error) });
     } finally {
       setIsDeleting(false);
     }
@@ -75,88 +68,72 @@ export function ReasonCodesTab({ data }: ReasonCodesTabProps) {
 
   const columns: ColumnDef<ReasonCodeFormValues>[] = [
     {
-      accessorKey: "kind",
-      header: "Tip",
-      cell: ({ row }) => {
-        const k = row.getValue("kind") as string;
-        return (
-          <Badge variant={k === "downtime" ? "secondary" : "destructive"}>
-            {KIND_LABELS[k] || k}
-          </Badge>
-        );
-      },
-    },
-    {
       accessorKey: "code",
       header: "Kod",
-      cell: ({ row }) => (
-        <span className="font-semibold">{row.getValue("code")}</span>
-      ),
+      cell: ({ row }) => <span className="font-semibold">{row.original.code}</span>,
     },
-    {
-      accessorKey: "label",
-      header: "Açıklama",
-    },
+    { accessorKey: "label", header: "Açıklama" },
     {
       id: "actions",
-      header: "İşlemler",
+      header: "",
       cell: ({ row }) => {
         const item = row.original;
         return (
-          <div className="flex items-center justify-end gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleEdit(item)}
-            >
-              <Edit2 className="w-4 h-4 text-muted-foreground" />
+          <div className="flex items-center justify-end gap-1">
+            <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} aria-label="Düzenle">
+              <Edit2 className="h-4 w-4 text-muted-foreground" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => item.id && handleDelete(item.id)}
-            >
-              <Trash2 className="w-4 h-4 text-danger" />
+            <Button variant="ghost" size="icon" onClick={() => item.id && handleDelete(item.id)} aria-label="Sil">
+              <Trash2 className="h-4 w-4 text-danger" />
             </Button>
           </div>
         );
       },
     },
   ];
+  const visibleColumns = canWrite ? columns : columns.filter((c) => c.id !== "actions");
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-medium tracking-tight">Neden Kodları</h2>
-          <p className="text-sm text-muted-foreground">
-            Üretim duruş ve fire sebepleri
-          </p>
-        </div>
-        {canWrite && (
-          <Button onClick={handleAdd}>
-            <Plus className="w-4 h-4 mr-2" />
-            Yeni Ekle
-          </Button>
-        )}
+      <div>
+        <h2 className="text-lg font-medium tracking-tight">Neden Kodları</h2>
+        <p className="text-sm text-muted-foreground">Üretim girişinde seçilen fire ve duruş sebepleri</p>
       </div>
 
-      <DataTable
-        columns={canWrite ? columns : columns.filter((c) => c.id !== "actions")}
-        data={data}
-        searchKey="label"
-        searchPlaceholder="Açıklama ara..."
-        onDeleteSelected={canWrite ? handleBulkDelete : undefined}
-        isDeleting={isDeleting}
-      />
+      <div className="grid gap-6 xl:grid-cols-2">
+        {KINDS.map(({ kind, title, description, accent }) => {
+          const rows = data.filter((d) => d.kind === kind);
+          return (
+            <section key={kind} className={cn("space-y-3 rounded-md border border-t-4 border-border p-4", accent)}>
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <h3 className="font-semibold">
+                    {title} <span className="font-normal text-muted-foreground">({rows.length})</span>
+                  </h3>
+                  <p className="text-xs text-muted-foreground">{description}</p>
+                </div>
+                {canWrite && (
+                  <Button size="sm" onClick={() => handleAdd(kind)}>
+                    <Plus className="mr-1.5 h-4 w-4" />
+                    Yeni {kind === "scrap" ? "fire" : "duruş"} nedeni
+                  </Button>
+                )}
+              </div>
+              <DataTable
+                storageKey={`reason-codes-${kind}`}
+                columns={visibleColumns}
+                data={rows}
+                searchKey="label"
+                searchPlaceholder="Açıklama ara..."
+                onDeleteSelected={canWrite ? handleBulkDelete : undefined}
+                isDeleting={isDeleting}
+              />
+            </section>
+          );
+        })}
+      </div>
 
-      {formOpen && (
-        <ReasonCodeForm
-          open={formOpen}
-          onOpenChange={setFormOpen}
-          initialData={editingCode}
-        />
-      )}
+      {formOpen && <ReasonCodeForm open={formOpen} onOpenChange={setFormOpen} initialData={editingCode} defaultKind={newKind} />}
     </div>
   );
 }
