@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
-import { AlertTriangle, Info } from "lucide-react";
+import { Info } from "lucide-react";
 
 import { getProductionAnalytics } from "@/app/actions/analytics";
 import { PageHeader } from "@/components/shared/page-header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { formatTR } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { AnalyticsFilters, TypeToggle } from "./components/analytics-filters";
+import { AnalyticsFilters } from "./components/analytics-filters";
+import { InjectionDashboard } from "./components/injection-dashboard";
 import { ActualVsExpected, DistributionDonut, ShiftComparison, StatusBars, TrendChart } from "./components/analytics-charts";
-import { STATUS_LABELS, type Status } from "@/lib/analytics-status";
+import { ChartCard, Kpi, Pill, Section, STATUS_PILL, Th, kg, pct, statusHigh, statusOf } from "./components/dashboard-ui";
 
 export const metadata: Metadata = {
   title: "Üretim Analizi",
@@ -17,79 +18,9 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = { bas?: string; bit?: string; tur?: string; hat?: string; vardiya?: string; urun?: string; ie?: string; hammadde?: string };
+type SearchParams = { bas?: string; bit?: string; tur?: string; hat?: string; vardiya?: string; urun?: string; ie?: string; hammadde?: string; varyant?: string; renk?: string };
 
 const isDate = (v?: string) => Boolean(v && /^\d{4}-\d{2}-\d{2}$/.test(v));
-const pct = (v: number | null | undefined, d = 1) => (v === null || v === undefined ? "—" : `%${formatTR(v * 100, d)}`);
-const kg = (v: number, d = 0) => `${formatTR(v, d)} kg`;
-
-/** Hedefe göre durum (küçük iyi): hedefte ≤ hedef, sınırda ≤ hedef × 1,2, üstü hedef dışı. */
-const statusOf = (valuePct: number | null, targetPct: number): Status | undefined => {
-  if (valuePct === null) return undefined;
-  if (valuePct <= targetPct) return "ok";
-  return valuePct <= targetPct * 1.2 ? "warn" : "bad";
-};
-/** Büyük iyi (OEE): hedefte ≥ hedef, sınırda ≥ hedef × 0,85. */
-const statusHigh = (valuePct: number | null, targetPct: number): Status | undefined => {
-  if (valuePct === null) return undefined;
-  if (valuePct >= targetPct) return "ok";
-  return valuePct >= targetPct * 0.85 ? "warn" : "bad";
-};
-
-const STATUS_TEXT: Record<Status, string> = { ok: "text-success", warn: "text-warning", bad: "text-danger" };
-const STATUS_BORDER: Record<Status, string> = { ok: "border-l-success", warn: "border-l-warning", bad: "border-l-danger" };
-const STATUS_PILL: Record<Status, string> = {
-  ok: "bg-success/15 text-success",
-  warn: "bg-warning/20 text-warning-foreground",
-  bad: "bg-danger/15 text-danger",
-};
-
-const Kpi = ({ title, value, hint, status, accent }: { title: string; value: string; hint?: string; status?: Status; accent?: string }) => (
-  <Card className={cn("break-inside-avoid border-l-4", status ? STATUS_BORDER[status] : (accent ?? "border-l-border"))}>
-    <CardContent className="space-y-1 pt-5">
-      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{title}</div>
-      <div className={cn("text-2xl font-semibold tabular-nums", status && STATUS_TEXT[status])}>{value}</div>
-      {(hint || status) && (
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          {status && status !== "ok" && <AlertTriangle className={cn("h-3.5 w-3.5", STATUS_TEXT[status])} aria-hidden />}
-          {status && <span className={cn("font-medium", STATUS_TEXT[status])}>{STATUS_LABELS[status]}</span>}
-          {hint && <span>{hint}</span>}
-        </div>
-      )}
-    </CardContent>
-  </Card>
-);
-
-/** Durum renkli yüzde hücresi */
-const Pill = ({ value, status, d = 2 }: { value: number | null; status?: Status; d?: number }) =>
-  value === null ? (
-    <span className="text-muted-foreground">—</span>
-  ) : (
-    <span className={cn("inline-block rounded px-1.5 py-0.5 font-medium tabular-nums", status ? STATUS_PILL[status] : "")}>{pct(value, d)}</span>
-  );
-
-const Section = ({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) => (
-  <section className="space-y-3">
-    <div>
-      <h2 className="text-lg font-semibold">{title}</h2>
-      {description && <p className="text-sm text-muted-foreground">{description}</p>}
-    </div>
-    {children}
-  </section>
-);
-
-const ChartCard = ({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) => (
-  <Card className={cn("break-inside-avoid", className)}>
-    <CardHeader>
-      <CardTitle className="text-base">{title}</CardTitle>
-    </CardHeader>
-    <CardContent>{children}</CardContent>
-  </Card>
-);
-
-const Th = ({ children, right }: { children: React.ReactNode; right?: boolean }) => (
-  <th className={cn("whitespace-nowrap px-3 py-2 font-medium", right && "text-right")}>{children}</th>
-);
 
 export default async function ProductionAnalyticsPage(props: { searchParams: Promise<SearchParams> }) {
   const sp = await props.searchParams;
@@ -99,22 +30,7 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
   const to = isDate(sp.bit) ? sp.bit! : today;
   const lineType = sp.tur === "fitting" || sp.tur === "enjeksiyon" ? "injection" : "extrusion";
 
-  // Fitting (enjeksiyon) panosu henüz tasarlanmadı: şimdilik boş sayfa
-  if (lineType === "injection") {
-    return (
-      <div className="space-y-8">
-        <PageHeader title="Üretim Analizi — Fitting" description="Enjeksiyon üretim panosu" />
-        <div className="print:hidden">
-          <TypeToggle from={from} to={to} lineType={lineType} />
-        </div>
-        <Card>
-          <CardContent className="py-16 text-center text-sm text-muted-foreground">Fitting panosu hazırlanıyor.</CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const { options, analytics: a, days } = await getProductionAnalytics({
+  const report = await getProductionAnalytics({
     from,
     to,
     lineType,
@@ -123,7 +39,13 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
     productId: sp.urun || undefined,
     workOrderId: sp.ie || undefined,
     rawMaterialId: sp.hammadde || undefined,
+    variantCode: sp.varyant || undefined,
+    color: sp.renk || undefined,
   });
+  // Fitting (enjeksiyon): ayrı pano (referans görseller e1–e5)
+  if (lineType === "injection") return <InjectionDashboard report={report} from={from} to={to} />;
+
+  const { options, analytics: a, days } = report;
   const t = a.total;
   const tg = a.targets;
   const isExtrusion = lineType === "extrusion";

@@ -57,6 +57,23 @@ export function groupCodeFromCode(code: string): string | null {
   return null;
 }
 
+/**
+ * Koddan ürün rengi: PP'de ilk harf (V yeşil, A mavi, G gri, W beyaz, L lila),
+ * sifonik (D.) ürünler siyah. Bilinmeyen harf olduğu gibi döner.
+ */
+const COLOR_BY_LETTER: Record<string, string> = { V: "Yeşil", A: "Mavi", G: "Gri", W: "Beyaz", L: "Lila" };
+export function colorFromCode(code: string): string | null {
+  const c = code.trim().toUpperCase();
+  if (c.startsWith("D.")) return "Siyah";
+  const m = /^([A-Z])1[A-Z][0-9]/.exec(c);
+  return m ? (COLOR_BY_LETTER[m[1]] ?? m[1]) : null;
+}
+
+export type MoldMode = "otomatik" | "yari_otomatik";
+export const MOLD_MODE_LABELS: Record<MoldMode, string> = { otomatik: "Otomatik", yari_otomatik: "Yarı otomatik" };
+/** Veritabanındaki metni kalıp çalışma tipine çevirir (bilinmeyen → null) */
+export const asMoldMode = (v: string | null | undefined): MoldMode | null => (v === "otomatik" || v === "yari_otomatik" ? v : null);
+
 /** Ürün sıralaması: grup kodu 01 → 27 (grupsuzlar sonda), grup içinde stok kodu. */
 export const compareByGroup = (a: { group_code: string | null; code: string }, b: { group_code: string | null; code: string }) => {
   if (a.group_code !== b.group_code) {

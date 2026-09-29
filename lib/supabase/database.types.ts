@@ -426,6 +426,7 @@ export type Database = {
           id: string
           code: string
           name: string
+          operation_mode: string | null
           product_id: string | null
           cavity_count: number
           cycle_time_sec: number
@@ -440,6 +441,7 @@ export type Database = {
           id?: string
           code: string
           name: string
+          operation_mode?: string | null
           product_id?: string | null
           cavity_count: number
           cycle_time_sec: number
@@ -454,6 +456,7 @@ export type Database = {
           id?: string
           code?: string
           name?: string
+          operation_mode?: string | null
           product_id?: string | null
           cavity_count?: number
           cycle_time_sec?: number
@@ -1634,6 +1637,7 @@ export type Database = {
           diameter_mm: number | null
           sdr: number | null
           reference_kg_per_hour: number | null
+          runner_kg: number | null
         }
         Relationships: []
       }

@@ -18,6 +18,8 @@
  *   Hız performansı  = hammadde / Σ(referans × çalışma saati)
  */
 
+import type { MoldMode } from "@/lib/product-meta";
+
 export interface AnalyticsEntry {
   entryId: string;
   day: string;
@@ -49,6 +51,10 @@ export interface AnalyticsEntry {
   referenceKgPerHour: number | null;
   /** OEE performansı için ideal süre (sn); veri yoksa null */
   idealSec: number | null;
+  /** Enjeksiyon: nominal yolluk (kg) = atış × atış başı yolluk */
+  runnerKg?: number | null;
+  /** Enjeksiyon: kalıp çalışma tipi */
+  moldMode?: MoldMode | null;
 }
 
 export type ReasonPart = { reasonId: string; value: number };
@@ -139,6 +145,9 @@ export function measure(entries: AnalyticsEntry[]) {
     performance,
     oee,
     runHours: runMin / 60,
+    /** Brüt üretim süresi (planlı / vardiya süresi, saat) */
+    plannedHours: plannedMin / 60,
+    runnerKg: sum(entries, (e) => e.runnerKg ?? 0),
     downtimeHours: sum(entries, (e) => e.downtimeMin) / 60,
     expectedKg,
     /** Hammadde / (kapasite × çalışma saati), kapasitesi bilinen girişlerde */
@@ -253,6 +262,7 @@ export function computeProductionAnalytics(input: AnalyticsInput) {
       productName: first.productName,
       productUnit: first.productUnit,
       bomCode: first.bomCode,
+      moldMode: first.moldMode ?? null,
       ...m,
       outOfTarget: scrapOut || owOut,
       scrapDeviation: m.scrapPct !== null ? m.scrapPct * 100 - targets.scrapPct : null,
@@ -292,6 +302,11 @@ export function computeProductionAnalytics(input: AnalyticsInput) {
       .sort((a, b) => b.usedKg - a.usedKg);
   const byLine = breakdown((e) => e.lineId ?? "-", (k) => (k === "-" ? "Makine yok" : (lineNames.get(k) ?? "Bilinmeyen makine")));
   const byOperator = breakdown((e) => e.operator?.trim().toLocaleUpperCase("tr") || "-", (k) => (k === "-" ? "Belirtilmemiş" : k));
+  const productNames = new Map(entries.map((e) => [e.productId, { code: e.productCode, name: e.productName }]));
+  const byProduct = breakdown(
+    (e) => e.productId,
+    (k) => productNames.get(k)?.code ?? "?",
+  ).map((r) => ({ ...r, productName: productNames.get(r.key)?.name ?? "" }));
 
   // ── Trend: gün ya da hafta bazında fire % ve OEE % ──
   const weekStart = (day: string) => {
@@ -320,6 +335,7 @@ export function computeProductionAnalytics(input: AnalyticsInput) {
     scrapRecovery,
     byLine,
     byOperator,
+    byProduct,
     trend,
     trendBucket,
     rawMaterials,

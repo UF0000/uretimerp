@@ -16,7 +16,7 @@ interface AnalyticsFiltersProps {
   from: string;
   to: string;
   lineType: "extrusion" | "injection";
-  options: { lines: Option[]; products: Option[]; workOrders: Option[]; rawMaterials: Option[] };
+  options: { lines: Option[]; products: Option[]; workOrders: Option[]; rawMaterials: Option[]; variants?: Option[]; colors?: Option[] };
   /** Excel'e aktarılacak tablolar: sayfa adı → satırlar */
   exportSheets: { name: string; rows: Record<string, string | number | null>[] }[];
 }
@@ -53,6 +53,7 @@ export function TypeToggle({ from, to, lineType }: { from: string; to: string; l
 export function AnalyticsFilters({ from, to, lineType, options, exportSheets }: AnalyticsFiltersProps) {
   const router = useRouter();
   const params = useSearchParams();
+  const isInjection = lineType === "injection";
 
   const set = (key: string, value: string) => {
     const next = new URLSearchParams(params.toString());
@@ -106,7 +107,7 @@ export function AnalyticsFilters({ from, to, lineType, options, exportSheets }: 
           <Label className="text-xs">Bitiş</Label>
           <Input key={`bit-${to}`} type="date" defaultValue={to} onChange={(e) => e.target.value && set("bit", e.target.value)} />
         </div>
-        {select("hat", "Makine / ekstrüder", options.lines, "Tüm makineler")}
+        {select("hat", isInjection ? "Makine / istasyon" : "Makine / ekstrüder", options.lines, "Tüm makineler")}
         <div className="space-y-1">
           <Label className="text-xs">Vardiya</Label>
           <SearchableSelect
@@ -121,7 +122,7 @@ export function AnalyticsFilters({ from, to, lineType, options, exportSheets }: 
           />
         </div>
         {select("hammadde", "Hammadde türü", options.rawMaterials, "Tümü")}
-        {select("urun", "Ürün", options.products, "Tüm ürünler")}
+        {!isInjection && select("urun", "Ürün", options.products, "Tüm ürünler")}
         {select("ie", "Üretim emri", options.workOrders, "Tüm iş emirleri")}
         <div className="flex items-end">
           <Button
@@ -135,6 +136,17 @@ export function AnalyticsFilters({ from, to, lineType, options, exportSheets }: 
           </Button>
         </div>
       </div>
+
+      {isInjection && (
+        <div className="space-y-2 border-t border-dashed border-border pt-3">
+          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ürün kırılımı</div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {select("urun", "Üretilen ürün", options.products, "Tüm ürünler")}
+            {select("varyant", "Ürün (genel kod)", options.variants ?? [], "Tüm genel kodlar")}
+            {select("renk", "Renk", options.colors ?? [], "Tüm renkler")}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

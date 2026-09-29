@@ -116,6 +116,7 @@ export async function saveMold(data: MoldFormValues) {
         product_weight_g: payload.product_weight_g || null,
         maintenance_plan: payload.maintenance_plan || null,
         status: payload.status,
+        operation_mode: payload.operation_mode || null,
       })
       .eq("id", payload.id);
     if (error) throw new Error(error.message);
@@ -133,6 +134,7 @@ export async function saveMold(data: MoldFormValues) {
         product_weight_g: payload.product_weight_g || null,
         maintenance_plan: payload.maintenance_plan || null,
         status: payload.status,
+        operation_mode: payload.operation_mode || null,
       }]);
     if (error) {
       if (error.code === '23505' || error.message.includes('unique')) {
@@ -232,6 +234,10 @@ export async function bulkImportMolds(moldsData: ExcelRow[]) {
       sprue_weight_g = sprue_weight_g * cavity_count;
     }
 
+    // KALIP ÇALIŞMA: "OTOMATİK" / "YARI OTOMATİK"
+    const modeText = String(p["KALIP ÇALIŞMA"] || "").trim().toLocaleUpperCase("tr");
+    const operation_mode = modeText.startsWith("YARI") ? "yari_otomatik" : modeText.startsWith("OTOMAT") ? "otomatik" : null;
+
     return {
       code,
       name,
@@ -241,6 +247,7 @@ export async function bulkImportMolds(moldsData: ExcelRow[]) {
       total_shots: 0,
       sprue_weight_g,
       product_weight_g,
+      operation_mode,
       status: "active",
       _hasProductCode: !!productCode // Satırın gerçekten dolu olup olmadığını anlamak için işaretliyoruz
     };

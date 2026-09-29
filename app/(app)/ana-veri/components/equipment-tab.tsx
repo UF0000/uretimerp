@@ -24,6 +24,7 @@ import { MoldForm } from "./mold-form";
 import { getErrorMessage } from "@/lib/utils";
 import { usePermission } from "@/components/shared/role-provider";
 import { formatTR } from "@/lib/format";
+import { MOLD_MODE_LABELS, asMoldMode } from "@/lib/product-meta";
 const STATUS_LABELS: Record<string, string> = {
   active: "Aktif",
   maintenance: "Bakımda",
@@ -238,6 +239,14 @@ export function EquipmentTab({ lines, molds, products }: EquipmentTabProps) {
     { accessorKey: "cavity_count", header: "Göz Sayısı" },
     { accessorKey: "cycle_time_sec", header: "Çevrim (Sn)" },
     {
+      accessorKey: "operation_mode",
+      header: "Çalışma",
+      cell: ({ row }) => {
+        const mode = asMoldMode(row.original.operation_mode);
+        return mode ? MOLD_MODE_LABELS[mode] : "—";
+      },
+    },
+    {
       accessorKey: "status",
       header: "Durum",
       cell: ({ row }) => {
@@ -260,7 +269,7 @@ export function EquipmentTab({ lines, molds, products }: EquipmentTabProps) {
               variant="ghost"
               size="icon"
               onClick={() => {
-                setEditingMold(item);
+                setEditingMold({ ...item, operation_mode: asMoldMode(item.operation_mode) });
                 setMoldFormOpen(true);
               }}
             >

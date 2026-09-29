@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { materialFamily } from "@/lib/material-family";
+import { asMoldMode, colorFromCode } from "@/lib/product-meta";
 import { inChunks, readAll } from "@/lib/supabase/read-all";
 import { loadReasonParts } from "@/lib/supabase/entry-reasons";
 import {
@@ -20,6 +21,10 @@ export interface AnalyticsFilters {
   productId?: string;
   workOrderId?: string;
   rawMaterialId?: string;
+  /** Genel stok kodu (varyant) */
+  variantCode?: string;
+  /** Koddan renk (Yeşil, Mavi, Siyah…) */
+  color?: string;
 }
 
 export async function getProductionAnalytics(filters: AnalyticsFilters) {
@@ -66,6 +71,15 @@ export async function getProductionAnalytics(filters: AnalyticsFilters) {
     ),
   ]);
   const idealByEntry = new Map(oee.map((o) => [o.entry_id, o.ideal_sec]));
+  // Kalıp çalışma tipi ve ürün genel kodu (fitting panosu kırılımları)
+  const moldIds = [...new Set(rows.map((r) => r.mold_id).filter((id): id is string => Boolean(id)))];
+  const productIds = [...new Set(rows.map((r) => r.product_id).filter((id): id is string => Boolean(id)))];
+  const [moldRows, productRows] = await Promise.all([
+    inChunks(moldIds, 150, (c) => supabase.from("molds").select("id, operation_mode").in("id", c)),
+    inChunks(productIds, 150, (c) => supabase.from("products").select("id, variant_code").in("id", c)),
+  ]);
+  const moldMode = new Map(moldRows.map((m) => [m.id, asMoldMode(m.operation_mode)]));
+  const variantOf = new Map(productRows.map((p) => [p.id, p.variant_code]));
   // Çoklu fire/duruş nedenleri (dağılım grafikleri)
   const parts = await loadReasonParts(supabase, entryIds);
   const reversed = new Set(movements.map((m) => m.reverses_id).filter(Boolean));
@@ -113,6 +127,8 @@ export async function getProductionAnalytics(filters: AnalyticsFilters) {
     idealSec: idealByEntry.get(r.entry_id!) ?? null,
     scrapParts: parts.scrap.get(r.entry_id!),
     downtimeParts: parts.downtime.get(r.entry_id!),
+    runnerKg: r.runner_kg === null ? null : Number(r.runner_kg),
+    moldMode: r.mold_id ? (moldMode.get(r.mold_id) ?? null) : null,
   }));
 
   // Filtre seçenekleri (hammadde filtresi uygulanmadan önceki kapsamdan)
@@ -121,12 +137,16 @@ export async function getProductionAnalytics(filters: AnalyticsFilters) {
     products: [...new Map(entries.map((e) => [e.productId, { id: e.productId, label: `${e.productCode} — ${e.productName}` }])).values()],
     workOrders: [...new Map(entries.map((e) => [e.workOrderId, { id: e.workOrderId, label: e.workOrderNo }])).values()],
     rawMaterials: [...new Map(materials.map((m) => [m.productId, { id: m.productId, label: m.name }])).values()],
+    variants: [...new Set(entries.map((e) => variantOf.get(e.productId)).filter((v): v is string => Boolean(v)))].sort().map((v) => ({ id: v, label: v })),
+    colors: [...new Set(entries.map((e) => colorFromCode(e.productCode)).filter((c): c is string => Boolean(c)))].sort((a, b) => a.localeCompare(b, "tr")).map((c) => ({ id: c, label: c })),
   };
 
   if (filters.rawMaterialId) {
     const withMaterial = new Set(materials.filter((m) => m.productId === filters.rawMaterialId).map((m) => m.entryId));
     entries = entries.filter((e) => withMaterial.has(e.entryId));
   }
+  if (filters.variantCode) entries = entries.filter((e) => variantOf.get(e.productId) === filters.variantCode);
+  if (filters.color) entries = entries.filter((e) => colorFromCode(e.productCode) === filters.color);
 
   // Kapasite: seçili hat ya da türdeki tüm hatlar; her gün o gün geçerli kapasite × kullanılabilir saat
   const scopeLineIds = linesRes.data.filter((l) => !filters.lineId || l.id === filters.lineId).map((l) => l.id);

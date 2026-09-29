@@ -79,6 +79,8 @@ export const moldSchema = z.object({
   product_weight_g: z.number().min(0).optional().nullable(),
   maintenance_plan: z.string().optional().nullable(),
   status: z.enum(["active", "maintenance", "down"]),
+  /** Kalıp çalışma tipi: otomatik / yarı otomatik (analiz panosu) */
+  operation_mode: z.enum(["otomatik", "yari_otomatik"]).optional().nullable(),
 });
 
 export type MoldFormValues = z.infer<typeof moldSchema>;

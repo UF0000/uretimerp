@@ -69,6 +69,7 @@ export function MoldForm({
 
   const watchStatus = watch("status");
   const watchProduct = watch("product_id");
+  const watchMode = watch("operation_mode");
 
   const onSubmit = async (data: MoldFormValues) => {
     try {
@@ -198,6 +199,27 @@ export function MoldForm({
                 {...register("sprue_weight_g", { valueAsNumber: true })}
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Çalışma Tipi</Label>
+            <Select
+              value={watchMode ?? "none"}
+              onValueChange={(val) =>
+                setValue("operation_mode", val === "none" || !val ? null : (val as "otomatik" | "yari_otomatik"), { shouldDirty: true })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seçiniz">
+                  {watchMode === "otomatik" ? "Otomatik" : watchMode === "yari_otomatik" ? "Yarı otomatik" : "Belirtilmemiş"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Belirtilmemiş</SelectItem>
+                <SelectItem value="otomatik">Otomatik</SelectItem>
+                <SelectItem value="yari_otomatik">Yarı otomatik</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
