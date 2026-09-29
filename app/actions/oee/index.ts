@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { readAll } from "@/lib/supabase/read-all";
 
 /** Ham OEE bileşenlerinin toplamı; oranlar bu toplamlardan ağırlıklı hesaplanır. */
 interface OeeSums {
@@ -64,17 +65,17 @@ export async function getOeeReport(days: number) {
   // Türkiye saatine göre gün sınırı
   const since = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(new Date(Date.now() - days * 24 * 60 * 60 * 1000));
 
-  const [entriesRes, linesRes, moldsRes, reasonsRes, paramsRes] = await Promise.all([
-    supabase.from("v_oee_entries").select("*").gte("day", since).order("day"),
+  // Girişler ve kalıplar 1.000 satırı aşabilir: sayfa sayfa okunur
+  const [entries, linesRes, molds, reasonsRes, paramsRes] = await Promise.all([
+    readAll((f, t) => supabase.from("v_oee_entries").select("*").gte("day", since).order("day").order("entry_id").range(f, t), "OEE verileri getirilirken hata oluştu"),
     supabase.from("production_lines").select("id, code, name"),
-    supabase.from("molds").select("id, code, name"),
+    readAll((f, t) => supabase.from("molds").select("id, code, name").order("code").range(f, t), "Kalıplar getirilirken hata oluştu"),
     supabase.from("reason_codes").select("id, code, label"),
     supabase.from("cost_parameters").select("shift_minutes").limit(1).maybeSingle(),
   ]);
-  if (entriesRes.error) throw new Error("OEE verileri getirilirken hata oluştu: " + entriesRes.error.message);
 
   const lineById = new Map((linesRes.data ?? []).map((l) => [l.id, l]));
-  const moldById = new Map((moldsRes.data ?? []).map((m) => [m.id, m]));
+  const moldById = new Map(molds.map((m) => [m.id, m]));
   const reasonById = new Map((reasonsRes.data ?? []).map((r) => [r.id, r]));
 
   const total = emptySums();
@@ -83,7 +84,7 @@ export async function getOeeReport(days: number) {
   const downtimeByReason = new Map<string, number>();
   const scrapByReason = new Map<string, number>();
 
-  const add = (s: OeeSums, e: (typeof entriesRes.data)[number]) => {
+  const add = (s: OeeSums, e: (typeof entries)[number]) => {
     const run = Number(e.run_sec ?? 0);
     s.entries += 1;
     s.plannedSec += Number(e.planned_sec ?? 0);
@@ -99,7 +100,7 @@ export async function getOeeReport(days: number) {
     s.scrapKg += Number(e.scrap_kg ?? 0);
   };
 
-  for (const e of entriesRes.data) {
+  for (const e of entries) {
     add(total, e);
 
     const line = e.line_id ? lineById.get(e.line_id) : undefined;
