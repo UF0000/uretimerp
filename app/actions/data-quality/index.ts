@@ -3,18 +3,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/auth";
 import { findDataIssues, type DqBom } from "@/lib/data-quality";
+import { readAll } from "@/lib/supabase/read-all";
 
-/** PostgREST 1.000 satır sınırına takılmadan tüm sayfaları okur. */
-async function readAll<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>) {
-  const rows: T[] = [];
-  for (let from = 0; ; from += 1000) {
-    const { data, error } = await page(from, from + 999);
-    if (error) throw new Error("Eksik veri kontrolü yapılamadı: " + error.message);
-    rows.push(...(data ?? []));
-    if ((data ?? []).length < 1000) return rows;
-  }
-}
-
+const ERR = "Eksik veri kontrolü yapılamadı";
 const one = <T,>(v: T | T[] | null): T | null => (Array.isArray(v) ? (v[0] ?? null) : v);
 const num = (v: number | string | null | undefined) => (v === null || v === undefined ? null : Number(v));
 
@@ -33,8 +24,9 @@ export async function getDataIssues() {
         .eq("active", true)
         .order("code")
         .range(f, t),
+      ERR,
     ),
-    readAll((f, t) => supabase.from("molds").select("id, code, name, cavity_count, cycle_time_sec, product_weight_g, status").order("code").range(f, t)),
+    readAll((f, t) => supabase.from("molds").select("id, code, name, cavity_count, cycle_time_sec, product_weight_g, status").order("code").range(f, t), ERR),
     supabase.from("production_lines").select("id, code, name, line_type, status").order("code"),
     supabase.from("line_capacities").select("line_id, valid_from, valid_to").eq("active", true),
     supabase.from("reference_capacities").select("material_group, diameter_mm, sdr").eq("active", true).eq("approval", "approved"),

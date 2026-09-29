@@ -467,7 +467,8 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
             Hesaplar: sağlam = hammadde − fire; overweight = sağlam / (üretilen × reçete birim ağırlığı) − 1; NŞA kapasite = Σ gün (o gün
             geçerli makine kapasitesi × kullanılabilir saat; tatil ve kapalı günler düşülür); zaman kullanımı = (vardiya süresi − duruş) /
             kullanılabilir saat; referansa göre hız = tüketim / (grup·çap·SDR referans kapasitesi × çalışma saati). Hedefler, kapasite ve
-            takvim Yönetim&apos;den değiştirilir. <Link href="/uretim/oee" className="underline-offset-2 hover:underline">OEE raporu</Link>
+            takvim Yönetim&apos;den değiştirilir. <Link href="/uretim/oee" className="underline-offset-2 hover:underline">OEE raporu</Link> ·{" "}
+            <Link href="/uretim/fire" className="underline-offset-2 hover:underline">Fire raporu</Link>
           </p>
         </>
       )}

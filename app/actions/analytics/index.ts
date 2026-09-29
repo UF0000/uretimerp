@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { materialFamily } from "@/lib/material-family";
+import { inChunks, readAll } from "@/lib/supabase/read-all";
 import {
   computeProductionAnalytics,
   type AnalyticsEntry,
@@ -20,44 +21,37 @@ export interface AnalyticsFilters {
   rawMaterialId?: string;
 }
 
-/** Büyük id listelerini URL sınırına takılmadan parça parça sorgular. */
-async function inChunks<T>(ids: string[], size: number, run: (chunk: string[]) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>) {
-  const out: T[] = [];
-  for (let i = 0; i < ids.length; i += size) {
-    const { data, error } = await run(ids.slice(i, i + size));
-    if (error) throw new Error(error.message);
-    out.push(...(data ?? []));
-  }
-  return out;
-}
-
 export async function getProductionAnalytics(filters: AnalyticsFilters) {
   const supabase = await createClient();
 
-  let query = supabase
-    .from("v_production_analytics")
-    .select("*")
-    .eq("production_type", filters.lineType)
-    .gte("day", filters.from)
-    .lte("day", filters.to)
-    .order("entry_time");
-  if (filters.lineId) query = query.eq("line_id", filters.lineId);
-  if (filters.shift) query = query.eq("shift", filters.shift);
-  if (filters.productId) query = query.eq("product_id", filters.productId);
-  if (filters.workOrderId) query = query.eq("work_order_id", filters.workOrderId);
+  // Girişler 1.000 satırı aşabilir: sayfa sayfa okunur
+  const entriesPage = (from: number, to: number) => {
+    let query = supabase
+      .from("v_production_analytics")
+      .select("*")
+      .eq("production_type", filters.lineType)
+      .gte("day", filters.from)
+      .lte("day", filters.to)
+      .order("entry_time")
+      .order("entry_id")
+      .range(from, to);
+    if (filters.lineId) query = query.eq("line_id", filters.lineId);
+    if (filters.shift) query = query.eq("shift", filters.shift);
+    if (filters.productId) query = query.eq("product_id", filters.productId);
+    if (filters.workOrderId) query = query.eq("work_order_id", filters.workOrderId);
+    return query;
+  };
 
-  const [entriesRes, linesRes, reasonsRes, paramsRes, hoursRes] = await Promise.all([
-    query,
+  const [rows, linesRes, reasonsRes, paramsRes, hoursRes] = await Promise.all([
+    readAll(entriesPage, "Analiz verileri getirilirken hata oluştu"),
     supabase.from("production_lines").select("id, code, name, line_type").eq("line_type", filters.lineType).order("code"),
     supabase.from("reason_codes").select("id, code, label"),
     supabase.from("cost_parameters").select("target_scrap_pct, overweight_tolerance_pct, target_oee_pct").limit(1).maybeSingle(),
     supabase.rpc("available_hours", { p_from: filters.from, p_to: filters.to }),
   ]);
-  if (entriesRes.error) throw new Error("Analiz verileri getirilirken hata oluştu: " + entriesRes.error.message);
   if (linesRes.error) throw new Error("Hatlar getirilirken hata oluştu: " + linesRes.error.message);
   if (hoursRes.error) throw new Error("Çalışma takvimi getirilirken hata oluştu: " + hoursRes.error.message);
 
-  const rows = entriesRes.data;
   const entryIds = rows.map((r) => r.entry_id!).filter(Boolean);
 
   // İdeal süre (OEE performansı) ve stok hareketleri (tüketilen hammadde, fire hedefi)

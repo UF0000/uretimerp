@@ -121,7 +121,9 @@ supabase/
 
 **Faz 4 — Sağlamlaştırma**
 - [x] İzlenebilirlik `/depo/izlenebilirlik`: lot → iş emri/vardiya/tüketilen hammadde; vardiya girişinde reçine lotu seçilirse kesin (`p_raw_lots`, `v_stock_lot`), seçilmezse "olası lotlar"; hammadde lotundan üretilen lotlar (geri çağırma)
-- [~] Dashboard var — fire raporu OEE sayfasındaki fire Pareto ile sınırlı
+- [x] Dashboard + fire raporu `/uretim/fire` (hesap `lib/scrap-report.ts`): trend, neden Pareto'su (%80), makine/ürün/vardiya/operatör kırılımı, regrind geri kazanımı/kayıp, nedeni girilmemiş fire; panelde bu ayın fire kartı
+- [x] Eksik veri listesi `/ana-veri/eksik-veri` (`lib/data-quality.ts`): hesapları etkileyen reçete/ürün/kalıp/makine/hammadde/depo/kur boşlukları, önem + etkilediği hesap + düzeltme yeri
+- Büyük sorgular `lib/supabase/read-all.ts` (`readAll`/`inChunks`) ile okunur — PostgREST 1.000 satır sınırı
 - [x] RLS gözden geçirme: rol bazlı politikalar (`lib/permissions.ts` ile aynı), arayüzde rol bazlı gizleme
 - [x] Yönetim: kullanıcı rol/aktiflik (son aktif yönetici DB'de korunur), parametreler (maliyet, kur, vardiya süresi), Excel yedeği (22 tablo)
 - [x] Kapasite (Yönetim sekmeleri): makine kapasitesi tarihli (`line_capacities`, yeni dönem eskisini otomatik bitirir, çakışma DB'de engellenir), referans kapasite grup×çap×SDR×yıl (`reference_capacities`, analizde onaylı en güncel yıl), takvim (`cost_parameters.weekly_off_days` + `calendar_holidays`); ürün kartında `material_group`/`diameter_mm`/`sdr`. `day_shift_start`/`night_shift_start` şemada var, henüz kullanılmıyor

@@ -1,9 +1,13 @@
 import { Metadata } from "next";
-import { Factory, ShoppingCart, TrendingUp, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import { Factory, ShoppingCart, TrendingUp, AlertTriangle, Flame } from "lucide-react";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 
 import { getDashboardMetrics } from "@/app/actions/dashboard";
+import { getScrapSummary } from "@/app/actions/scrap";
+import { formatTR } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductionChart } from "./components/production-chart";
@@ -14,7 +18,8 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardPage() {
-  const { metrics, productionTrend, recentCompletedOrders } = await getDashboardMetrics();
+  const [{ metrics, productionTrend, recentCompletedOrders }, scrap] = await Promise.all([getDashboardMetrics(), getScrapSummary()]);
+  const scrapOver = scrap.scrapPct !== null && scrap.scrapPct * 100 > scrap.targetScrapPct;
 
   return (
     <div className="space-y-6">
@@ -71,6 +76,34 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Link href="/uretim/fire" className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <Card className="transition-colors hover:bg-muted/40">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Bu Ay Fire</CardTitle>
+            <Flame className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="flex flex-wrap items-end gap-x-8 gap-y-2">
+            <div>
+              <div className={cn("text-2xl font-bold tabular-nums", scrap.scrapPct === null ? "" : scrapOver ? "text-danger" : "text-success")}>
+                {scrap.scrapPct === null ? "—" : `%${formatTR(scrap.scrapPct * 100, 2)}`}
+              </div>
+              <p className="text-xs text-muted-foreground">hedef ≤ %{formatTR(scrap.targetScrapPct, 1)}</p>
+            </div>
+            <div>
+              <div className="text-lg font-semibold tabular-nums">{formatTR(scrap.scrapKg, 0)} kg</div>
+              <p className="text-xs text-muted-foreground">toplam fire · {formatTR(scrap.lostKg, 0)} kg kayıp</p>
+            </div>
+            <div className="min-w-0">
+              <div className="truncate text-lg font-semibold">{scrap.topReason?.label ?? "—"}</div>
+              <p className="text-xs text-muted-foreground">
+                en büyük neden{scrap.topReason ? ` · %${formatTR(scrap.topReason.share * 100, 0)}` : ""}
+              </p>
+            </div>
+            <span className="ml-auto text-xs text-primary">Fire raporu →</span>
+          </CardContent>
+        </Card>
+      </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Grafik Bölümü (Sol - 2 Sütun) */}

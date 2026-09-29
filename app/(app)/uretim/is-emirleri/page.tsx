@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { BarChart3, Gauge } from "lucide-react";
+import { BarChart3, Flame, Gauge } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { getWorkOrders } from "@/app/actions/work-orders";
 import { getProducts } from "@/app/actions/master-data/products";
@@ -42,6 +42,10 @@ export default async function WorkOrdersPage() {
             <Link href="/uretim/oee" className={buttonVariants({ variant: "outline" })}>
               <Gauge className="mr-2 h-4 w-4" />
               OEE Raporu
+            </Link>
+            <Link href="/uretim/fire" className={buttonVariants({ variant: "outline" })}>
+              <Flame className="mr-2 h-4 w-4" />
+              Fire Raporu
             </Link>
           </>
         }
