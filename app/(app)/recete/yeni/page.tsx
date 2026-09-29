@@ -10,7 +10,8 @@ export const metadata: Metadata = {
   description: "Sisteme yeni bir üretim reçetesi ekle",
 };
 
-export default async function NewBomPage() {
+export default async function NewBomPage(props: { searchParams: Promise<{ urun?: string }> }) {
+  const { urun } = await props.searchParams;
   await requirePermission("master-data:write");
   const [products, lines, molds] = await Promise.all([
     getProducts(),
@@ -29,6 +30,7 @@ export default async function NewBomPage() {
         products={products} 
         lines={lines} 
         molds={molds} 
+        defaultProductId={urun}
       />
     </div>
   );

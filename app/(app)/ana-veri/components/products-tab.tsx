@@ -18,6 +18,7 @@ import { CATEGORY_LABELS, PRODUCT_TYPE_BADGE, PRODUCT_TYPE_LABELS, PRODUCT_TYPES
 import type { ExcelRow } from "@/lib/excel";
 import type { Tables } from "@/lib/supabase/database.types";
 import { formatTR } from "@/lib/format";
+import { matchesTokens, searchTokens } from "@/lib/search";
 import { ProductForm } from "./product-form";
 import { ExcelImportButton } from "./excel-import-button";
 import { getErrorMessage } from "@/lib/utils";
@@ -53,11 +54,10 @@ export function ProductsTab({ data, groups }: ProductsTabProps) {
   const materialGroups = useMemo(() => distinct((p) => p.material_group), [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => {
-    const needle = q.trim().toLocaleLowerCase("tr");
+    const tokens = searchTokens(q);
     return data.filter(
       (p) =>
-        (!needle ||
-          [p.code, p.name, p.group_code, p.variant_code, p.material_grade].some((v) => v?.toLocaleLowerCase("tr").includes(needle))) &&
+        matchesTokens(tokens, p.code, p.name, p.group_code, p.variant_code, p.material_grade, p.material_group, p.description, p.barcode) &&
         (!type || p.type === type) &&
         (!category || p.category === category) &&
         (!groupCode || p.group_code === groupCode) &&
@@ -233,7 +233,7 @@ F-01\tBoru Firesi\tscrap\tkg\tFire\t\t0\t0\t0`;
       <div className="grid grid-cols-2 gap-2 rounded-md border border-border bg-muted/30 p-3 md:grid-cols-3 xl:grid-cols-7">
         <div className="relative col-span-2 md:col-span-3 xl:col-span-2">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Kod, ad, grup veya genel kod ara…" className="pl-9" />
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ara: kelimeler ayrı ayrı aranır (ör. henq sdr 6)" className="pl-9" />
         </div>
         <SearchableSelect
           value={type}

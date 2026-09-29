@@ -62,7 +62,7 @@ export default async function TraceabilityPage(props: { searchParams: Promise<{ 
       <Card>
         <CardContent className="space-y-3 pt-6">
           <form className="flex gap-2" action="/depo/izlenebilirlik">
-            <Input name="lot" defaultValue={query} placeholder="Lot no, örn. L260929-IE-001-1" className="max-w-md" />
+            <Input key={query} name="lot" defaultValue={query} placeholder="Lot no, örn. L260929-IE-001-1" className="max-w-md" />
             <Button type="submit">
               <Search className="mr-2 h-4 w-4" />
               Lotu izle

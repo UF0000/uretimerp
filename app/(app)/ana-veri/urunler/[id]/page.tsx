@@ -127,7 +127,7 @@ export default async function ProductDetailPage(props: { params: Promise<{ id: s
       </Card>
 
       {/* ── Bölümler ── */}
-      <Tabs defaultValue={tab} className="w-full">
+      <Tabs key={tab} defaultValue={tab} className="w-full">
         <TabsList className="mb-4 max-w-full justify-start overflow-x-auto">
           <TabsTrigger value="stok">Stok</TabsTrigger>
           <TabsTrigger value="teknik">Teknik</TabsTrigger>

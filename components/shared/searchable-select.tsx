@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { matchesTokens, searchTokens } from "@/lib/search";
 
 interface Option {
   value: string;
@@ -31,10 +32,9 @@ export function SearchableSelect({
 }: SearchableSelectProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredOptions = options.filter(opt => {
-    const term = searchTerm.toLowerCase();
-    return opt.label.toLowerCase().includes(term) || opt.searchString?.toLowerCase().includes(term);
-  });
+  // Kelime kelime arama (sıra önemsiz): "henq sdr 6"
+  const tokens = searchTokens(searchTerm);
+  const filteredOptions = options.filter((opt) => matchesTokens(tokens, opt.label, opt.searchString));
 
   const selectedLabel = options.find(o => o.value === value)?.label || placeholder;
 

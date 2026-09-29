@@ -14,6 +14,7 @@ import type { StockOverviewRow } from "@/app/actions/stock";
 import { usePermission } from "@/components/shared/role-provider";
 import { CATEGORY_LABELS, PRODUCT_TYPE_LABELS, PRODUCT_TYPES, categoryLabel, type ProductType } from "@/lib/product-meta";
 import { formatTR } from "@/lib/format";
+import { matchesTokens, searchTokens } from "@/lib/search";
 import { cn } from "@/lib/utils";
 
 interface StockTableProps {
@@ -62,10 +63,10 @@ export function StockTable({ data, warehouses, groups }: StockTableProps) {
 
   // Depo dışındaki filtrelerden geçen satırlar (depo düğmelerindeki sayılar bunlara göre)
   const baseFiltered = useMemo(() => {
-    const needle = q.trim().toLocaleLowerCase("tr");
+    const tokens = searchTokens(q);
     return data.filter((r) => {
       const p = r.product;
-      if (needle && ![p.code, p.name, p.group_code].some((v) => v?.toLocaleLowerCase("tr").includes(needle))) return false;
+      if (!matchesTokens(tokens, p.code, p.name, p.group_code, p.material_group, r.warehouse?.name)) return false;
       if (type && p.type !== type) return false;
       if (category && p.category !== category) return false;
       if (groupCode && p.group_code !== groupCode) return false;
@@ -202,7 +203,7 @@ export function StockTable({ data, warehouses, groups }: StockTableProps) {
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
           <div className="relative col-span-2 md:col-span-3 xl:col-span-2">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Kod, ad veya grup kodu ara…" className="pl-9" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ara: kelimeler ayrı ayrı aranır (ör. henq sdr 6)" className="pl-9" />
           </div>
           <SearchableSelect value={type} onValueChange={setType} placeholder="Tüm türler" options={[{ value: ALL, label: "Tüm türler" }, ...PRODUCT_TYPES.map((t) => ({ value: t, label: PRODUCT_TYPE_LABELS[t] }))]} />
           <SearchableSelect value={category} onValueChange={setCategory} placeholder="Tüm aileler" options={[{ value: ALL, label: "Tüm aileler" }, ...Object.entries(CATEGORY_LABELS).map(([k, v]) => ({ value: k, label: v }))]} />

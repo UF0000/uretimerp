@@ -281,14 +281,13 @@ export async function searchProductsForVariant(q: string) {
   const term = q.trim();
   if (term.length < 2) return [];
   const supabase = await createClient();
-  const safe = term.replace(/[%,()]/g, " ");
-  const { data, error } = await supabase
-    .from("products")
-    .select("id, code, name, variant_code")
-    .eq("active", true)
-    .or(`code.ilike.%${safe}%,name.ilike.%${safe}%`)
-    .order("code")
-    .limit(20);
+  // Her kelime kodda ya da adda geçmeli (sıra önemsiz); birden çok .or() VE ile birleşir
+  let query = supabase.from("products").select("id, code, name, variant_code").eq("active", true);
+  for (const word of term.split(/\s+/).filter(Boolean).slice(0, 6)) {
+    const safe = word.replace(/[%,()*\\]/g, "");
+    if (safe) query = query.or(`code.ilike.%${safe}%,name.ilike.%${safe}%`);
+  }
+  const { data, error } = await query.order("code").limit(20);
   if (error) throw new Error(error.message);
   return data;
 }

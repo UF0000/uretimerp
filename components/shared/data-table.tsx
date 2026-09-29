@@ -27,10 +27,12 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { useColumnWidths } from "./use-column-widths";
+import { normalizeSearch, recordText, searchTokens } from "@/lib/search";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  /** Verilirse arama kutusu gösterilir; arama satırdaki tüm alanlarda kelime kelime yapılır */
   searchKey?: string;
   searchPlaceholder?: string;
   onDeleteSelected?: (ids: string[]) => void;
@@ -69,6 +71,22 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  // Arama: satırdaki tüm metinlerde, kelime kelime (bkz. lib/search.ts)
+  const [search, setSearch] = React.useState("");
+  const searchIndex = React.useMemo(() => new WeakMap<object, string>(), []);
+  const searched = React.useMemo(() => {
+    const tokens = searchTokens(search);
+    if (!tokens.length) return data;
+    return data.filter((row) => {
+      const key = row as object;
+      let text = searchIndex.get(key);
+      if (text === undefined) {
+        text = normalizeSearch(recordText(row));
+        searchIndex.set(key, text);
+      }
+      return tokens.every((t) => text!.includes(t));
+    });
+  }, [data, search, searchIndex]);
   const [rowSelection, setRowSelection] = React.useState({});
 
   // Eğer toplu silme fonksiyonu verildiyse Checkbox sütununu başa ekle
@@ -99,7 +117,7 @@ export function DataTable<TData, TValue>({
   }, [columns, onDeleteSelected]);
 
   const table = useReactTable({
-    data,
+    data: searched,
     columns: finalColumns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -120,9 +138,9 @@ export function DataTable<TData, TValue>({
 
   // Kaydırmalı liste: veri (filtre) değişince baştan; son satıra yaklaşınca 100 satır daha
   const [limit, setLimit] = React.useState(SCROLL_STEP);
-  const [limitFor, setLimitFor] = React.useState(data);
-  if (limitFor !== data) {
-    setLimitFor(data);
+  const [limitFor, setLimitFor] = React.useState(searched);
+  if (limitFor !== searched) {
+    setLimitFor(searched);
     setLimit(SCROLL_STEP);
   }
   const allRows = table.getRowModel().rows;
@@ -168,10 +186,8 @@ export function DataTable<TData, TValue>({
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={searchPlaceholder}
-              value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
-              onChange={(event) =>
-                table.getColumn(searchKey)?.setFilterValue(event.target.value)
-              }
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
               className="pl-9"
             />
           </div>

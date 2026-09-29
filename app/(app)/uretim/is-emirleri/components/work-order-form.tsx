@@ -3,13 +3,15 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, FilePlus2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { WorkOrderFormValues, WorkOrderFormInput, workOrderSchema } from "@/lib/validations/work-orders";
 import { saveWorkOrder } from "@/app/actions/work-orders";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { usePermission } from "@/components/shared/role-provider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -34,6 +36,7 @@ interface WorkOrderFormProps {
 }
 
 export function WorkOrderForm({ products, boms, lines, molds, orders }: WorkOrderFormProps) {
+  const canCreateBom = usePermission("master-data:write");
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -149,6 +152,15 @@ export function WorkOrderForm({ products, boms, lines, molds, orders }: WorkOrde
                 </SelectContent>
               </Select>
               {errors.bom_id && <p className="text-xs text-danger">{errors.bom_id.message}</p>}
+              {selectedProductId && filteredBoms.length === 0 &&
+                (canCreateBom ? (
+                  <Link href={`/recete/yeni?urun=${selectedProductId}`} className={buttonVariants({ variant: "outline", size: "sm", className: "w-full" })}>
+                    <FilePlus2 className="mr-1.5 h-4 w-4" />
+                    Bu ürün için reçete oluştur
+                  </Link>
+                ) : (
+                  <p className="text-xs text-warning">Bu ürünün reçetesi yok; reçeteyi yönetici açmalı.</p>
+                ))}
             </div>
 
             <div className="space-y-2">

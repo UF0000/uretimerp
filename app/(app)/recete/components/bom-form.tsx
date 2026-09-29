@@ -40,9 +40,13 @@ interface BomFormProps {
     sprue_weight_g: number | null;
     product_weight_g: number | null;
   }[];
+  /** Yeni reçetede önceden seçili ürün (ör. iş emri ekranından "Reçete oluştur") */
+  defaultProductId?: string;
 }
 
-export function BomForm({ initialData, products, lines, molds }: BomFormProps) {
+export function BomForm({ initialData, products, lines, molds, defaultProductId }: BomFormProps) {
+  const presetProduct = !initialData && defaultProductId ? products.find((p) => p.id === defaultProductId) : undefined;
+  const presetMold = presetProduct ? molds.find((m) => m.product_id === presetProduct.id) : undefined;
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -65,9 +69,9 @@ export function BomForm({ initialData, products, lines, molds }: BomFormProps) {
     defaultValues: initialData
       ? { ...initialData, extrusion: initialData.extrusion ? { ...initialData.extrusion, target_m_per_hour: mPerHourToMin(initialData.extrusion.target_m_per_hour) } : initialData.extrusion }
       : {
-      product_id: "",
+      product_id: presetProduct?.id ?? "",
       code: "",
-      name: "",
+      name: presetProduct?.name ?? "",
       version: 1,
       active: true,
       production_type: "extrusion",
@@ -75,7 +79,15 @@ export function BomForm({ initialData, products, lines, molds }: BomFormProps) {
       notes: "",
       items: [{ component_product_id: "", quantity: 0, unit: "kg", ratio_pct: 100 }],
       extrusion: { line_id: "", kg_per_meter: 0, scrap_pct: 0 },
-      injection: { mold_id: "", cavity_count: 1, cycle_time_sec: 10, runner_sprue_weight_g: 0 },
+      injection: presetMold
+        ? {
+            mold_id: presetMold.id,
+            cavity_count: presetMold.cavity_count ?? 1,
+            cycle_time_sec: presetMold.cycle_time_sec ?? 10,
+            runner_sprue_weight_g: presetMold.sprue_weight_g ?? 0,
+            product_weight_g: presetMold.product_weight_g ?? undefined,
+          }
+        : { mold_id: "", cavity_count: 1, cycle_time_sec: 10, runner_sprue_weight_g: 0 },
     },
   });
 
