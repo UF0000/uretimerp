@@ -38,6 +38,9 @@ export async function saveProduct(data: ProductFormValues) {
         unit: payload.unit,
         category: payload.category || null,
         material_grade: payload.material_grade || null,
+        material_group: payload.material_group ? payload.material_group.toUpperCase() : null,
+        diameter_mm: payload.diameter_mm ?? null,
+        sdr: payload.sdr ?? null,
         min_stock: payload.min_stock,
         critical_stock: payload.critical_stock,
       })
@@ -54,6 +57,9 @@ export async function saveProduct(data: ProductFormValues) {
         unit: payload.unit,
         category: payload.category || null,
         material_grade: payload.material_grade || null,
+        material_group: payload.material_group ? payload.material_group.toUpperCase() : null,
+        diameter_mm: payload.diameter_mm ?? null,
+        sdr: payload.sdr ?? null,
         min_stock: payload.min_stock,
         critical_stock: payload.critical_stock,
       }]);

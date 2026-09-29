@@ -59,12 +59,16 @@ export function ProductForm({
       unit: "adet",
       category: "",
       material_grade: "",
+      material_group: "",
+      diameter_mm: null,
+      sdr: null,
       min_stock: 0,
       critical_stock: 0,
     },
   });
 
   const watchType = watch("type");
+  const numberOrNull = (v: string) => (v === "" || v === null ? null : Number(v));
 
   const onSubmit = async (data: ProductFormValues) => {
     try {
@@ -214,6 +218,38 @@ export function ProductForm({
               </div>
             )}
           </div>
+
+          {(watchType === "finished" || watchType === "semi") && (
+            <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="material_group">Malzeme grubu</Label>
+                  <Input id="material_group" list="product-material-groups" placeholder="Örn: PE" {...register("material_group")} />
+                  <datalist id="product-material-groups">
+                    <option value="PE" />
+                    <option value="PP/PPR" />
+                  </datalist>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="diameter_mm">Çap (mm)</Label>
+                  <Input
+                    id="diameter_mm"
+                    type="number"
+                    step="any"
+                    {...register("diameter_mm", { setValueAs: numberOrNull })}
+                    className={errors.diameter_mm ? "border-danger" : ""}
+                  />
+                  {errors.diameter_mm && <p className="text-xs text-danger">{errors.diameter_mm.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sdr">SDR</Label>
+                  <Input id="sdr" type="number" step="any" {...register("sdr", { setValueAs: numberOrNull })} className={errors.sdr ? "border-danger" : ""} />
+                  {errors.sdr && <p className="text-xs text-danger">{errors.sdr.message}</p>}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">Borularda üretim analizindeki referans kapasite eşleşmesi için.</p>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

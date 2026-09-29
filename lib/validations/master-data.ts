@@ -8,6 +8,10 @@ export const productSchema = z.object({
   unit: z.enum(["adet", "kg", "metre"]),
   category: z.string().optional().nullable(),
   material_grade: z.string().optional().nullable(),
+  /** Boru boyutu: referans kapasite eşleşmesi (grup × çap × SDR) için */
+  material_group: z.string().trim().optional().nullable(),
+  diameter_mm: z.number().positive("Çap 0'dan büyük olmalıdır").optional().nullable(),
+  sdr: z.number().positive("SDR 0'dan büyük olmalıdır").optional().nullable(),
   min_stock: z.number().min(0),
   critical_stock: z.number().default(0),
   unit_cost: z.number().optional().default(0),

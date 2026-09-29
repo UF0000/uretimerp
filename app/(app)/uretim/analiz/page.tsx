@@ -122,6 +122,7 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
   const isExtrusion = lineType === "extrusion";
   const families = [...new Set(a.shifts.flatMap((s) => Object.keys(s.materialsKg)))];
   const shiftName = { day: "Gündüz", night: "Gece" } as const;
+  const lineCount = a.capacity.linesWithCapacity + a.capacity.linesWithoutCapacity;
 
   const exportSheets = [
     {
@@ -138,6 +139,7 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
         { Gösterge: "NŞA kapasite (kg)", Değer: a.capacity.nsaCapacityKg },
         { Gösterge: "Kapasite verimi (%)", Değer: a.capacity.capacityEfficiency === null ? null : a.capacity.capacityEfficiency * 100 },
         { Gösterge: "Zaman kullanımı (%)", Değer: a.capacity.timeUtilization === null ? null : a.capacity.timeUtilization * 100 },
+        { Gösterge: "Referansa göre hız (%)", Değer: t.speedPerformance === null ? null : t.speedPerformance * 100 },
         { Gösterge: "Çalışma (saat)", Değer: t.runHours },
         { Gösterge: "Duruş (saat)", Değer: t.downtimeHours },
       ],
@@ -168,6 +170,7 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
         "Fire (%)": w.scrapPct === null ? null : w.scrapPct * 100,
         "Overweight (%)": w.overweightPct === null ? null : w.overweightPct * 100,
         "OEE (%)": w.oee === null ? null : w.oee * 100,
+        "Referansa göre hız (%)": w.speedPerformance === null ? null : w.speedPerformance * 100,
         "Hedef dışı": w.outOfTarget ? "Evet" : "Hayır",
       })),
     },
@@ -215,21 +218,27 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
             </div>
           </Section>
 
-          <Section title="Kapasite ve süre özeti" description="Hat saatlik kapasitesine göre verim, zaman kullanımı ve beklenen üretim">
+          <Section title="Kapasite ve süre özeti" description="Makine kapasitesi ve çalışma takvimine göre verim, zaman kullanımı ve beklenen üretim">
             {a.capacity.linesWithCapacity === 0 ? (
               <p className="flex items-start gap-2 rounded-md border border-border p-3 text-sm text-muted-foreground">
                 <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                Hatlarda saatlik kapasite (kg/saat) girilmemiş. Ana Veri → Kalıp &amp; Hatlar&apos;dan her makinenin kapasitesini girin;
-                kapasite verimi, zaman kullanımı ve beklenen üretim buna göre hesaplanır.
+                Bu dönemde geçerli makine kapasitesi (kg/saat) yok. Yönetim → Makine Kapasitesi&apos;nden her makinenin kapasitesini
+                girin; kapasite verimi, zaman kullanımı ve beklenen üretim buna göre hesaplanır.
               </p>
             ) : (
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-5">
                 <Kpi title="Makine-saat ağırlıklı kapasite" value={a.capacity.weightedCapacityKgPerHour === null ? "—" : `${formatTR(a.capacity.weightedCapacityKgPerHour, 1)} kg/sa`} />
-                <Kpi title="Makine bazlı NŞA kapasite" value={kg(a.capacity.nsaCapacityKg)} hint={`${a.capacity.linesWithCapacity} makine × ${days * 24} saat`} />
+                <Kpi title="Makine bazlı NŞA kapasite" value={kg(a.capacity.nsaCapacityKg)} hint={`${a.capacity.linesWithCapacity} makine × ${formatTR(lineCount ? a.capacity.availableLineHours / lineCount : 0, 0)} kullanılabilir saat`} />
                 <Kpi title="Kapasite verimi" value={pct(a.capacity.capacityEfficiency)} hint="tüketim / NŞA kapasite" />
                 <Kpi title="Aktif sürede kapasite" value={pct(a.capacity.activeCapacityPct)} hint="çalışılan sürede" />
-                <Kpi title="Zaman kullanımı" value={pct(a.capacity.timeUtilization)} hint="çalışma / takvim süresi" />
-                <Kpi title="Hız performansı" value={pct(t.performance)} hint="ideal / gerçek çalışma süresi" />
+                <Kpi title="Zaman kullanımı" value={pct(a.capacity.timeUtilization)} hint="çalışma / kullanılabilir süre" />
+                <Kpi title="OEE performansı" value={pct(t.performance)} hint="ideal / gerçek çalışma süresi" />
+                <Kpi
+                  title="Referansa göre hız"
+                  value={pct(t.speedPerformance)}
+                  hint={t.speedPerformance === null ? "referans kapasite yok (Yönetim)" : `girişlerin ${pct(t.referenceCoverage, 0)}'inde referans var`}
+                />
+                <Kpi title="Referansa göre beklenen" value={kg(t.referenceExpectedKg)} hint="referans × çalışma saati" />
                 <Kpi title="Fiili sürede beklenen" value={kg(a.capacity.expectedKg)} hint="kapasite × çalışma saati" />
                 <Kpi title="Çalışma / duruş" value={`${formatTR(t.runHours, 1)} / ${formatTR(t.downtimeHours, 1)} sa`} />
               </div>
@@ -423,7 +432,7 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
                 <table className="w-full text-sm">
                   <thead className="text-left text-muted-foreground">
                     <tr className="border-b border-border">
-                      {["Üretim emri", "Ürün", "Tüketim (kg)", "Sağlam (kg)", "Verim", "Fire", "Overweight", "OEE"].map((h, i) => (
+                      {["Üretim emri", "Ürün", "Tüketim (kg)", "Sağlam (kg)", "Verim", "Fire", "Overweight", "OEE", "Ref. hız"].map((h, i) => (
                         <th key={h} className={cn("px-3 py-2 font-medium", i > 1 && "text-right")}>{h}</th>
                       ))}
                     </tr>
@@ -445,6 +454,7 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
                         <td className={cn("px-3 py-2 text-right tabular-nums", STATUS_TEXT[statusOf(w.scrapPct === null ? null : w.scrapPct * 100, tg.scrapPct)])}>{pct(w.scrapPct, 2)}</td>
                         <td className={cn("px-3 py-2 text-right tabular-nums", w.overweightPct !== null && STATUS_TEXT[statusOf(Math.abs(w.overweightPct * 100), tg.overweightTolerancePct)])}>{pct(w.overweightPct, 2)}</td>
                         <td className="px-3 py-2 text-right tabular-nums">{pct(w.oee, 1)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{pct(w.speedPerformance, 1)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -454,9 +464,10 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
           </Section>
 
           <p className="text-xs text-muted-foreground">
-            Hesaplar: sağlam = hammadde − fire; overweight = sağlam / (üretilen × reçete birim ağırlığı) − 1; NŞA kapasite = makine
-            kapasitesi × takvim saati; zaman kullanımı = (vardiya süresi − duruş) / takvim saati. Hedefler Yönetim → Parametreler&apos;den
-            değiştirilir. <Link href="/uretim/oee" className="underline-offset-2 hover:underline">OEE raporu</Link>
+            Hesaplar: sağlam = hammadde − fire; overweight = sağlam / (üretilen × reçete birim ağırlığı) − 1; NŞA kapasite = Σ gün (o gün
+            geçerli makine kapasitesi × kullanılabilir saat; tatil ve kapalı günler düşülür); zaman kullanımı = (vardiya süresi − duruş) /
+            kullanılabilir saat; referansa göre hız = tüketim / (grup·çap·SDR referans kapasitesi × çalışma saati). Hedefler, kapasite ve
+            takvim Yönetim&apos;den değiştirilir. <Link href="/uretim/oee" className="underline-offset-2 hover:underline">OEE raporu</Link>
           </p>
         </>
       )}
