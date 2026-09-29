@@ -1,0 +1,31 @@
+-- Grup kodu adları — kaynak: "Stok Kodları.xlsx" → KIRILIM sayfası.
+-- Kod, PE stok kodunun son iki hanesidir (D.110.000.04 → 04). Excel listesi esas alınır.
+INSERT INTO product_groups (code, name) VALUES
+  ('01', 'Boru'),
+  ('02', 'HDPE süzgeç'),
+  ('03', 'Paslanmaz süzgeç'),
+  ('04', '45° dirsek'),
+  ('05', '88,5° dirsek'),
+  ('06', '90° dirsek'),
+  ('07', '45° çatal'),
+  ('08', '90° çatal'),
+  ('09', 'Redüksiyon'),
+  ('10', 'Konsantrik redüksiyon'),
+  ('11', 'Manşon'),
+  ('12', 'Kelepçe'),
+  ('13', 'Askılama sistemi'),
+  ('14', 'Genleşme soketi'),
+  ('15', 'Temizleme kapağı'),
+  ('16', 'Closing and inspection cap'),
+  ('17', 'Stuffing box fitt. round thread'),
+  ('18', 'Muf'),
+  ('19', 'Stoper'),
+  ('20', 'Yalıtım grubu'),
+  ('21', 'Manşon grubu yarı mamül'),
+  ('22', 'Hidrant grubu ek parçalar'),
+  ('23', 'Süzgeç grubu yarı mamüller'),
+  ('24', 'PP boru'),
+  ('25', 'PP fittings'),
+  ('26', 'Multilayer boru'),
+  ('27', 'Hammaddeler')
+ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name;
