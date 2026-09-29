@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getErrorMessage } from "@/lib/utils";
+import { BOX_TYPES, findBoxType } from "@/lib/packaging";
 
 interface ProductFormProps {
   open: boolean;
@@ -38,6 +39,8 @@ const EMPTY: ProductFormInput = {
   group_code: "",
   variant_code: "",
   description: "",
+  bag_type: "",
+  bag_qty: null,
   package_type: "",
   package_qty: null,
   pallet_qty: null,
@@ -69,7 +72,9 @@ export function ProductForm({ open, onOpenChange, initialData, groups }: Product
     defaultValues: initialData || EMPTY,
   });
 
-  const [type, unit, category, code] = useWatch({ control, name: ["type", "unit", "category", "code"] });
+  const [type, unit, category, code, packageType] = useWatch({ control, name: ["type", "unit", "category", "code", "package_type"] });
+  const unitShort = unit === "metre" ? "m" : unit;
+  const boxType = findBoxType(packageType);
   const isMaterial = type === "raw" || type === "regrind" || type === "scrap";
   const hasDimensions = category === "boru" || category === "baglanti_parcasi" || type === "finished" || type === "semi";
   const suggestedGroup = code ? groupCodeFromCode(code) : null;
@@ -228,23 +233,50 @@ export function ProductForm({ open, onOpenChange, initialData, groups }: Product
           <SectionTitle>Paketleme</SectionTitle>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="package_type">Paket tipi</Label>
-              <Input id="package_type" list="package-types" placeholder="Koli, torba, demet…" {...register("package_type")} />
-              <datalist id="package-types">
-                <option value="Koli" />
-                <option value="Torba" />
-                <option value="Demet" />
-                <option value="Rulo" />
-                <option value="Palet" />
+              <Label htmlFor="bag_type">İç poşet tipi</Label>
+              <Input id="bag_type" list="bag-types" placeholder="430X500, COES…" {...register("bag_type")} />
+              <datalist id="bag-types">
+                <option value="430X500" />
+                <option value="COES" />
+                <option value="170x205" />
+                <option value="260x300" />
               </datalist>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="package_qty">Paket içi miktar ({unit === "metre" ? "m" : unit})</Label>
+              <Label htmlFor="bag_qty">Poşet içi miktar ({unitShort})</Label>
+              <Input id="bag_qty" type="number" step="any" {...register("bag_qty", { setValueAs: numberOrNull })} className={errors.bag_qty ? "border-danger" : ""} />
+            </div>
+            <div className="hidden sm:block" />
+            <div className="space-y-2">
+              <Label htmlFor="package_type">Kutu / paket tipi</Label>
+              <Input id="package_type" list="package-types" placeholder="400x400x320, poşet, koli…" {...register("package_type")} />
+              <datalist id="package-types">
+                {BOX_TYPES.map((b) => (
+                  <option key={b.size} value={b.size}>
+                    {b.name}
+                  </option>
+                ))}
+                <option value="Poşet" />
+                <option value="Müşteri kutusu" />
+                <option value="Koli" />
+                <option value="Demet" />
+                <option value="Rulo" />
+              </datalist>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="package_qty">Kutu içi miktar ({unitShort})</Label>
               <Input id="package_qty" type="number" step="any" {...register("package_qty", { setValueAs: numberOrNull })} className={errors.package_qty ? "border-danger" : ""} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="pallet_qty">Palet başına paket</Label>
-              <Input id="pallet_qty" type="number" step="any" {...register("pallet_qty", { setValueAs: numberOrNull })} className={errors.pallet_qty ? "border-danger" : ""} />
+              <Label htmlFor="pallet_qty">Palet başına kutu</Label>
+              <div className="flex gap-2">
+                <Input id="pallet_qty" type="number" step="any" {...register("pallet_qty", { setValueAs: numberOrNull })} className={errors.pallet_qty ? "border-danger" : ""} />
+                {boxType && (
+                  <Button type="button" variant="outline" size="icon" title={`${boxType.name}: palete ${boxType.perPallet} kutu (${boxType.layout})`} onClick={() => setValue("pallet_qty", boxType.perPallet, { shouldDirty: true })}>
+                    <Wand2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
             {(category === "boru" || unit === "metre") && (
               <div className="space-y-2">

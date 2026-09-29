@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatTR } from "@/lib/format";
 import { PRODUCT_TYPE_BADGE, PRODUCT_TYPE_LABELS, categoryLabel, type ProductType } from "@/lib/product-meta";
 import { cn } from "@/lib/utils";
+import { findBoxType, pipesPerPackage } from "@/lib/packaging";
 import { ProductImage } from "./components/product-image";
 import { TechnicalCard } from "./components/technical-card";
 import { MovementChart } from "./components/movement-chart";
@@ -73,7 +74,10 @@ export default async function ProductDetailPage(props: { params: Promise<{ id: s
   const isFitting = p.category === "baglanti_parcasi" || t?.productionType === "injection";
   const isPurchased = type === "raw" || type === "trade" || ["hammadde", "metal", "ambalaj", "sarf_malzeme", "yedek_parca"].includes(p.category ?? "") || extras.suppliers.length > 0;
   const perPallet = p.package_qty && p.pallet_qty ? Number(p.package_qty) * Number(p.pallet_qty) : null;
-  const hasPackaging = [p.package_type, p.package_qty, p.pallet_qty, p.pipe_length_m, p.package_weight_kg, p.barcode, p.package_note].some((v) => v !== null && v !== "");
+  const hasPackaging = [p.bag_type, p.bag_qty, p.package_type, p.package_qty, p.pallet_qty, p.pipe_length_m, p.package_weight_kg, p.barcode, p.package_note].some((v) => v !== null && v !== "");
+  const boxType = findBoxType(p.package_type);
+  const bagsPerBox = p.bag_qty && p.package_qty ? Number(p.package_qty) / Number(p.bag_qty) : null;
+  const pipesPerPack = p.unit === "metre" ? pipesPerPackage(p.package_qty, p.pipe_length_m) : null;
   const tab = TABS.includes(sp.sekme as (typeof TABS)[number]) && (sp.sekme !== "tedarikciler" || isPurchased) ? sp.sekme! : "stok";
 
   const s = insights.stock;
@@ -285,9 +289,20 @@ export default async function ProductDetailPage(props: { params: Promise<{ id: s
           <Panel title="Paketleme">
             {hasPackaging ? (
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
-                <Field label="Paket tipi" value={p.package_type || "—"} />
-                <Field label="Paket içi" value={p.package_qty ? `${formatTR(Number(p.package_qty), 0)} ${unit}` : "—"} />
-                <Field label="Palet başına paket" value={p.pallet_qty ? formatTR(Number(p.pallet_qty), 0) : "—"} />
+                {(p.bag_type || p.bag_qty) && (
+                  <>
+                    <Field label="İç poşet" value={p.bag_type || "—"} />
+                    <Field label="Poşet içi" value={p.bag_qty ? `${formatTR(Number(p.bag_qty), 0)} ${unit}` : "—"} />
+                    <Field label="Kutuda poşet" value={bagsPerBox ? formatTR(bagsPerBox, bagsPerBox % 1 ? 1 : 0) : "—"} />
+                    <div className="hidden sm:block" />
+                  </>
+                )}
+                <Field label="Kutu / paket tipi" value={p.package_type ? (boxType ? `${boxType.name} (${boxType.size})` : p.package_type) : "—"} />
+                <Field
+                  label="Kutu / paket içi"
+                  value={p.package_qty ? `${formatTR(Number(p.package_qty), 0)} ${unit}${pipesPerPack ? ` (${formatTR(pipesPerPack, pipesPerPack % 1 ? 1 : 0)} boru)` : ""}` : "—"}
+                />
+                <Field label="Palet başına kutu" value={p.pallet_qty ? `${formatTR(Number(p.pallet_qty), 0)}${boxType ? ` (${boxType.layout})` : ""}` : "—"} />
                 <Field label="Palet başına miktar" value={perPallet ? `${formatTR(perPallet, 0)} ${unit}` : "—"} />
                 {(isPipe || p.pipe_length_m) && <Field label="Boy uzunluğu" value={p.pipe_length_m ? `${formatTR(Number(p.pipe_length_m), 2)} m` : "—"} />}
                 <Field label="Paket ağırlığı" value={p.package_weight_kg ? `${formatTR(Number(p.package_weight_kg), 2)} kg` : "—"} />

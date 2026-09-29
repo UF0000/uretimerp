@@ -1033,6 +1033,8 @@ export type Database = {
           pallet_qty: number | null
           pipe_length_m: number | null
           package_weight_kg: number | null
+          bag_qty: number | null
+          bag_type: string | null
           barcode: string | null
           package_note: string | null
         }
@@ -1062,6 +1064,8 @@ export type Database = {
           pallet_qty?: number | null
           pipe_length_m?: number | null
           package_weight_kg?: number | null
+          bag_qty?: number | null
+          bag_type?: string | null
           barcode?: string | null
           package_note?: string | null
         }
@@ -1091,6 +1095,8 @@ export type Database = {
           pallet_qty?: number | null
           pipe_length_m?: number | null
           package_weight_kg?: number | null
+          bag_qty?: number | null
+          bag_type?: string | null
           barcode?: string | null
           package_note?: string | null
         }

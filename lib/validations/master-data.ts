@@ -19,7 +19,9 @@ export const productSchema = z.object({
   /** Genel stok kodu: aynı kodu taşıyan ürünler birbirinin varyantıdır */
   variant_code: z.string().trim().max(60).optional().nullable(),
   description: z.string().trim().max(1000).optional().nullable(),
-  // Paketleme
+  // Paketleme: iç poşet → dış paket (kutu) → palet
+  bag_type: z.string().trim().max(40).optional().nullable(),
+  bag_qty: z.number().positive("0'dan büyük olmalıdır").optional().nullable(),
   package_type: z.string().trim().max(40).optional().nullable(),
   package_qty: z.number().positive("0'dan büyük olmalıdır").optional().nullable(),
   pallet_qty: z.number().positive("0'dan büyük olmalıdır").optional().nullable(),
