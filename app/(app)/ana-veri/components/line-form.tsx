@@ -49,7 +49,6 @@ export function LineForm({ open, onOpenChange, initialData }: LineFormProps) {
       name: "",
       head_type: "",
       line_type: "extrusion",
-      capacity_kg_per_hour: null,
       status: "active",
     },
   });
@@ -128,23 +127,6 @@ export function LineForm({ open, onOpenChange, initialData }: LineFormProps) {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="capacity_kg_per_hour">Saatlik Kapasite (kg/saat)</Label>
-            <Input
-              id="capacity_kg_per_hour"
-              type="number"
-              step="0.1"
-              placeholder="Örn: 345"
-              {...register("capacity_kg_per_hour", { setValueAs: (v: string) => (v === "" || v === null ? null : Number(v)) })}
-              className={errors.capacity_kg_per_hour ? "border-danger" : ""}
-            />
-            {errors.capacity_kg_per_hour ? (
-              <p className="text-xs text-danger">{errors.capacity_kg_per_hour.message}</p>
-            ) : (
-              <p className="text-xs text-muted-foreground">Üretim analizinde kapasite verimi ve zaman kullanımı için.</p>
-            )}
           </div>
 
           <div className="space-y-2">

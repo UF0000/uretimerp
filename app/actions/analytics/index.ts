@@ -46,14 +46,16 @@ export async function getProductionAnalytics(filters: AnalyticsFilters) {
   if (filters.productId) query = query.eq("product_id", filters.productId);
   if (filters.workOrderId) query = query.eq("work_order_id", filters.workOrderId);
 
-  const [entriesRes, linesRes, reasonsRes, paramsRes] = await Promise.all([
+  const [entriesRes, linesRes, reasonsRes, paramsRes, hoursRes] = await Promise.all([
     query,
-    supabase.from("production_lines").select("id, code, name, capacity_kg_per_hour, line_type").eq("line_type", filters.lineType).order("code"),
+    supabase.from("production_lines").select("id, code, name, line_type").eq("line_type", filters.lineType).order("code"),
     supabase.from("reason_codes").select("id, code, label"),
     supabase.from("cost_parameters").select("target_scrap_pct, overweight_tolerance_pct, target_oee_pct").limit(1).maybeSingle(),
+    supabase.rpc("available_hours", { p_from: filters.from, p_to: filters.to }),
   ]);
   if (entriesRes.error) throw new Error("Analiz verileri getirilirken hata oluştu: " + entriesRes.error.message);
   if (linesRes.error) throw new Error("Hatlar getirilirken hata oluştu: " + linesRes.error.message);
+  if (hoursRes.error) throw new Error("Çalışma takvimi getirilirken hata oluştu: " + hoursRes.error.message);
 
   const rows = entriesRes.data;
   const entryIds = rows.map((r) => r.entry_id!).filter(Boolean);
@@ -109,6 +111,7 @@ export async function getProductionAnalytics(filters: AnalyticsFilters) {
     scrapReasonId: r.scrap_reason_code_id,
     downtimeReasonId: r.downtime_reason_code_id,
     capacityKgPerHour: r.capacity_kg_per_hour === null ? null : Number(r.capacity_kg_per_hour),
+    referenceKgPerHour: r.reference_kg_per_hour === null ? null : Number(r.reference_kg_per_hour),
     idealSec: idealByEntry.get(r.entry_id!) ?? null,
   }));
 
@@ -125,19 +128,44 @@ export async function getProductionAnalytics(filters: AnalyticsFilters) {
     entries = entries.filter((e) => withMaterial.has(e.entryId));
   }
 
-  // Kapasite: seçili hat ya da türdeki tüm hatlar
-  const scopeLines = linesRes.data
-    .filter((l) => !filters.lineId || l.id === filters.lineId)
-    .map((l) => ({ id: l.id, name: l.name, capacityKgPerHour: l.capacity_kg_per_hour === null ? null : Number(l.capacity_kg_per_hour) }));
-  const days = Math.max(1, Math.round((Date.parse(filters.to) - Date.parse(filters.from)) / 86400000) + 1);
+  // Kapasite: seçili hat ya da türdeki tüm hatlar; her gün o gün geçerli kapasite × kullanılabilir saat
+  const scopeLineIds = linesRes.data.filter((l) => !filters.lineId || l.id === filters.lineId).map((l) => l.id);
+  const capacities = await inChunks(scopeLineIds, 150, (c) =>
+    supabase
+      .from("line_capacities")
+      .select("line_id, capacity_kg_per_hour, valid_from, valid_to")
+      .eq("active", true)
+      .lte("valid_from", filters.to)
+      .or(`valid_to.is.null,valid_to.gte.${filters.from}`)
+      .in("line_id", c),
+  );
+  const dayHours = (hoursRes.data as unknown as { day: string; hours: number | string }[]).map((h) => ({ day: h.day, hours: Number(h.hours) }));
+  const days = dayHours.length || 1;
+  const availableHoursTotal = dayHours.reduce((a, h) => a + h.hours, 0);
+  const linesWithCapacity = new Set<string>();
+  let nsaCapacityKg = 0;
+  for (const { day, hours } of dayHours) {
+    for (const lineId of scopeLineIds) {
+      const cap = capacities
+        .filter((c) => c.line_id === lineId && c.valid_from <= day && (!c.valid_to || c.valid_to >= day))
+        .sort((a, b) => b.valid_from.localeCompare(a.valid_from))[0];
+      if (!cap) continue;
+      linesWithCapacity.add(lineId);
+      nsaCapacityKg += Number(cap.capacity_kg_per_hour) * hours;
+    }
+  }
 
   const analytics = computeProductionAnalytics({
     entries,
     materials,
     scrapTargets,
     reasons: new Map((reasonsRes.data ?? []).map((r) => [r.id, { code: r.code, label: r.label }])),
-    lines: scopeLines,
-    calendarHours: days * 24,
+    capacityScope: {
+      lineCount: scopeLineIds.length,
+      linesWithCapacity: linesWithCapacity.size,
+      availableLineHours: availableHoursTotal * scopeLineIds.length,
+      nsaCapacityKg,
+    },
     targets: {
       scrapPct: Number(paramsRes.data?.target_scrap_pct ?? 3),
       overweightTolerancePct: Number(paramsRes.data?.overweight_tolerance_pct ?? 2.5),

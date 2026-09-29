@@ -269,6 +269,27 @@ export type Database = {
           },
         ]
       }
+      calendar_holidays: {
+        Row: {
+          day: string
+          name: string
+          off_hours: number
+          created_at: string | null
+        }
+        Insert: {
+          day: string
+          name: string
+          off_hours?: number
+          created_at?: string | null
+        }
+        Update: {
+          day?: string
+          name?: string
+          off_hours?: number
+          created_at?: string | null
+        }
+        Relationships: []
+      }
       cost_parameters: {
         Row: {
           id: string
@@ -281,6 +302,9 @@ export type Database = {
           target_scrap_pct: number
           overweight_tolerance_pct: number
           target_oee_pct: number
+          weekly_off_days: number[]
+          day_shift_start: string
+          night_shift_start: string
         }
         Insert: {
           id?: string
@@ -293,6 +317,9 @@ export type Database = {
           target_scrap_pct?: number
           overweight_tolerance_pct?: number
           target_oee_pct?: number
+          weekly_off_days?: number[]
+          day_shift_start?: string
+          night_shift_start?: string
         }
         Update: {
           id?: string
@@ -305,8 +332,52 @@ export type Database = {
           target_scrap_pct?: number
           overweight_tolerance_pct?: number
           target_oee_pct?: number
+          weekly_off_days?: number[]
+          day_shift_start?: string
+          night_shift_start?: string
         }
         Relationships: []
+      }
+      line_capacities: {
+        Row: {
+          id: string
+          line_id: string
+          capacity_kg_per_hour: number
+          valid_from: string
+          valid_to: string | null
+          note: string | null
+          active: boolean
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          line_id: string
+          capacity_kg_per_hour: number
+          valid_from: string
+          valid_to?: string | null
+          note?: string | null
+          active?: boolean
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          line_id?: string
+          capacity_kg_per_hour?: number
+          valid_from?: string
+          valid_to?: string | null
+          note?: string | null
+          active?: boolean
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "line_capacities_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "production_lines"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lots: {
         Row: {
@@ -694,7 +765,6 @@ export type Database = {
           name: string
           head_type: string | null
           status: Database["public"]["Enums"]["equipment_status"]
-          capacity_kg_per_hour: number | null
           line_type: Database["public"]["Enums"]["production_type"] | null
         }
         Insert: {
@@ -703,7 +773,6 @@ export type Database = {
           name: string
           head_type?: string | null
           status?: Database["public"]["Enums"]["equipment_status"]
-          capacity_kg_per_hour?: number | null
           line_type?: Database["public"]["Enums"]["production_type"] | null
         }
         Update: {
@@ -712,7 +781,6 @@ export type Database = {
           name?: string
           head_type?: string | null
           status?: Database["public"]["Enums"]["equipment_status"]
-          capacity_kg_per_hour?: number | null
           line_type?: Database["public"]["Enums"]["production_type"] | null
         }
         Relationships: []
@@ -732,6 +800,9 @@ export type Database = {
           active: boolean
           unit_cost: number | null
           currency: string | null
+          material_group: string | null
+          diameter_mm: number | null
+          sdr: number | null
         }
         Insert: {
           id?: string
@@ -747,6 +818,9 @@ export type Database = {
           active?: boolean
           unit_cost?: number | null
           currency?: string | null
+          material_group?: string | null
+          diameter_mm?: number | null
+          sdr?: number | null
         }
         Update: {
           id?: string
@@ -762,6 +836,9 @@ export type Database = {
           active?: boolean
           unit_cost?: number | null
           currency?: string | null
+          material_group?: string | null
+          diameter_mm?: number | null
+          sdr?: number | null
         }
         Relationships: []
       }
@@ -879,6 +956,48 @@ export type Database = {
           code?: string
           label?: string
           active?: boolean
+        }
+        Relationships: []
+      }
+      reference_capacities: {
+        Row: {
+          id: string
+          material_group: string
+          diameter_mm: number
+          sdr: number | null
+          capacity_kg_per_hour: number
+          year: number
+          source: string | null
+          approval: string
+          active: boolean
+          note: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          material_group: string
+          diameter_mm: number
+          sdr?: number | null
+          capacity_kg_per_hour: number
+          year: number
+          source?: string | null
+          approval?: string
+          active?: boolean
+          note?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          material_group?: string
+          diameter_mm?: number
+          sdr?: number | null
+          capacity_kg_per_hour?: number
+          year?: number
+          source?: string | null
+          approval?: string
+          active?: boolean
+          note?: string | null
+          created_at?: string | null
         }
         Relationships: []
       }
@@ -1201,6 +1320,10 @@ export type Database = {
           planned_min: number | null
           run_min: number | null
           capacity_kg_per_hour: number | null
+          material_group: string | null
+          diameter_mm: number | null
+          sdr: number | null
+          reference_kg_per_hour: number | null
         }
         Relationships: []
       }
@@ -1227,6 +1350,13 @@ export type Database = {
       app_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
+      }
+      available_hours: {
+        Args: {
+          p_from: string
+          p_to: string
+        }
+        Returns: string[]
       }
       cancel_stock_document: {
         Args: {

@@ -40,7 +40,7 @@ const STATUS_VARIANTS: Record<
 };
 
 interface EquipmentTabProps {
-  lines: LineFormValues[];
+  lines: (LineFormValues & { current_capacity_kg_per_hour: number | null })[];
   molds: (Tables<"molds"> & { product: { name: string } | null })[];
   products: Tables<"products">[];
 }
@@ -127,7 +127,7 @@ export function EquipmentTab({ lines, molds, products }: EquipmentTabProps) {
     }
   };
 
-  const lineColumns: ColumnDef<LineFormValues>[] = [
+  const lineColumns: ColumnDef<EquipmentTabProps["lines"][number]>[] = [
     {
       accessorKey: "code",
       header: "Hat Kodu",
@@ -143,9 +143,9 @@ export function EquipmentTab({ lines, molds, products }: EquipmentTabProps) {
       cell: ({ row }) => (row.original.line_type === "injection" ? "Enjeksiyon" : row.original.line_type === "extrusion" ? "Ekstrüder" : "-"),
     },
     {
-      accessorKey: "capacity_kg_per_hour",
-      header: "Kapasite",
-      cell: ({ row }) => (row.original.capacity_kg_per_hour ? `${formatTR(Number(row.original.capacity_kg_per_hour), 0)} kg/sa` : <span className="text-muted-foreground">girilmemiş</span>),
+      accessorKey: "current_capacity_kg_per_hour",
+      header: "Kapasite (bugün)",
+      cell: ({ row }) => (row.original.current_capacity_kg_per_hour ? `${formatTR(row.original.current_capacity_kg_per_hour, 0)} kg/sa` : <span className="text-muted-foreground">girilmemiş</span>),
     },
     {
       accessorKey: "status",

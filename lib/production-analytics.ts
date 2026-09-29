@@ -7,12 +7,14 @@
  *   Overweight %     = sağlam / nominal − 1   (nominal = üretilen × reçete birim ağırlığı)
  *   Materyal verim   = sağlam / hammadde
  *   OEE              = kullanılabilirlik × performans × kalite (v_oee_entries ile aynı)
- * Kapasite (hat kg/saat kapasitesi girilmiş girişler):
- *   NŞA kapasite     = Σ hat kapasitesi × dönemin takvim saati
+ * Kapasite (makine kapasitesi giriş gününde geçerli kayıttan):
+ *   NŞA kapasite     = Σ gün Σ makine (o gün geçerli kapasite × kullanılabilir saat); tatil/kapalı gün düşülür
  *   Kapasite verimi  = hammadde / NŞA kapasite
  *   Aktif sürede kap.= hammadde / Σ(kapasite × çalışma saati)
- *   Zaman kullanımı  = Σ çalışma saati / (hat sayısı × takvim saati)
+ *   Zaman kullanımı  = Σ çalışma saati / Σ makine kullanılabilir saati
  *   Beklenen üretim  = Σ(kapasite × çalışma saati)
+ * Referans (ürün grup × çap × SDR kg/saat):
+ *   Hız performansı  = hammadde / Σ(referans × çalışma saati)
  */
 
 export interface AnalyticsEntry {
@@ -38,6 +40,8 @@ export interface AnalyticsEntry {
   scrapReasonId: string | null;
   downtimeReasonId: string | null;
   capacityKgPerHour: number | null;
+  /** Ürünün grup/çap/SDR referans kapasitesi (kg/saat) */
+  referenceKgPerHour: number | null;
   /** OEE performansı için ideal süre (sn); veri yoksa null */
   idealSec: number | null;
 }
@@ -62,9 +66,14 @@ export interface AnalyticsInput {
   materials: EntryMaterial[];
   scrapTargets: EntryScrapTarget[];
   reasons: Map<string, { code: string; label: string }>;
-  /** Kapsamdaki hatlar (kapasite hesabı için) */
-  lines: { id: string; name: string; capacityKgPerHour: number | null }[];
-  calendarHours: number;
+  /** Kapsamdaki makineler için önceden hesaplanmış kapasite (takvim ve geçerlilik tarihleriyle) */
+  capacityScope: {
+    lineCount: number;
+    linesWithCapacity: number;
+    /** Σ makine kullanılabilir saati (tatil/kapalı gün düşülmüş) */
+    availableLineHours: number;
+    nsaCapacityKg: number;
+  };
   targets: { scrapPct: number; overweightTolerancePct: number; oeePct: number };
 }
 
@@ -95,6 +104,8 @@ function measure(entries: AnalyticsEntry[]) {
 
   const withCap = entries.filter((e) => e.capacityKgPerHour && e.capacityKgPerHour > 0);
   const expectedKg = sum(withCap, (e) => (e.capacityKgPerHour! * e.runMin) / 60);
+  const withRef = entries.filter((e) => e.referenceKgPerHour && e.referenceKgPerHour > 0);
+  const referenceExpectedKg = sum(withRef, (e) => (e.referenceKgPerHour! * e.runMin) / 60);
 
   return {
     entries: entries.length,
@@ -114,6 +125,10 @@ function measure(entries: AnalyticsEntry[]) {
     expectedKg,
     /** Hammadde / (kapasite × çalışma saati), kapasitesi bilinen girişlerde */
     activeCapacityPct: ratio(sum(withCap, (e) => e.usedKg), expectedKg),
+    referenceExpectedKg,
+    /** Hız performansı: referans kapasiteye göre (referansı olan girişlerde) */
+    speedPerformance: ratio(sum(withRef, (e) => e.usedKg), referenceExpectedKg),
+    referenceCoverage: entries.length ? withRef.length / entries.length : 0,
   };
 }
 
@@ -131,22 +146,21 @@ function groupBy<T>(xs: T[], key: (x: T) => string) {
 }
 
 export function computeProductionAnalytics(input: AnalyticsInput) {
-  const { entries, materials, scrapTargets, reasons, lines, calendarHours, targets } = input;
+  const { entries, materials, scrapTargets, reasons, capacityScope, targets } = input;
   const total = measure(entries);
 
   // ── Kapasite ──
-  const capLines = lines.filter((l) => l.capacityKgPerHour && l.capacityKgPerHour > 0);
-  const nsaCapacityKg = sum(capLines, (l) => l.capacityKgPerHour! * calendarHours);
   const capEntries = entries.filter((e) => e.capacityKgPerHour && e.capacityKgPerHour > 0);
   const capRunHours = sum(capEntries, (e) => e.runMin / 60);
   const capacity = {
-    linesWithCapacity: capLines.length,
-    linesWithoutCapacity: lines.length - capLines.length,
+    linesWithCapacity: capacityScope.linesWithCapacity,
+    linesWithoutCapacity: capacityScope.lineCount - capacityScope.linesWithCapacity,
+    availableLineHours: capacityScope.availableLineHours,
     weightedCapacityKgPerHour: capRunHours > 0 ? sum(capEntries, (e) => (e.capacityKgPerHour! * e.runMin) / 60) / capRunHours : null,
-    nsaCapacityKg,
-    capacityEfficiency: ratio(sum(capEntries, (e) => e.usedKg), nsaCapacityKg),
+    nsaCapacityKg: capacityScope.nsaCapacityKg,
+    capacityEfficiency: ratio(sum(capEntries, (e) => e.usedKg), capacityScope.nsaCapacityKg),
     activeCapacityPct: total.activeCapacityPct,
-    timeUtilization: ratio(capRunHours, capLines.length * calendarHours),
+    timeUtilization: ratio(total.runHours, capacityScope.availableLineHours),
     expectedKg: total.expectedKg,
   };
 

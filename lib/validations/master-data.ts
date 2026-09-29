@@ -42,8 +42,6 @@ export const lineSchema = z.object({
   head_type: z.string().optional().nullable(),
   status: z.enum(["active", "maintenance", "down"]),
   line_type: z.enum(["extrusion", "injection"]).optional().nullable(),
-  /** Saatlik kapasite (kg/saat): üretim analizi kapasite hesapları için */
-  capacity_kg_per_hour: z.number().positive("Kapasite 0'dan büyük olmalıdır").optional().nullable(),
 });
 
 export type LineFormValues = z.infer<typeof lineSchema>;

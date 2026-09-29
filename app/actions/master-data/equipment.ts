@@ -10,11 +10,18 @@ export async function getLines() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("production_lines")
-    .select("*")
+    .select("*, capacities:line_capacities(capacity_kg_per_hour, valid_from, valid_to, active)")
     .order("name");
 
   if (error) throw new Error("Hatlar getirilirken hata oluştu: " + error.message);
-  return data;
+  // Bugün geçerli kapasite (liste gösterimi için)
+  const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Istanbul" });
+  return data.map(({ capacities, ...line }) => {
+    const current = capacities
+      .filter((c) => c.active && c.valid_from <= today && (!c.valid_to || c.valid_to >= today))
+      .sort((a, b) => b.valid_from.localeCompare(a.valid_from))[0];
+    return { ...line, current_capacity_kg_per_hour: current ? Number(current.capacity_kg_per_hour) : null };
+  });
 }
 
 export async function saveLine(data: LineFormValues) {
@@ -33,7 +40,6 @@ export async function saveLine(data: LineFormValues) {
         head_type: payload.head_type || null,
         status: payload.status,
         line_type: payload.line_type || null,
-        capacity_kg_per_hour: payload.capacity_kg_per_hour ?? null,
       })
       .eq("id", payload.id);
     if (error) throw new Error(error.message);
@@ -46,7 +52,6 @@ export async function saveLine(data: LineFormValues) {
         head_type: payload.head_type || null,
         status: payload.status,
         line_type: payload.line_type || null,
-        capacity_kg_per_hour: payload.capacity_kg_per_hour ?? null,
       }]);
     if (error) {
       if (error.code === '23505' || error.message.includes('unique')) {
