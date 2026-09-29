@@ -1,20 +1,18 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { readAll } from "@/lib/supabase/read-all";
 import { revalidatePath } from "next/cache";
 import type { ExcelRow } from "@/lib/excel";
 import { productSchema, ProductFormValues } from "@/lib/validations/master-data";
 
 export async function getProducts() {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .eq("active", true)
-    .order("name");
-
-  if (error) throw new Error("Ürünler getirilirken bir hata oluştu: " + error.message);
-  return data;
+  // 1.000 satır sınırına takılmadan tüm aktif ürünler
+  return readAll(
+    (from, to) => supabase.from("products").select("*").eq("active", true).order("name").order("id").range(from, to),
+    "Ürünler getirilirken bir hata oluştu",
+  );
 }
 
 export async function saveProduct(data: ProductFormValues) {
@@ -41,6 +39,10 @@ export async function saveProduct(data: ProductFormValues) {
         material_group: payload.material_group ? payload.material_group.toUpperCase() : null,
         diameter_mm: payload.diameter_mm ?? null,
         sdr: payload.sdr ?? null,
+        wall_thickness_mm: payload.wall_thickness_mm ?? null,
+        group_code: payload.group_code || null,
+        variant_code: payload.variant_code ? payload.variant_code.toUpperCase() : null,
+        description: payload.description || null,
         min_stock: payload.min_stock,
         critical_stock: payload.critical_stock,
       })
@@ -60,6 +62,10 @@ export async function saveProduct(data: ProductFormValues) {
         material_group: payload.material_group ? payload.material_group.toUpperCase() : null,
         diameter_mm: payload.diameter_mm ?? null,
         sdr: payload.sdr ?? null,
+        wall_thickness_mm: payload.wall_thickness_mm ?? null,
+        group_code: payload.group_code || null,
+        variant_code: payload.variant_code ? payload.variant_code.toUpperCase() : null,
+        description: payload.description || null,
         min_stock: payload.min_stock,
         critical_stock: payload.critical_stock,
       }]);
@@ -172,3 +178,11 @@ export async function bulkImportProducts(productsData: ExcelRow[]) {
 }
 
 export type ProductRow = Awaited<ReturnType<typeof getProducts>>[number];
+
+/** Grup kodu tanımları (03 = 45° dirsek …) */
+export async function getProductGroups() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("product_groups").select("code, name").order("code");
+  if (error) throw new Error("Grup kodları getirilirken hata oluştu: " + error.message);
+  return data;
+}

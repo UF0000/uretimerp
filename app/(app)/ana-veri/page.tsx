@@ -5,7 +5,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getProducts } from "@/app/actions/master-data/products";
+import { getProductGroups, getProducts } from "@/app/actions/master-data/products";
 import { getPartners } from "@/app/actions/master-data/partners";
 import { getWarehouses } from "@/app/actions/master-data/warehouses";
 import { getLines, getMolds } from "@/app/actions/master-data/equipment";
@@ -23,13 +23,14 @@ export const metadata: Metadata = {
 };
 
 export default async function MasterDataPage() {
-  const [products, partners, warehouses, lines, molds, reasonCodes] = await Promise.all([
+  const [products, partners, warehouses, lines, molds, reasonCodes, groups] = await Promise.all([
     getProducts(),
     getPartners(),
     getWarehouses(),
     getLines(),
     getMolds(),
     getReasonCodes(),
+    getProductGroups(),
   ]);
 
   return (
@@ -57,7 +58,7 @@ export default async function MasterDataPage() {
         <Card>
           <CardContent className="pt-6 min-h-[500px]">
             <TabsContent value="products" className="m-0">
-              <ProductsTab data={products} />
+              <ProductsTab data={products} groups={groups} />
             </TabsContent>
             
             <TabsContent value="equipment" className="m-0">

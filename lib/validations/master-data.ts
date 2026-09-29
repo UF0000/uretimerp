@@ -1,10 +1,11 @@
 import { z } from "@/lib/zod";
+import { PRODUCT_TYPES } from "@/lib/product-meta";
 
 export const productSchema = z.object({
   id: z.string().optional(),
   code: z.string().min(1, "Ürün kodu zorunludur"),
   name: z.string().min(1, "Ürün adı zorunludur"),
-  type: z.enum(["finished", "raw", "semi", "regrind", "scrap"]),
+  type: z.enum(PRODUCT_TYPES),
   unit: z.enum(["adet", "kg", "metre"]),
   category: z.string().optional().nullable(),
   material_grade: z.string().optional().nullable(),
@@ -12,6 +13,12 @@ export const productSchema = z.object({
   material_group: z.string().trim().optional().nullable(),
   diameter_mm: z.number().positive("Çap 0'dan büyük olmalıdır").optional().nullable(),
   sdr: z.number().positive("SDR 0'dan büyük olmalıdır").optional().nullable(),
+  wall_thickness_mm: z.number().positive("Et kalınlığı 0'dan büyük olmalıdır").optional().nullable(),
+  /** Ürün türü grubu (ör. 03 = 45° dirsek); stok kodundan bağımsız */
+  group_code: z.string().trim().max(20).optional().nullable(),
+  /** Genel stok kodu: aynı kodu taşıyan ürünler birbirinin varyantıdır */
+  variant_code: z.string().trim().max(60).optional().nullable(),
+  description: z.string().trim().max(1000).optional().nullable(),
   min_stock: z.number().min(0),
   critical_stock: z.number().default(0),
   unit_cost: z.number().optional().default(0),

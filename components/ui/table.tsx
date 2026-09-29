@@ -4,7 +4,8 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+/** `fixedColumns`: sütun genişlikleri <col width> ile verilir; tablo genişliği `width` özniteliğinden gelir. */
+function Table({ className, fixedColumns = false, ...props }: React.ComponentProps<"table"> & { fixedColumns?: boolean }) {
   return (
     <div
       data-slot="table-container"
@@ -12,7 +13,7 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
     >
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
+        className={cn(fixedColumns ? "table-fixed" : "w-full", "caption-bottom text-sm", className)}
         {...props}
       />
     </div>

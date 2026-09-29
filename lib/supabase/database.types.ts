@@ -785,6 +785,24 @@ export type Database = {
         }
         Relationships: []
       }
+      product_groups: {
+        Row: {
+          code: string
+          name: string
+          created_at: string | null
+        }
+        Insert: {
+          code: string
+          name: string
+          created_at?: string | null
+        }
+        Update: {
+          code?: string
+          name?: string
+          created_at?: string | null
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           id: string
@@ -803,6 +821,10 @@ export type Database = {
           material_group: string | null
           diameter_mm: number | null
           sdr: number | null
+          group_code: string | null
+          variant_code: string | null
+          wall_thickness_mm: number | null
+          description: string | null
         }
         Insert: {
           id?: string
@@ -821,6 +843,10 @@ export type Database = {
           material_group?: string | null
           diameter_mm?: number | null
           sdr?: number | null
+          group_code?: string | null
+          variant_code?: string | null
+          wall_thickness_mm?: number | null
+          description?: string | null
         }
         Update: {
           id?: string
@@ -839,6 +865,10 @@ export type Database = {
           material_group?: string | null
           diameter_mm?: number | null
           sdr?: number | null
+          group_code?: string | null
+          variant_code?: string | null
+          wall_thickness_mm?: number | null
+          description?: string | null
         }
         Relationships: []
       }
@@ -1444,7 +1474,7 @@ export type Database = {
       ncr_status: "open" | "closed"
       order_status: "open" | "in_production" | "done" | "cancelled"
       partner_type: "customer" | "supplier"
-      product_type: "finished" | "raw" | "semi" | "regrind" | "scrap"
+      product_type: "finished" | "raw" | "semi" | "regrind" | "scrap" | "trade" | "service"
       production_type: "extrusion" | "injection"
       qc_result: "accept" | "reject" | "conditional"
       qc_type: "incoming" | "process" | "final"

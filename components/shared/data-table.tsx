@@ -12,7 +12,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Search, Trash2 } from "lucide-react";
+import { Columns3, Search, Trash2 } from "lucide-react";
 
 import {
   Table,
@@ -25,6 +25,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
+import { useColumnWidths } from "./use-column-widths";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -38,6 +40,12 @@ interface DataTableProps<TData, TValue> {
   /** Toplu işlem onay sorusu; {n} seçili kayıt sayısıyla değişir */
   bulkConfirmText?: string;
   disablePagination?: boolean;
+  /** Arama kutusunun yanında gösterilecek ek filtreler / düğmeler */
+  toolbar?: React.ReactNode;
+  /** Satıra çift tıklanınca (ör. detay sayfasını aç) */
+  onRowDoubleClick?: (row: TData) => void;
+  /** Sütun genişliklerinin saklanacağı anahtar (varsayılan: sütun adlarından) */
+  storageKey?: string;
 }
 
 export function DataTable<TData, TValue>({
@@ -50,6 +58,9 @@ export function DataTable<TData, TValue>({
   bulkActionLabel = "Seçilenleri Sil",
   bulkConfirmText = "Seçili {n} kaydı silmek istediğinize emin misiniz?",
   disablePagination = false,
+  toolbar,
+  onRowDoubleClick,
+  storageKey,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -100,6 +111,9 @@ export function DataTable<TData, TValue>({
     },
   });
 
+  const columnIds = table.getVisibleLeafColumns().map((c) => c.id);
+  const widths = useColumnWidths(storageKey ?? columnIds.join("|"), columnIds);
+
   const selectedRows = table.getFilteredSelectedRowModel().rows;
   
   const handleBulkDelete = () => {
@@ -133,7 +147,14 @@ export function DataTable<TData, TValue>({
             />
           </div>
         ) : (
-          <div /> // Search key yoksa sağdaki butonu tutmak için boş div
+          !toolbar && <div /> // Search key yoksa sağdaki butonu tutmak için boş div
+        )}
+        {toolbar}
+        {widths.custom && (
+          <Button variant="ghost" size="sm" onClick={widths.reset} title="Sütun genişliklerini otomatiğe döndür">
+            <Columns3 className="mr-1.5 h-4 w-4" />
+            Sütunları sıfırla
+          </Button>
         )}
 
         {selectedRows.length > 0 && onDeleteSelected && (
@@ -149,19 +170,41 @@ export function DataTable<TData, TValue>({
         )}
       </div>
       <div className="rounded-md border border-border bg-card">
-        <Table>
+        <Table
+          ref={widths.tableRef}
+          fixedColumns={widths.custom}
+          width={widths.custom ? widths.total : undefined}
+        >
+          {widths.custom && (
+            <colgroup>
+              {columnIds.map((id) => (
+                <col key={id} width={widths.get(id)} />
+              ))}
+            </colgroup>
+          )}
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead key={header.id} data-col={header.column.id} className={cn("group/th relative", widths.custom && "overflow-hidden text-ellipsis")}>
                       {header.isPlaceholder
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
                             header.getContext()
                           )}
+                      {header.column.id !== "select" && (
+                        <span
+                          role="separator"
+                          aria-orientation="vertical"
+                          aria-label="Sütun genişliği: sürükleyin, çift tıklayınca sığdırılır"
+                          title="Sürükleyerek genişletin · çift tıklayınca içeriğe sığar"
+                          onPointerDown={(e) => widths.startResize(header.column.id, e)}
+                          onDoubleClick={() => widths.autoFit(header.column.id)}
+                          className="absolute right-0 top-0 z-10 h-full w-2 cursor-col-resize touch-none select-none border-r-2 border-transparent hover:border-primary group-hover/th:border-border"
+                        />
+                      )}
                     </TableHead>
                   );
                 })}
@@ -174,10 +217,12 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="hover:bg-muted/50"
+                  className={cn("hover:bg-muted/50", onRowDoubleClick && "cursor-pointer select-none")}
+                  onDoubleClick={onRowDoubleClick ? () => onRowDoubleClick(row.original) : undefined}
+                  title={onRowDoubleClick ? "Ayrıntı için çift tıklayın" : undefined}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} data-col={cell.column.id} className={cn(widths.custom && "overflow-hidden text-ellipsis")}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
