@@ -114,7 +114,7 @@ export function NcrCreateModal({ isOpen, onClose, products, warehouses, prefill 
               <Label>Uygun Olmayan Miktar *</Label>
               <Input
                 type="number"
-                step="0.01"
+                step="0.001"
                 {...register("quantity", { setValueAs: (v: string) => (v === "" ? undefined : Number(v)) })}
                 className={errors.quantity ? "border-danger" : ""}
               />

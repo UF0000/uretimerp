@@ -164,7 +164,7 @@ export function MoldForm({
               <Input
                 id="cycle_time_sec"
                 type="number"
-                step="0.1"
+                step="0.001"
                 {...register("cycle_time_sec", { valueAsNumber: true })}
               />
             </div>
@@ -179,7 +179,7 @@ export function MoldForm({
               <Input
                 id="product_weight_g"
                 type="number"
-                step="0.1"
+                step="0.001"
                 {...register("product_weight_g", { valueAsNumber: true })}
               />
             </div>
@@ -194,7 +194,7 @@ export function MoldForm({
               <Input
                 id="sprue_weight_g"
                 type="number"
-                step="0.1"
+                step="0.001"
                 {...register("sprue_weight_g", { valueAsNumber: true })}
               />
             </div>

@@ -14,14 +14,14 @@ import { Label } from "@/components/ui/label";
 import { getErrorMessage } from "@/lib/utils";
 
 const FIELDS: { name: keyof ParametersFormValues; label: string; hint: string; step: string }[] = [
-  { name: "labor_per_unit", label: "İşçilik (₺ / birim)", hint: "Üretilen her birim için işçilik maliyeti", step: "0.01" },
-  { name: "energy_per_unit", label: "Enerji (₺ / birim)", hint: "Üretilen her birim için enerji maliyeti", step: "0.01" },
-  { name: "overhead_pct", label: "Genel gider (%)", hint: "Hammadde + işçilik + enerji üzerine eklenir", step: "0.1" },
-  { name: "usd_rate", label: "USD kuru (₺)", hint: "USD fiyatlı malzemelerin TL karşılığı", step: "0.01" },
-  { name: "eur_rate", label: "EUR kuru (₺)", hint: "EUR fiyatlı malzemelerin TL karşılığı", step: "0.01" },
+  { name: "labor_per_unit", label: "İşçilik (₺ / birim)", hint: "Üretilen her birim için işçilik maliyeti", step: "0.001" },
+  { name: "energy_per_unit", label: "Enerji (₺ / birim)", hint: "Üretilen her birim için enerji maliyeti", step: "0.001" },
+  { name: "overhead_pct", label: "Genel gider (%)", hint: "Hammadde + işçilik + enerji üzerine eklenir", step: "0.001" },
+  { name: "usd_rate", label: "USD kuru (₺)", hint: "USD fiyatlı malzemelerin TL karşılığı", step: "0.001" },
+  { name: "eur_rate", label: "EUR kuru (₺)", hint: "EUR fiyatlı malzemelerin TL karşılığı", step: "0.001" },
   { name: "shift_minutes", label: "Vardiya süresi (dk)", hint: "OEE kullanılabilirlik hesabında planlı süre", step: "1" },
-  { name: "target_scrap_pct", label: "Fire hedefi (%)", hint: "Bu değerin üstü hedef dışı sayılır", step: "0.1" },
-  { name: "overweight_tolerance_pct", label: "Overweight toleransı (±%)", hint: "Metre/parça ağırlığı sapma sınırı", step: "0.1" },
+  { name: "target_scrap_pct", label: "Fire hedefi (%)", hint: "Bu değerin üstü hedef dışı sayılır", step: "0.001" },
+  { name: "overweight_tolerance_pct", label: "Overweight toleransı (±%)", hint: "Metre/parça ağırlığı sapma sınırı", step: "0.001" },
   { name: "target_oee_pct", label: "OEE hedefi (%)", hint: "Üretim analizinde OEE değerlendirmesi", step: "1" },
 ];
 

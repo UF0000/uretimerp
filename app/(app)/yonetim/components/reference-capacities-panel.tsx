@@ -106,17 +106,17 @@ export function ReferenceCapacitiesPanel({ rows, materialGroups }: { rows: Row[]
         </div>
         <div className="space-y-1">
           <Label htmlFor="ref_dia">Çap (mm)</Label>
-          <Input id="ref_dia" type="number" step="0.1" placeholder="Örn: 90" {...register("diameter_mm", { valueAsNumber: true })} className={errors.diameter_mm ? "border-danger" : ""} />
+          <Input id="ref_dia" type="number" step="0.001" placeholder="Örn: 90" {...register("diameter_mm", { valueAsNumber: true })} className={errors.diameter_mm ? "border-danger" : ""} />
           {errors.diameter_mm && <p className="text-xs text-danger">{errors.diameter_mm.message}</p>}
         </div>
         <div className="space-y-1">
           <Label htmlFor="ref_sdr">SDR (boş = hepsi)</Label>
-          <Input id="ref_sdr" type="number" step="0.1" placeholder="Örn: 11" {...register("sdr", { setValueAs: numberOrNull })} className={errors.sdr ? "border-danger" : ""} />
+          <Input id="ref_sdr" type="number" step="0.001" placeholder="Örn: 11" {...register("sdr", { setValueAs: numberOrNull })} className={errors.sdr ? "border-danger" : ""} />
           {errors.sdr && <p className="text-xs text-danger">{errors.sdr.message}</p>}
         </div>
         <div className="space-y-1">
           <Label htmlFor="ref_cap">Kapasite (kg/saat)</Label>
-          <Input id="ref_cap" type="number" step="0.1" {...register("capacity_kg_per_hour", { valueAsNumber: true })} className={errors.capacity_kg_per_hour ? "border-danger" : ""} />
+          <Input id="ref_cap" type="number" step="0.001" {...register("capacity_kg_per_hour", { valueAsNumber: true })} className={errors.capacity_kg_per_hour ? "border-danger" : ""} />
           {errors.capacity_kg_per_hour && <p className="text-xs text-danger">{errors.capacity_kg_per_hour.message}</p>}
         </div>
         <div className="space-y-1">

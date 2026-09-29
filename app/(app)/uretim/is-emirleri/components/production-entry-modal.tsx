@@ -178,7 +178,7 @@ export function ProductionEntryModal({
               <Label>Sağlam Üretim ({unit})</Label>
               <Input
                 type="number"
-                step="0.01"
+                step="0.001"
                 {...register("produced_qty", num(0))}
                 className={errors.produced_qty ? "border-danger" : ""}
               />
@@ -191,7 +191,7 @@ export function ProductionEntryModal({
               <Label>Kullanılan Hammadde (kg)</Label>
               <Input
                 type="number"
-                step="0.01"
+                step="0.001"
                 {...register("total_used_kg", num(0))}
                 className={errors.total_used_kg ? "border-danger" : ""}
               />
@@ -278,7 +278,7 @@ export function ProductionEntryModal({
               <Label>Fire (kg)</Label>
               <Input
                 type="number"
-                step="0.01"
+                step="0.001"
                 {...register("scrap_kg", num(0))}
                 className={errors.scrap_kg ? "border-danger" : ""}
               />
@@ -327,7 +327,7 @@ export function ProductionEntryModal({
               </div>
               <div className="space-y-2">
                 <Label>Gerçek Çevrim (sn)</Label>
-                <Input type="number" step="0.1" {...register("actual_cycle_time_sec", num(null))} />
+                <Input type="number" step="0.001" {...register("actual_cycle_time_sec", num(null))} />
                 {errors.actual_cycle_time_sec && <p className="text-xs text-danger">{errors.actual_cycle_time_sec.message}</p>}
               </div>
             </div>

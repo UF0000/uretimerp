@@ -158,7 +158,7 @@ export function OrderForm({ products, partners }: OrderFormProps) {
 
                       <div className="col-span-4 space-y-2">
                         <Label>Sipariş Miktarı *</Label>
-                        <Input type="number" step="0.1" {...register(`items.${index}.quantity`, { valueAsNumber: true })} />
+                        <Input type="number" step="0.001" {...register(`items.${index}.quantity`, { valueAsNumber: true })} />
                       </div>
                     </div>
                     <Button 

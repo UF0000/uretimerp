@@ -348,7 +348,7 @@ export function BomForm({ initialData, products, lines, molds, defaultProductId 
                     <Label>Hedef Hız (m/dk)</Label>
                     <Input
                       type="number"
-                      step="0.1"
+                      step="0.001"
                       placeholder="OEE performansı için"
                       {...register("extrusion.target_m_per_hour", {
                         setValueAs: (v: string) => (v === "" || v === null ? null : Number(v)),
@@ -360,7 +360,7 @@ export function BomForm({ initialData, products, lines, molds, defaultProductId 
                   </div>
                   <div className="space-y-2">
                     <Label>Hedef Fire Oranı (%)</Label>
-                    <Input type="number" step="0.1" {...register("extrusion.scrap_pct", { valueAsNumber: true })} />
+                    <Input type="number" step="0.001" {...register("extrusion.scrap_pct", { valueAsNumber: true })} />
                   </div>
                   <div className="space-y-2">
                     <Label>Fire/Kırma Ürünü (Opsy.)</Label>
@@ -393,15 +393,15 @@ export function BomForm({ initialData, products, lines, molds, defaultProductId 
                   </div>
                   <div className="space-y-2">
                     <Label>Çevrim Süresi (Baskı Başına - Sn)</Label>
-                    <Input type="number" step="0.1" {...register("injection.cycle_time_sec", { valueAsNumber: true })} />
+                    <Input type="number" step="0.001" {...register("injection.cycle_time_sec", { valueAsNumber: true })} />
                   </div>
                   <div className="space-y-2">
                     <Label>Plastik Ağırlığı (Ürün Başına - g)</Label>
-                    <Input type="number" step="0.1" {...register("injection.product_weight_g", { valueAsNumber: true })} />
+                    <Input type="number" step="0.001" {...register("injection.product_weight_g", { valueAsNumber: true })} />
                   </div>
                   <div className="space-y-2">
                     <Label>Toplam Yolluk Ağırlığı (Baskı Başına - g)</Label>
-                    <Input type="number" step="0.1" {...register("injection.runner_sprue_weight_g", { valueAsNumber: true })} />
+                    <Input type="number" step="0.001" {...register("injection.runner_sprue_weight_g", { valueAsNumber: true })} />
                   </div>
                   <div className="col-span-2 space-y-2">
                     <Label>Fire/Kırma Ürünü (Opsiyonel)</Label>
@@ -473,7 +473,7 @@ export function BomForm({ initialData, products, lines, molds, defaultProductId 
                         <Label>Kullanım Oranı (%)</Label>
                         <Input 
                           type="number" 
-                          step="0.1" 
+                          step="0.001" 
                           {...register(`items.${index}.ratio_pct`, { 
                             valueAsNumber: true,
                             onChange: (e) => {
@@ -486,7 +486,7 @@ export function BomForm({ initialData, products, lines, molds, defaultProductId 
 
                       <div className="col-span-2 space-y-2">
                         <Label>Miktar</Label>
-                        <Input type="number" step="0.1" {...register(`items.${index}.quantity`, { valueAsNumber: true })} />
+                        <Input type="number" step="0.001" {...register(`items.${index}.quantity`, { valueAsNumber: true })} />
                       </div>
 
                       <div className="col-span-2 space-y-2">

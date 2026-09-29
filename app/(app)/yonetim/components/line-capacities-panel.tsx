@@ -108,7 +108,7 @@ export function LineCapacitiesPanel({ lines, capacities }: { lines: CapacitySett
         </div>
         <div className="space-y-1">
           <Label htmlFor="cap_kg">Kapasite (kg/saat)</Label>
-          <Input id="cap_kg" type="number" step="0.1" placeholder="Örn: 345" {...register("capacity_kg_per_hour", { valueAsNumber: true })} className={errors.capacity_kg_per_hour ? "border-danger" : ""} />
+          <Input id="cap_kg" type="number" step="0.001" placeholder="Örn: 345" {...register("capacity_kg_per_hour", { valueAsNumber: true })} className={errors.capacity_kg_per_hour ? "border-danger" : ""} />
           {errors.capacity_kg_per_hour && <p className="text-xs text-danger">{errors.capacity_kg_per_hour.message}</p>}
         </div>
         <div className="space-y-1">

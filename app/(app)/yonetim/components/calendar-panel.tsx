@@ -117,7 +117,7 @@ export function CalendarPanel({ weeklyOffDays, holidays }: { weeklyOffDays: numb
           </div>
           <div className="space-y-1">
             <Label htmlFor="hol_hours">Kapalı saat</Label>
-            <Input id="hol_hours" type="number" step="0.5" {...register("off_hours", { valueAsNumber: true })} className={errors.off_hours ? "border-danger" : ""} />
+            <Input id="hol_hours" type="number" step="0.001" {...register("off_hours", { valueAsNumber: true })} className={errors.off_hours ? "border-danger" : ""} />
             {errors.off_hours ? (
               <p className="text-xs text-danger">{errors.off_hours.message}</p>
             ) : (

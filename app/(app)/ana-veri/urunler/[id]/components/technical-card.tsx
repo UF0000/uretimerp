@@ -20,13 +20,13 @@ type FieldKey = keyof TechnicalValues;
 const FIELDS: Record<"extrusion" | "injection", { key: FieldKey; label: string; unit: string; step: string; pick: (t: Technical) => number | null }[]> = {
   extrusion: [
     { key: "kg_per_meter", label: "Metre ağırlığı", unit: "kg/m", step: "0.001", pick: (t) => t.kgPerMeter },
-    { key: "target_m_per_hour", label: "Üretim hızı (hedef)", unit: "m/dk", step: "0.01", pick: (t) => mPerHourToMin(t.targetMPerHour) },
+    { key: "target_m_per_hour", label: "Üretim hızı (hedef)", unit: "m/dk", step: "0.001", pick: (t) => mPerHourToMin(t.targetMPerHour) },
   ],
   injection: [
-    { key: "cycle_time_sec", label: "Çevrim süresi", unit: "sn", step: "0.1", pick: (t) => t.cycleTimeSec },
+    { key: "cycle_time_sec", label: "Çevrim süresi", unit: "sn", step: "0.001", pick: (t) => t.cycleTimeSec },
     { key: "cavity_count", label: "Göz sayısı", unit: "göz", step: "1", pick: (t) => t.cavityCount },
-    { key: "product_weight_g", label: "Parça ağırlığı", unit: "g", step: "0.01", pick: (t) => t.productWeightG },
-    { key: "runner_sprue_weight_g", label: "Yolluk ağırlığı (atış başı)", unit: "g", step: "0.01", pick: (t) => t.runnerWeightG },
+    { key: "product_weight_g", label: "Parça ağırlığı", unit: "g", step: "0.001", pick: (t) => t.productWeightG },
+    { key: "runner_sprue_weight_g", label: "Yolluk ağırlığı (atış başı)", unit: "g", step: "0.001", pick: (t) => t.runnerWeightG },
   ],
 };
 
