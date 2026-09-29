@@ -46,7 +46,7 @@ interface DataTableProps<TData, TValue> {
   onRowDoubleClick?: (row: TData) => void;
   /** Sütun genişliklerinin saklanacağı anahtar (varsayılan: sütun adlarından) */
   storageKey?: string;
-  /** Sayfalama yerine kaydırmalı liste: başlık sabit, satırlar aşağı kaydırdıkça yüklenir */
+  /** Kaydırmalı liste (varsayılan): başlık sabit, satırlar aşağı kaydırdıkça yüklenir. false = sayfalı */
   scrollable?: boolean;
 }
 
@@ -65,7 +65,7 @@ export function DataTable<TData, TValue>({
   toolbar,
   onRowDoubleClick,
   storageKey,
-  scrollable = false,
+  scrollable = true,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);

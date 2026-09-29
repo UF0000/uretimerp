@@ -280,7 +280,6 @@ F-01\tBoru Firesi\tscrap\tkg\tFire\t\t0\t0\t0`;
 
       <DataTable
         storageKey="products"
-        scrollable
         columns={columns}
         data={filtered}
         onRowDoubleClick={openDetail}
