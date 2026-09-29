@@ -23,7 +23,7 @@ export async function getMrpReport() {
     supabase.from("warehouses").select("id, type"),
     supabase
       .from("work_orders")
-      .select("product_id, planned_qty, entries:production_entries(produced_qty)")
+      .select("product_id, planned_qty, entries:production_entries(produced_qty, cancelled_at)")
       .neq("status", "done"),
     supabase
       .from("boms")
@@ -65,7 +65,7 @@ export async function getMrpReport() {
   // Açık iş emirlerinin kalan üretimi
   const openWorkOrders = new Map<string, number>();
   for (const wo of workOrdersRes.data ?? []) {
-    const produced = (wo.entries ?? []).reduce((s, e) => s + Number(e.produced_qty || 0), 0);
+    const produced = (wo.entries ?? []).filter((e) => !e.cancelled_at).reduce((s, e) => s + Number(e.produced_qty || 0), 0);
     const remaining = Number(wo.planned_qty) - produced;
     if (remaining > 0) sumInto(openWorkOrders, wo.product_id, remaining);
   }

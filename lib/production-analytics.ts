@@ -40,11 +40,25 @@ export interface AnalyticsEntry {
   downtimeMin: number;
   scrapReasonId: string | null;
   downtimeReasonId: string | null;
+  /** Çoklu neden satırları (varsa tek neden alanlarının yerine kullanılır) */
+  scrapParts?: ReasonPart[];
+  downtimeParts?: ReasonPart[];
   capacityKgPerHour: number | null;
   /** Ürünün grup/çap/SDR referans kapasitesi (kg/saat) */
   referenceKgPerHour: number | null;
   /** OEE performansı için ideal süre (sn); veri yoksa null */
   idealSec: number | null;
+}
+
+export type ReasonPart = { reasonId: string; value: number };
+
+/** Girişin fire (kg) ya da duruş (dk) nedenleri: satırlar varsa onlar, yoksa tek neden alanı */
+export function reasonParts(e: AnalyticsEntry, kind: "scrap" | "downtime"): ReasonPart[] {
+  const parts = kind === "scrap" ? e.scrapParts : e.downtimeParts;
+  if (parts?.length) return parts;
+  const id = kind === "scrap" ? e.scrapReasonId : e.downtimeReasonId;
+  const value = kind === "scrap" ? e.scrapKg : e.downtimeMin;
+  return id && value > 0 ? [{ reasonId: id, value }] : [];
 }
 
 export interface EntryMaterial {
@@ -207,12 +221,9 @@ export function computeProductionAnalytics(input: AnalyticsInput) {
     .sort((a, b) => b.usedKg - a.usedKg);
 
   // ── Neden kodları (Pareto) ──
-  const pareto = (pick: (e: AnalyticsEntry) => [string | null, number]) => {
+  const pareto = (kind: "scrap" | "downtime") => {
     const m = new Map<string, number>();
-    for (const e of entries) {
-      const [id, v] = pick(e);
-      if (id && v > 0) m.set(id, (m.get(id) ?? 0) + v);
-    }
+    for (const e of entries) for (const p of reasonParts(e, kind)) m.set(p.reasonId, (m.get(p.reasonId) ?? 0) + p.value);
     const total = sum([...m.values()], (v) => v);
     return [...m.entries()]
       .map(([id, value]) => ({ id, code: reasons.get(id)?.code ?? "?", label: reasons.get(id)?.label ?? "Bilinmeyen", value, share: total > 0 ? value / total : 0 }))
@@ -263,12 +274,9 @@ export function computeProductionAnalytics(input: AnalyticsInput) {
   const scrapRecovery = { regrindKg, lostKg: Math.max(0, total.scrapKg - regrindKg), recoveryPct: ratio(regrindKg, total.scrapKg) };
 
   // ── Kırılımlar: makine ve operatör (fire, duruş, OEE) ──
-  const topReason = (list: AnalyticsEntry[], pick: (e: AnalyticsEntry) => [string | null, number]) => {
+  const topReason = (list: AnalyticsEntry[], kind: "scrap" | "downtime") => {
     const m = new Map<string, number>();
-    for (const e of list) {
-      const [id, v] = pick(e);
-      if (id && v > 0) m.set(id, (m.get(id) ?? 0) + v);
-    }
+    for (const e of list) for (const p of reasonParts(e, kind)) m.set(p.reasonId, (m.get(p.reasonId) ?? 0) + p.value);
     const top = [...m.entries()].sort((a, b) => b[1] - a[1])[0];
     return top ? (reasons.get(top[0])?.label ?? "Bilinmeyen") : null;
   };
@@ -279,8 +287,8 @@ export function computeProductionAnalytics(input: AnalyticsInput) {
         label: label(k),
         ...measure(list),
         downtimeMin: sum(list, (e) => e.downtimeMin),
-        topScrapReason: topReason(list, (e) => [e.scrapReasonId, e.scrapKg]),
-        topDowntimeReason: topReason(list, (e) => [e.downtimeReasonId, e.downtimeMin]),
+        topScrapReason: topReason(list, "scrap"),
+        topDowntimeReason: topReason(list, "downtime"),
       }))
       .sort((a, b) => b.usedKg - a.usedKg);
   const byLine = breakdown((e) => e.lineId ?? "-", (k) => (k === "-" ? "Makine yok" : (lineNames.get(k) ?? "Bilinmeyen makine")));
@@ -316,8 +324,8 @@ export function computeProductionAnalytics(input: AnalyticsInput) {
     trend,
     trendBucket,
     rawMaterials,
-    scrapReasons: pareto((e) => [e.scrapReasonId, e.scrapKg]),
-    downtimeReasons: pareto((e) => [e.downtimeReasonId, e.downtimeMin]),
+    scrapReasons: pareto("scrap"),
+    downtimeReasons: pareto("downtime"),
     shifts,
     workOrders: workOrders.sort((a, b) => (a.materialYield ?? 1) - (b.materialYield ?? 1)),
     priorities,

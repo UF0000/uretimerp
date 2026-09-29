@@ -33,7 +33,7 @@ export async function getCompletedWorkOrdersForCosting(productId?: string) {
           injection:bom_injection(cavity_count, runner_sprue_weight_g, product_weight_g),
           extrusion:bom_extrusion(kg_per_meter)
         ),
-        production:production_entries(produced_qty, scrap_qty)
+        production:production_entries(produced_qty, scrap_qty, cancelled_at)
       `)
       .eq("status", "done")
       .match(productId ? { product_id: productId } : {})
@@ -73,8 +73,9 @@ export async function getCompletedWorkOrdersForCosting(productId?: string) {
   const effective = movements.filter((m) => !m.reverses_id && !reversed.has(m.id));
 
   return workOrders.map((wo) => {
-    const produced = (wo.production ?? []).reduce((sum, e) => sum + Number(e.produced_qty || 0), 0);
-    const scrapKg = (wo.production ?? []).reduce((sum, e) => sum + Number(e.scrap_qty || 0), 0);
+    const entries = (wo.production ?? []).filter((e) => !e.cancelled_at); // iptal edilen girişler hariç
+    const produced = entries.reduce((sum, e) => sum + Number(e.produced_qty || 0), 0);
+    const scrapKg = entries.reduce((sum, e) => sum + Number(e.scrap_qty || 0), 0);
     const woMoves = effective.filter((m) => m.source_id === wo.id);
 
     // Gerçekleşen hammadde: üretim kaynaklı çıkışlar

@@ -23,6 +23,7 @@ export async function getDashboardMetrics() {
   const { data: todayProduction } = await supabase
     .from("production_entries")
     .select("produced_qty")
+    .is("cancelled_at", null)
     .gte("entry_time", today.toISOString());
     
   const totalProducedToday = todayProduction?.reduce((sum, item) => sum + Number(item.produced_qty), 0) || 0;
@@ -35,6 +36,7 @@ export async function getDashboardMetrics() {
   const { data: weeklyProduction } = await supabase
     .from("production_entries")
     .select("produced_qty, entry_time")
+    .is("cancelled_at", null)
     .gte("entry_time", sevenDaysAgo.toISOString())
     .order("entry_time", { ascending: true });
 

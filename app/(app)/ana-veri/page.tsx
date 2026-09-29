@@ -17,6 +17,8 @@ import { WarehousesTab } from "./components/warehouses-tab";
 import { EquipmentTab } from "./components/equipment-tab";
 import { ReasonCodesTab } from "./components/reason-codes-tab";
 import { ProductGroupsTab } from "./components/product-groups-tab";
+import { OperatorsTab } from "./components/operators-tab";
+import { getOperators } from "@/app/actions/master-data/operators";
 
 export const metadata: Metadata = {
   title: "Ana Veri",
@@ -24,7 +26,7 @@ export const metadata: Metadata = {
 };
 
 export default async function MasterDataPage() {
-  const [products, partners, warehouses, lines, molds, reasonCodes, groups] = await Promise.all([
+  const [products, partners, warehouses, lines, molds, reasonCodes, groups, operators] = await Promise.all([
     getProducts(),
     getPartners(),
     getWarehouses(),
@@ -32,6 +34,7 @@ export default async function MasterDataPage() {
     getMolds(),
     getReasonCodes(),
     getProductGroups(),
+    getOperators(),
   ]);
 
   // Ürünlerde kullanılan grup kodları ve ürün sayısı
@@ -60,6 +63,7 @@ export default async function MasterDataPage() {
           <TabsTrigger value="partners">Cariler</TabsTrigger>
           <TabsTrigger value="warehouses">Depolar</TabsTrigger>
           <TabsTrigger value="reason_codes">Neden Kodları</TabsTrigger>
+          <TabsTrigger value="operators">Operatörler</TabsTrigger>
         </TabsList>
 
         <Card>
@@ -82,6 +86,10 @@ export default async function MasterDataPage() {
 
             <TabsContent value="warehouses" className="m-0">
               <WarehousesTab data={warehouses} />
+            </TabsContent>
+
+            <TabsContent value="operators" className="m-0">
+              <OperatorsTab data={operators} />
             </TabsContent>
 
             <TabsContent value="reason_codes" className="m-0">

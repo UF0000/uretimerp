@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { materialFamily } from "@/lib/material-family";
 import { inChunks, readAll } from "@/lib/supabase/read-all";
+import { loadReasonParts } from "@/lib/supabase/entry-reasons";
 import {
   computeProductionAnalytics,
   type AnalyticsEntry,
@@ -65,6 +66,8 @@ export async function getProductionAnalytics(filters: AnalyticsFilters) {
     ),
   ]);
   const idealByEntry = new Map(oee.map((o) => [o.entry_id, o.ideal_sec]));
+  // Çoklu fire/duruş nedenleri (dağılım grafikleri)
+  const parts = await loadReasonParts(supabase, entryIds);
   const reversed = new Set(movements.map((m) => m.reverses_id).filter(Boolean));
   const effective = movements.filter((m) => !m.reverses_id && !reversed.has(m.id));
 
@@ -108,6 +111,8 @@ export async function getProductionAnalytics(filters: AnalyticsFilters) {
     capacityKgPerHour: r.capacity_kg_per_hour === null ? null : Number(r.capacity_kg_per_hour),
     referenceKgPerHour: r.reference_kg_per_hour === null ? null : Number(r.reference_kg_per_hour),
     idealSec: idealByEntry.get(r.entry_id!) ?? null,
+    scrapParts: parts.scrap.get(r.entry_id!),
+    downtimeParts: parts.downtime.get(r.entry_id!),
   }));
 
   // Filtre seçenekleri (hammadde filtresi uygulanmadan önceki kapsamdan)

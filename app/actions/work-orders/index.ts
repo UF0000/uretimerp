@@ -23,13 +23,14 @@ export async function getWorkOrders() {
       line:production_lines(name),
       mold:molds(name),
       order:orders(no),
-      entries:production_entries(produced_qty, scrap_qty, downtime_min)
+      entries:production_entries(produced_qty, scrap_qty, downtime_min, cancelled_at)
     `)
     .order("started_at", { ascending: false, nullsFirst: true })
     .order("id", { ascending: false });
 
   if (error) throw new Error("İş emirleri getirilirken hata oluştu: " + error.message);
-  return data;
+  // İptal edilen (düzeltilen) girişler ilerlemeye sayılmaz
+  return data.map((w) => ({ ...w, entries: (w.entries ?? []).filter((e) => !e.cancelled_at) }));
 }
 
 export type WorkOrderRow = Awaited<ReturnType<typeof getWorkOrders>>[number];

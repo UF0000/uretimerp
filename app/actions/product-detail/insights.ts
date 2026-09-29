@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/auth";
 import { inChunks, readAll } from "@/lib/supabase/read-all";
 import { one } from "@/lib/utils";
-import { measure, type AnalyticsEntry } from "@/lib/production-analytics";
+import { measure, reasonParts, type AnalyticsEntry } from "@/lib/production-analytics";
+import { loadReasonParts } from "@/lib/supabase/entry-reasons";
 import { getCompletedWorkOrdersForCosting } from "@/app/actions/cost";
 
 const DAY = 86400000;
@@ -38,7 +39,7 @@ export async function getProductInsights(productId: string) {
       .select("quantity, delivered_qty, order:orders!inner(id, no, status, delivery_date, order_date, partner:partners(name))")
       .eq("product_id", productId)
       .in("order.status", [...OPEN_ORDER]),
-    supabase.from("work_orders").select("id, no, status, planned_qty, started_at, production:production_entries(produced_qty)").eq("product_id", productId).in("status", [...OPEN_WO]).order("no"),
+    supabase.from("work_orders").select("id, no, status, planned_qty, started_at, production:production_entries(produced_qty, cancelled_at)").eq("product_id", productId).in("status", [...OPEN_WO]).order("no"),
     supabase.from("quality_checks").select("id, type, lot_no, standard, result, checked_at").eq("product_id", productId).order("checked_at", { ascending: false }).limit(50),
     supabase.from("ncr").select("id, no, status, description, quantity, lot_no, created_at, closed_at").eq("product_id", productId).order("created_at", { ascending: false }).limit(20),
     supabase.from("cost_parameters").select("target_scrap_pct, overweight_tolerance_pct, target_oee_pct").limit(1).maybeSingle(),
@@ -94,7 +95,7 @@ export async function getProductInsights(productId: string) {
     .sort((a, b) => (a.deliveryDate ?? "9999").localeCompare(b.deliveryDate ?? "9999"));
   const reserved = openOrders.reduce((s, o) => s + o.remaining, 0);
   const openWorkOrders = (woRes.data ?? []).map((w) => {
-    const produced = (w.production ?? []).reduce((s, e) => s + Number(e.produced_qty || 0), 0);
+    const produced = (w.production ?? []).filter((e) => !e.cancelled_at).reduce((s, e) => s + Number(e.produced_qty || 0), 0);
     return { id: w.id, no: w.no, status: w.status, planned: Number(w.planned_qty), produced, remaining: Math.max(0, Number(w.planned_qty) - produced) };
   });
   const inProduction = openWorkOrders.reduce((s, w) => s + w.remaining, 0);
@@ -128,6 +129,7 @@ export async function getProductInsights(productId: string) {
     (c) => supabase.from("v_oee_entries").select("entry_id, ideal_sec").in("entry_id", c),
   );
   const idealBy = new Map(ideal.map((i) => [i.entry_id, i.ideal_sec === null ? null : Number(i.ideal_sec)]));
+  const parts = await loadReasonParts(supabase, perfRows.map((r) => r.entry_id!));
   const entries: AnalyticsEntry[] = perfRows.map((r) => ({
     entryId: r.entry_id!,
     day: r.day!,
@@ -154,14 +156,13 @@ export async function getProductInsights(productId: string) {
     capacityKgPerHour: r.capacity_kg_per_hour === null ? null : Number(r.capacity_kg_per_hour),
     referenceKgPerHour: r.reference_kg_per_hour === null ? null : Number(r.reference_kg_per_hour),
     idealSec: idealBy.get(r.entry_id!) ?? null,
+    scrapParts: parts.scrap.get(r.entry_id!),
+    downtimeParts: parts.downtime.get(r.entry_id!),
   }));
   const reasonLabel = new Map((reasonsRes.data ?? []).map((r) => [r.id, r.label]));
-  const topReasons = (pick: (e: AnalyticsEntry) => [string | null, number]) => {
+  const topReasons = (kind: "scrap" | "downtime") => {
     const m = new Map<string, number>();
-    for (const e of entries) {
-      const [id, v] = pick(e);
-      if (id && v > 0) m.set(id, (m.get(id) ?? 0) + v);
-    }
+    for (const e of entries) for (const p of reasonParts(e, kind)) m.set(p.reasonId, (m.get(p.reasonId) ?? 0) + p.value);
     const total = [...m.values()].reduce((s, v) => s + v, 0);
     return [...m.entries()]
       .sort((a, b) => b[1] - a[1])
@@ -172,8 +173,8 @@ export async function getProductInsights(productId: string) {
     ? {
         ...measure(entries),
         workOrders: new Set(entries.map((e) => e.workOrderId)).size,
-        topScrap: topReasons((e) => [e.scrapReasonId, e.scrapKg]),
-        topDowntime: topReasons((e) => [e.downtimeReasonId, e.downtimeMin]),
+        topScrap: topReasons("scrap"),
+        topDowntime: topReasons("downtime"),
       }
     : null;
 

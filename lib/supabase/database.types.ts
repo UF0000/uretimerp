@@ -678,8 +678,110 @@ export type Database = {
         }
         Relationships: []
       }
+      operators: {
+        Row: {
+          id: string
+          name: string
+          active: boolean
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          active?: boolean
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          active?: boolean
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      production_entry_scraps: {
+        Row: {
+          id: string
+          entry_id: string
+          reason_code_id: string
+          kg: number
+        }
+        Insert: {
+          id?: string
+          entry_id: string
+          reason_code_id: string
+          kg: number
+        }
+        Update: {
+          id?: string
+          entry_id?: string
+          reason_code_id?: string
+          kg?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_entry_scraps_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "production_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entry_scraps_reason_code_id_fkey"
+            columns: ["reason_code_id"]
+            isOneToOne: false
+            referencedRelation: "reason_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_entry_downtimes: {
+        Row: {
+          id: string
+          entry_id: string
+          reason_code_id: string
+          minutes: number
+        }
+        Insert: {
+          id?: string
+          entry_id: string
+          reason_code_id: string
+          minutes: number
+        }
+        Update: {
+          id?: string
+          entry_id?: string
+          reason_code_id?: string
+          minutes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_entry_downtimes_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "production_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entry_downtimes_reason_code_id_fkey"
+            columns: ["reason_code_id"]
+            isOneToOne: false
+            referencedRelation: "reason_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       production_entries: {
         Row: {
+          start_at: string | null
+          end_at: string | null
+          operator_id: string | null
+          mold_id: string | null
+          mold_shots: number
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancel_note: string | null
+          replaced_by_entry_id: string | null
           id: string
           work_order_id: string
           shift: Database["public"]["Enums"]["shift_type"]
@@ -696,6 +798,15 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          start_at?: string | null
+          end_at?: string | null
+          operator_id?: string | null
+          mold_id?: string | null
+          mold_shots?: number
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancel_note?: string | null
+          replaced_by_entry_id?: string | null
           id?: string
           work_order_id: string
           shift: Database["public"]["Enums"]["shift_type"]
@@ -712,6 +823,15 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          start_at?: string | null
+          end_at?: string | null
+          operator_id?: string | null
+          mold_id?: string | null
+          mold_shots?: number
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancel_note?: string | null
+          replaced_by_entry_id?: string | null
           id?: string
           work_order_id?: string
           shift?: Database["public"]["Enums"]["shift_type"]
@@ -1575,6 +1695,19 @@ export type Database = {
           roles: Database["public"]["Enums"]["user_role"][]
         }
         Returns: boolean
+      }
+      save_production_entry: {
+        Args: {
+          p: Json
+        }
+        Returns: Json
+      }
+      cancel_production_entry: {
+        Args: {
+          p_entry_id: string
+          p_note?: string
+        }
+        Returns: undefined
       }
       record_production_entry: {
         Args: {
