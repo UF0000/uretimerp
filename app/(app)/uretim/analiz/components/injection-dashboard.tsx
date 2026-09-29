@@ -2,7 +2,7 @@ import type { ProductionAnalyticsReport } from "@/app/actions/analytics";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatTR } from "@/lib/format";
-import { MOLD_MODE_LABELS, type MoldMode } from "@/lib/product-meta";
+import { MOLD_MODE_LABELS } from "@/lib/product-meta";
 import { AnalyticsFilters } from "./analytics-filters";
 import { CyclePerfBars, DistributionDonut, MaterialScrapBars, MaterialScrapPct, ShiftComparison, ShiftProduction } from "./analytics-charts";
 import { ChartCard, Kpi, Section, pct, statusHigh, statusOf } from "./dashboard-ui";
@@ -17,7 +17,6 @@ const kg3 = (v: number) => formatTR(v, 3);
 const hours = (v: number) => `${formatTR(v, 1)} sa`;
 const shareOf = (part: number, whole: number) => (whole > 0 ? `%${formatTR((part / whole) * 100, 1)}` : "—");
 const SHIFT_NAME = { day: "GÜNDÜZ", night: "GECE" } as const;
-const MOLD_MODES: MoldMode[] = ["yari_otomatik", "otomatik"];
 
 export function InjectionDashboard({ report, from, to }: { report: ProductionAnalyticsReport; from: string; to: string }) {
   const { analytics: a, options, days } = report;
@@ -210,20 +209,15 @@ export function InjectionDashboard({ report, from, to }: { report: ProductionAna
             </ChartCard>
           </div>
 
-          {MOLD_MODES.map((mode) => (
-            <ChartCard
-              key={mode}
-              title={`${MOLD_MODE_LABELS[mode]} Kalıp — Çevrim Performansı (%)`}
-              description="Her bant tek iş emridir: üst satır üretim emri, alt satır üretilen stok kodu."
-            >
-              <CyclePerfBars
-                noun="iş emri"
-                rows={a.workOrders
-                  .filter((w) => w.moldMode === mode && w.performance !== null)
-                  .map((w) => ({ key: w.workOrderId, label: w.workOrderNo, sublabel: `Ürün: ${w.productCode}`, value: w.performance! * 100 }))}
-              />
-            </ChartCard>
-          ))}
+          {/* Otomatik kalıpta operatör etkisi yok: çevrim performansı yalnızca yarı otomatik kalıplarda izlenir */}
+          <ChartCard title="Yarı Otomatik Kalıp — Çevrim Performansı (%)" description="Her bant tek iş emridir: üst satır üretim emri, alt satır üretilen stok kodu.">
+            <CyclePerfBars
+              noun="iş emri"
+              rows={a.workOrders
+                .filter((w) => w.moldMode === "yari_otomatik" && w.performance !== null)
+                .map((w) => ({ key: w.workOrderId, label: w.workOrderNo, sublabel: `Ürün: ${w.productCode}`, value: w.performance! * 100 }))}
+            />
+          </ChartCard>
           {noMode > 0 && (
             <p className="text-xs text-muted-foreground">
               {noMode} iş emrinin kalıbında çalışma tipi (otomatik / yarı otomatik) girilmemiş; Ana Veri → Kalıplar&apos;dan girilebilir.
