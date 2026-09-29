@@ -46,7 +46,11 @@ interface DataTableProps<TData, TValue> {
   onRowDoubleClick?: (row: TData) => void;
   /** Sütun genişliklerinin saklanacağı anahtar (varsayılan: sütun adlarından) */
   storageKey?: string;
+  /** Sayfalama yerine kaydırmalı liste: başlık sabit, satırlar aşağı kaydırdıkça yüklenir */
+  scrollable?: boolean;
 }
+
+const SCROLL_STEP = 100;
 
 export function DataTable<TData, TValue>({
   columns,
@@ -61,6 +65,7 @@ export function DataTable<TData, TValue>({
   toolbar,
   onRowDoubleClick,
   storageKey,
+  scrollable = false,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -100,7 +105,7 @@ export function DataTable<TData, TValue>({
     onColumnFiltersChange: setColumnFilters,
     onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: disablePagination ? undefined : getPaginationRowModel(),
+    getPaginationRowModel: disablePagination || scrollable ? undefined : getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     autoResetPageIndex: false,
@@ -112,6 +117,30 @@ export function DataTable<TData, TValue>({
   });
 
   const columnIds = table.getVisibleLeafColumns().map((c) => c.id);
+
+  // Kaydırmalı liste: veri (filtre) değişince baştan; son satıra yaklaşınca 100 satır daha
+  const [limit, setLimit] = React.useState(SCROLL_STEP);
+  const [limitFor, setLimitFor] = React.useState(data);
+  if (limitFor !== data) {
+    setLimitFor(data);
+    setLimit(SCROLL_STEP);
+  }
+  const allRows = table.getRowModel().rows;
+  const rows = scrollable ? allRows.slice(0, limit) : allRows;
+  const sentinel = React.useCallback(
+    (node: HTMLTableRowElement | null) => {
+      if (!node || !scrollable) return;
+      const io = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((e) => e.isIntersecting)) setLimit((l) => l + SCROLL_STEP);
+        },
+        { root: node.closest("[data-slot=table-container]"), rootMargin: "400px" },
+      );
+      io.observe(node);
+      return () => io.disconnect();
+    },
+    [scrollable],
+  );
   const widths = useColumnWidths(storageKey ?? columnIds.join("|"), columnIds);
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
@@ -173,6 +202,7 @@ export function DataTable<TData, TValue>({
         <Table
           ref={widths.tableRef}
           fixedColumns={widths.custom}
+          containerClassName={scrollable ? "max-h-[70vh] overflow-auto" : undefined}
           width={widths.custom ? widths.total : undefined}
         >
           {widths.custom && (
@@ -182,7 +212,7 @@ export function DataTable<TData, TValue>({
               ))}
             </colgroup>
           )}
-          <TableHeader>
+          <TableHeader className={cn(scrollable && "sticky top-0 z-20 bg-card shadow-[0_1px_0_var(--border)]")}>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
@@ -212,8 +242,8 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+            {rows.length ? (
+              rows.map((row) => (
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
@@ -241,10 +271,20 @@ export function DataTable<TData, TValue>({
                 </TableCell>
               </TableRow>
             )}
+            {scrollable && rows.length < allRows.length && (
+              <TableRow ref={sentinel} key={`more-${rows.length}`}>
+                <TableCell colSpan={finalColumns.length} className="h-12 text-center text-xs text-muted-foreground">
+                  Yükleniyor… ({rows.length} / {allRows.length})
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
-      {!disablePagination && (
+      {scrollable && (
+        <div className="text-sm text-muted-foreground">Toplam {allRows.length} kayıt · aşağı kaydırdıkça yüklenir</div>
+      )}
+      {!disablePagination && !scrollable && (
         <div className="flex flex-col gap-2 py-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-muted-foreground">
             Toplam {table.getFilteredRowModel().rows.length} kayıttan {(table.getState().pagination.pageIndex * table.getState().pagination.pageSize) + 1} - {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, table.getFilteredRowModel().rows.length)} arası gösteriliyor.

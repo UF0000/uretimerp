@@ -75,7 +75,7 @@ export function findDataIssues(input: DqInput): DataIssue[] {
         add({ key: `bom-kgm-${b.id}`, area: "Reçete", severity: "blocker", subject, detail, problem: "Metre ağırlığı (kg/m) yok", effect: "Overweight, nominal kg, MRP hammadde ihtiyacı", href, fixHint: "Reçetede kg/m girin" });
       }
       if (!positive(e.targetMPerHour)) {
-        add({ key: `bom-speed-${b.id}`, area: "Reçete", severity: "warning", subject, detail, problem: "Hedef hız (m/saat) yok", effect: "OEE performansı ve OEE", href, fixHint: "Reçetede hedef hız girin" });
+        add({ key: `bom-speed-${b.id}`, area: "Reçete", severity: "warning", subject, detail, problem: "Hedef hız (m/dk) yok", effect: "OEE performansı ve OEE", href, fixHint: "Reçetede hedef hız girin" });
       }
       if (!e.lineId) {
         add({ key: `bom-line-${b.id}`, area: "Reçete", severity: "warning", subject, detail, problem: "Reçetede makine (hat) seçili değil", effect: "İş emrinde hat seçilmezse makine kapasitesi ve hat bazlı analiz", href, fixHint: "Reçetede hat seçin" });

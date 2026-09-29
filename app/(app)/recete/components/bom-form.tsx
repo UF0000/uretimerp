@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import { BomFormValues, BomFormInput, bomSchema } from "@/lib/validations/bom";
 import { saveBom } from "@/app/actions/bom";
+import { mPerHourToMin, mPerMinToHour } from "@/lib/speed";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,7 +61,10 @@ export function BomForm({ initialData, products, lines, molds }: BomFormProps) {
     formState: { errors },
   } = useForm<BomFormInput, unknown, BomFormValues>({
     resolver: zodResolver(bomSchema),
-    defaultValues: initialData || {
+    // Hız formda m/dakika; kayıtta m/saat'e çevrilir
+    defaultValues: initialData
+      ? { ...initialData, extrusion: initialData.extrusion ? { ...initialData.extrusion, target_m_per_hour: mPerHourToMin(initialData.extrusion.target_m_per_hour) } : initialData.extrusion }
+      : {
       product_id: "",
       code: "",
       name: "",
@@ -142,7 +146,10 @@ export function BomForm({ initialData, products, lines, molds }: BomFormProps) {
   const onSubmit = async (data: BomFormValues) => {
     try {
       setIsSubmitting(true);
-      const result = await saveBom(data);
+      const result = await saveBom({
+        ...data,
+        extrusion: data.extrusion ? { ...data.extrusion, target_m_per_hour: mPerMinToHour(data.extrusion.target_m_per_hour) } : data.extrusion,
+      });
       if (result.newVersion) {
         toast.success(`Yeni versiyon oluşturuldu: ${result.code} v${result.version}`, {
           description: "Eski versiyon üretimde kullanıldığı için korunup pasife alındı.",
@@ -326,7 +333,7 @@ export function BomForm({ initialData, products, lines, molds }: BomFormProps) {
                     <Input type="number" step="0.001" {...register("extrusion.kg_per_meter", { valueAsNumber: true })} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Hedef Hız (m/saat)</Label>
+                    <Label>Hedef Hız (m/dk)</Label>
                     <Input
                       type="number"
                       step="0.1"

@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatTR } from "@/lib/format";
 import { getErrorMessage } from "@/lib/utils";
+import { mPerHourToMin, mPerMinToHour } from "@/lib/speed";
 
 type Technical = NonNullable<ProductDetail["technical"]>;
 type FieldKey = keyof TechnicalValues;
@@ -19,7 +20,7 @@ type FieldKey = keyof TechnicalValues;
 const FIELDS: Record<"extrusion" | "injection", { key: FieldKey; label: string; unit: string; step: string; pick: (t: Technical) => number | null }[]> = {
   extrusion: [
     { key: "kg_per_meter", label: "Metre ağırlığı", unit: "kg/m", step: "0.001", pick: (t) => t.kgPerMeter },
-    { key: "target_m_per_hour", label: "Üretim hızı (hedef)", unit: "m/saat", step: "0.1", pick: (t) => t.targetMPerHour },
+    { key: "target_m_per_hour", label: "Üretim hızı (hedef)", unit: "m/dk", step: "0.01", pick: (t) => mPerHourToMin(t.targetMPerHour) },
   ],
   injection: [
     { key: "cycle_time_sec", label: "Çevrim süresi", unit: "sn", step: "0.1", pick: (t) => t.cycleTimeSec },
@@ -45,6 +46,7 @@ export function TechnicalCard({ productId, technical }: { productId: string; tec
 
   const fmt = (v: number | null, unit: string, d = 2) => (v === null ? "—" : `${formatTR(v, d)} ${unit}`);
   const t = technical;
+  // kg/saat = kg/m × m/saat (veritabanında hız m/saat)
   const kgPerHour = t.kgPerMeter && t.targetMPerHour ? t.kgPerMeter * t.targetMPerHour : null;
   const pcsPerHour = t.cycleTimeSec && t.cavityCount ? (3600 / t.cycleTimeSec) * t.cavityCount : null;
 
@@ -52,7 +54,9 @@ export function TechnicalCard({ productId, technical }: { productId: string; tec
     const payload: TechnicalValues = {};
     for (const f of fields) {
       const raw = values[f.key]?.trim();
-      payload[f.key] = raw ? Number(raw.replace(",", ".")) : null;
+      const n = raw ? Number(raw.replace(",", ".")) : null;
+      // Hız ekranda m/dk, kayıtta m/saat
+      payload[f.key] = f.key === "target_m_per_hour" ? mPerMinToHour(n) : n;
     }
     try {
       setSaving(true);
@@ -122,7 +126,7 @@ export function TechnicalCard({ productId, technical }: { productId: string; tec
       ) : (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {fields.map((f) => (
-            <Stat key={f.key} label={f.label} value={fmt(f.pick(t), f.unit, f.key === "cavity_count" ? 0 : f.key === "kg_per_meter" ? 3 : 1)} />
+            <Stat key={f.key} label={f.label} value={fmt(f.pick(t), f.unit, f.key === "cavity_count" ? 0 : f.key === "kg_per_meter" ? 3 : f.key === "target_m_per_hour" ? 2 : 1)} />
           ))}
           {t.productionType === "extrusion" ? (
             <Stat label="Saatlik üretim (hesap)" value={fmt(kgPerHour, "kg/saat", 1)} />

@@ -106,6 +106,8 @@ supabase/
 - [x] Ana veri CRUD (ürün/hammadde/kalıp/hat/cari/depo/neden kodları) + Excel içe aktarım
 - [x] Ürün kartı: liste filtreleri (tür/aile/grup kodu/malzeme/varyant), görsel (Storage `product-images`), çift tık → `/ana-veri/urunler/[id]`: genel bilgi, stok, boyut (çap/et/SDR), teknik veri (reçete/kalıptan; düzenleme `save_bom` + kalıp güncelleme), hammadde, 12 ay hareket grafiği, varyantlar (+ toplamlar), otomatik standart maliyet (`lib/product-cost.ts`). Türler + Ticari mal/Hizmet; aile = `category` (boru, baglanti_parcasi=Fitting, metal…), sabitler `lib/product-meta.ts`
 - Grup kodu (`products.group_code`, adlar `product_groups`, Ana Veri → Grup Kodları sekmesi; gerçek liste kullanıcıdan gelecek): PE'de koddan (D.110.090.**03**), PP'de elle. Varyant = aynı `variant_code` (genel stok kodu); PP kuralı ilk harf renk + "." sonrası firma eki (V1A012020.HENQ → 1A012020)
+- Ekstrüzyon hızı ekranda **m/dk**, veritabanında `bom_extrusion.target_m_per_hour` (m/saat; OEE bu birimle) — dönüşüm `lib/speed.ts`
+- Ürün listesi kaydırmalı (DataTable `scrollable`: sabit başlık, 100'er satır)
 - Tüm DataTable'larda Excel gibi sütun genişliği (sürükle / çift tık sığdır, localStorage) — `components/shared/use-column-widths.ts`
 - [x] Reçete / BOM + versiyonlama (`save_bom`: kullanılmış reçete düzenlenince yeni versiyon)
 - [x] Stok defteri append-only (UPDATE/DELETE tetikleyiciyle yasak), iptal = ters kayıt, fiş iptali

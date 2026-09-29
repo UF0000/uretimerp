@@ -5,11 +5,11 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 /** `fixedColumns`: sütun genişlikleri <col width> ile verilir; tablo genişliği `width` özniteliğinden gelir. */
-function Table({ className, fixedColumns = false, ...props }: React.ComponentProps<"table"> & { fixedColumns?: boolean }) {
+function Table({ className, fixedColumns = false, containerClassName, ...props }: React.ComponentProps<"table"> & { fixedColumns?: boolean; containerClassName?: string }) {
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto"
+      className={cn("relative w-full overflow-x-auto", containerClassName)}
     >
       <table
         data-slot="table"
