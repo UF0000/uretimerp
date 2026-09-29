@@ -39,10 +39,22 @@ export const CATEGORY_LABELS: Record<string, string> = {
 
 export const categoryLabel = (c: string | null | undefined) => (c ? (CATEGORY_LABELS[c] ?? c) : "—");
 
-/** PE kodu: D.110.090.03 → grup kodu "03" (son iki hane). */
+/**
+ * Koddan grup kodu (KIRILIM listesi):
+ * - PE / sifonik: son iki hane (D.110.090.03 → 03, D.040.ENJ.21 → 21)
+ * - Hammadde: ".27" ile biten kodlar (PE.100.N.000.27, MAS.PE.GN.000.27) → 27
+ * - PP boru: renk harfi + 1A… (V1A0420L4.HENQ) → 24
+ * - PP fitting: renk harfi + 1C… / 1B… (V1C012020) → 25
+ * Migration 20260930100000 aynı kuralı SQL'de uygular.
+ */
 export function groupCodeFromCode(code: string): string | null {
-  const m = /^D\.[0-9]+(?:\.[0-9]+)*\.([0-9]{2})$/.exec(code.trim());
-  return m ? m[1] : null;
+  const c = code.trim().toUpperCase();
+  const pe = /^D\.[0-9A-Z.]+\.([0-9]{2})$/.exec(c);
+  if (pe) return pe[1];
+  if (/\.27$/.test(c)) return "27";
+  if (/^[A-Z]1A[0-9]/.test(c)) return "24";
+  if (/^[A-Z]1[BC][0-9]/.test(c)) return "25";
+  return null;
 }
 
 /**
