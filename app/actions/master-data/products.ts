@@ -179,7 +179,7 @@ export async function bulkImportProducts(productsData: ExcelRow[]) {
 
 export type ProductRow = Awaited<ReturnType<typeof getProducts>>[number];
 
-/** Grup kodu tanımları (03 = 45° dirsek …) */
+/** Grup kodu tanımları (kod → ad) */
 export async function getProductGroups() {
   const supabase = await createClient();
   const { data, error } = await supabase.from("product_groups").select("code, name").order("code");

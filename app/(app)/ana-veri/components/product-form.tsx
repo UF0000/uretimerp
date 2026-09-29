@@ -173,7 +173,7 @@ export function ProductForm({ open, onOpenChange, initialData, groups }: Product
                   </option>
                 ))}
               </datalist>
-              <p className="text-xs text-muted-foreground">Ürün türü grubu (03 = 45° dirsek…); stok kodundan bağımsız</p>
+              <p className="text-xs text-muted-foreground">Ürün türü grubu (ör. 03); stok kodundan bağımsız</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="variant_code">Genel stok kodu (varyant)</Label>

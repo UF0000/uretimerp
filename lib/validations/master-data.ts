@@ -14,7 +14,7 @@ export const productSchema = z.object({
   diameter_mm: z.number().positive("Çap 0'dan büyük olmalıdır").optional().nullable(),
   sdr: z.number().positive("SDR 0'dan büyük olmalıdır").optional().nullable(),
   wall_thickness_mm: z.number().positive("Et kalınlığı 0'dan büyük olmalıdır").optional().nullable(),
-  /** Ürün türü grubu (ör. 03 = 45° dirsek); stok kodundan bağımsız */
+  /** Ürün türü grubu (ör. 03); stok kodundan bağımsız */
   group_code: z.string().trim().max(20).optional().nullable(),
   /** Genel stok kodu: aynı kodu taşıyan ürünler birbirinin varyantıdır */
   variant_code: z.string().trim().max(60).optional().nullable(),
