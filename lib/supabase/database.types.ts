@@ -803,6 +803,89 @@ export type Database = {
         }
         Relationships: []
       }
+      product_documents: {
+        Row: {
+          id: string
+          product_id: string
+          category: string
+          title: string
+          file_path: string
+          file_name: string
+          mime_type: string | null
+          size_bytes: number | null
+          uploaded_by: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          category?: string
+          title: string
+          file_path: string
+          file_name: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          uploaded_by?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          category?: string
+          title?: string
+          file_path?: string
+          file_name?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          uploaded_by?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      product_suppliers: {
+        Row: {
+          id: string
+          product_id: string
+          partner_id: string
+          is_primary: boolean
+          supplier_code: string | null
+          lead_time_days: number | null
+          min_order_qty: number | null
+          note: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          partner_id: string
+          is_primary?: boolean
+          supplier_code?: string | null
+          lead_time_days?: number | null
+          min_order_qty?: number | null
+          note?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          partner_id?: string
+          is_primary?: boolean
+          supplier_code?: string | null
+          lead_time_days?: number | null
+          min_order_qty?: number | null
+          note?: string | null
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_suppliers_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           id: string
@@ -825,6 +908,13 @@ export type Database = {
           variant_code: string | null
           wall_thickness_mm: number | null
           description: string | null
+          package_type: string | null
+          package_qty: number | null
+          pallet_qty: number | null
+          pipe_length_m: number | null
+          package_weight_kg: number | null
+          barcode: string | null
+          package_note: string | null
         }
         Insert: {
           id?: string
@@ -847,6 +937,13 @@ export type Database = {
           variant_code?: string | null
           wall_thickness_mm?: number | null
           description?: string | null
+          package_type?: string | null
+          package_qty?: number | null
+          pallet_qty?: number | null
+          pipe_length_m?: number | null
+          package_weight_kg?: number | null
+          barcode?: string | null
+          package_note?: string | null
         }
         Update: {
           id?: string
@@ -869,8 +966,53 @@ export type Database = {
           variant_code?: string | null
           wall_thickness_mm?: number | null
           description?: string | null
+          package_type?: string | null
+          package_qty?: number | null
+          pallet_qty?: number | null
+          pipe_length_m?: number | null
+          package_weight_kg?: number | null
+          barcode?: string | null
+          package_note?: string | null
         }
         Relationships: []
+      }
+      supplier_prices: {
+        Row: {
+          id: string
+          product_supplier_id: string
+          price: number
+          currency: string
+          valid_from: string
+          note: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          product_supplier_id: string
+          price: number
+          currency?: string
+          valid_from?: string
+          note?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          product_supplier_id?: string
+          price?: number
+          currency?: string
+          valid_from?: string
+          note?: string | null
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_prices_product_supplier_id_fkey"
+            columns: ["product_supplier_id"]
+            isOneToOne: false
+            referencedRelation: "product_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

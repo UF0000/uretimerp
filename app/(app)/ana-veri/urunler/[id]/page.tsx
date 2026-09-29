@@ -5,6 +5,7 @@ import { ArrowLeft, Info } from "lucide-react";
 
 import { getProductDetail } from "@/app/actions/product-detail";
 import { getProductInsights } from "@/app/actions/product-detail/insights";
+import { getProductExtras } from "@/app/actions/product-detail/extras";
 import { getProductGroups } from "@/app/actions/master-data/products";
 import { PageHeader } from "@/components/shared/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,8 @@ import { MovementChart } from "./components/movement-chart";
 import { VariantsPanel } from "./components/variants-panel";
 import { EditProductButton } from "./components/edit-product-button";
 import { ActualCostSection, PerformanceSection, QualitySection, StockSection } from "./components/insight-sections";
+import { DocumentsPanel } from "./components/documents-panel";
+import { SuppliersPanel } from "./components/suppliers-panel";
 
 export const metadata: Metadata = { title: "Ürün Ayrıntısı" };
 export const dynamic = "force-dynamic";
@@ -47,12 +50,15 @@ export default async function ProductDetailPage(props: { params: Promise<{ id: s
   const { id } = await props.params;
   const [detail, groups] = await Promise.all([getProductDetail(id), getProductGroups()]);
   if (!detail) notFound();
-  const insights = await getProductInsights(id);
+  const [insights, extras] = await Promise.all([getProductInsights(id), getProductExtras(id)]);
   const { product: p, technical: t, cost, components } = detail;
   const unit = UNIT_LABEL[p.unit] ?? p.unit;
   const type = p.type as ProductType;
   const isPipe = p.category === "boru" || t?.productionType === "extrusion";
   const isFitting = p.category === "baglanti_parcasi" || t?.productionType === "injection";
+  const isPurchased = type === "raw" || type === "trade" || ["hammadde", "metal", "ambalaj", "sarf_malzeme", "yedek_parca"].includes(p.category ?? "") || extras.suppliers.length > 0;
+  const perPallet = p.package_qty && p.pallet_qty ? Number(p.package_qty) * Number(p.pallet_qty) : null;
+  const hasPackaging = [p.package_type, p.package_qty, p.pallet_qty, p.pipe_length_m, p.package_weight_kg, p.barcode, p.package_note].some((v) => v !== null && v !== "");
 
   return (
     <div className="space-y-6">
@@ -132,6 +138,23 @@ export default async function ProductDetailPage(props: { params: Promise<{ id: s
               {isFitting && <Field label="Parça ağırlığı" value={t?.productWeightG ? `${formatTR(t.productWeightG, 1)} g` : "—"} />}
             </dl>
           </Section>
+
+          <Section title="Paketleme" className="md:col-span-2">
+            {hasPackaging ? (
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
+                <Field label="Paket tipi" value={p.package_type || "—"} />
+                <Field label="Paket içi" value={p.package_qty ? `${formatTR(Number(p.package_qty), 0)} ${unit}` : "—"} />
+                <Field label="Palet başına paket" value={p.pallet_qty ? formatTR(Number(p.pallet_qty), 0) : "—"} />
+                <Field label="Palet başına miktar" value={perPallet ? `${formatTR(perPallet, 0)} ${unit}` : "—"} />
+                {(isPipe || p.pipe_length_m) && <Field label="Boy uzunluğu" value={p.pipe_length_m ? `${formatTR(Number(p.pipe_length_m), 2)} m` : "—"} />}
+                <Field label="Paket ağırlığı" value={p.package_weight_kg ? `${formatTR(Number(p.package_weight_kg), 2)} kg` : "—"} />
+                <Field label="Barkod" value={p.barcode || "—"} />
+                {p.package_note && <Field label="Not" value={p.package_note} className="col-span-2" />}
+              </dl>
+            ) : (
+              <p className="text-sm text-muted-foreground">Paketleme bilgisi girilmemiş. &quot;Kartı düzenle&quot; → Paketleme bölümünden eklenir.</p>
+            )}
+          </Section>
         </div>
       </div>
 
@@ -200,6 +223,16 @@ export default async function ProductDetailPage(props: { params: Promise<{ id: s
       <Section title="Kalite geçmişi">
         <QualitySection insights={insights} />
       </Section>
+
+      <Section title="Teknik dokümanlar">
+        <DocumentsPanel productId={p.id} documents={extras.documents} />
+      </Section>
+
+      {isPurchased && (
+        <Section title="Tedarikçiler ve alış fiyatları">
+          <SuppliersPanel productId={p.id} extras={extras} />
+        </Section>
+      )}
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Section title="Maliyet (otomatik, birim başına)">

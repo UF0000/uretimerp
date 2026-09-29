@@ -108,6 +108,8 @@ supabase/
 - Grup kodu (`products.group_code`, adlar `product_groups`, Ana Veri → Grup Kodları sekmesi; gerçek liste kullanıcıdan gelecek): PE'de koddan (D.110.090.**03**), PP'de elle. Varyant = aynı `variant_code` (genel stok kodu); PP kuralı ilk harf renk + "." sonrası firma eki (V1A012020.HENQ → 1A012020)
 - Ekstrüzyon hızı ekranda **m/dk**, veritabanında `bom_extrusion.target_m_per_hour` (m/saat; OEE bu birimle) — dönüşüm `lib/speed.ts` (eski m/dk girişleri `20260929170000` ile ×60 çevrildi)
 - Ürün listesi kaydırmalı (DataTable `scrollable`: sabit başlık, 100'er satır)
+- Ürün kartı ek bölümleri: stok ve rezervasyon (kullanılabilir = kullanılabilir depolar − açık sipariş kalanı; karantina/hurda/regrind hariç), depo/lot, tahmini tükenme (90 gün ort. satış, hammaddede tüketim), üretim performansı (12 ay, `measure()`), kalite geçmişi, gerçekleşen maliyet (`getCompletedWorkOrdersForCosting(productId)`) — `app/actions/product-detail/insights.ts`; paketleme alanları (products.package_*, pipe_length_m, barcode), teknik dokümanlar (`product_documents`, özel bucket `product-documents`, imzalı indirme), tedarikçiler (`product_suppliers` + `supplier_prices`, fiyat eklerken kart fiyatı güncellenebilir) — `extras.ts`
+- DataTable varsayılanı kaydırmalı liste (`scrollable`); sayfalı gerekirse `scrollable={false}`
 - Tüm DataTable'larda Excel gibi sütun genişliği (sürükle / çift tık sığdır, localStorage) — `components/shared/use-column-widths.ts`
 - [x] Reçete / BOM + versiyonlama (`save_bom`: kullanılmış reçete düzenlenince yeni versiyon)
 - [x] Stok defteri append-only (UPDATE/DELETE tetikleyiciyle yasak), iptal = ters kayıt, fiş iptali
@@ -133,7 +135,7 @@ supabase/
 - [x] Kapasite (Yönetim sekmeleri): makine kapasitesi tarihli (`line_capacities`, yeni dönem eskisini otomatik bitirir, çakışma DB'de engellenir), referans kapasite grup×çap×SDR×yıl (`reference_capacities`, analizde onaylı en güncel yıl), takvim (`cost_parameters.weekly_off_days` + `calendar_holidays`); ürün kartında `material_group`/`diameter_mm`/`sdr`. `day_shift_start`/`night_shift_start` şemada var, henüz kullanılmıyor
 - [x] Mobil: 375 px'te sayfa taşması yok (13 sayfa ölçüldü), sekmeler kaydırılabilir, tablo sayfalaması dar ekrana uygun, iş emri butonları mobilde no altında
 
-**Bekleyen temizlik:** Ürün kartı test verisi (`20260929150000_test_products.sql`): V9TEST01, A9TEST01.HENQ, D.990.063.99, TEST-HAM-PPR, TEST-MTL-01, KLP-TEST-01, TEST-RCT-* reçeteleri; stok hareketleri `note = 'TEST VERİSİ'`. Kullanıcı isteyince: hareketleri ters kayıtla sıfırla, ürün/kalıp/reçeteyi pasife al.
+**Bekleyen temizlik:** Ürün kartı test verisi (`20260929150000_test_products.sql`): V9TEST01, A9TEST01.HENQ, D.990.063.99, TEST-HAM-PPR, TEST-MTL-01, KLP-TEST-01, TEST-RCT-* reçeteleri; stok hareketleri `note = 'TEST VERİSİ'`. Ayrıca `20260929190000_test_extras.sql`: cariler "TEST Tedarikçi A.Ş." / "TEST Müşteri Ltd.", sipariş TEST-SIP-001, test tedarikçi fiyatları. Kullanıcı isteyince: hareketleri ters kayıtla sıfırla, ürün/kalıp/reçeteyi pasife al.
 
 **Alınan kararlar (kalıcı):**
 - Sektör: **plastik imalat** (ekstrüzyon + enjeksiyon).

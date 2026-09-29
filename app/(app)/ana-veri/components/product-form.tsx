@@ -38,6 +38,13 @@ const EMPTY: ProductFormInput = {
   group_code: "",
   variant_code: "",
   description: "",
+  package_type: "",
+  package_qty: null,
+  pallet_qty: null,
+  pipe_length_m: null,
+  package_weight_kg: null,
+  barcode: "",
+  package_note: "",
   min_stock: 0,
   critical_stock: 0,
 };
@@ -217,6 +224,47 @@ export function ProductForm({ open, onOpenChange, initialData, groups }: Product
               <p className="text-xs text-muted-foreground">Ağırlık, üretim hızı ve çevrim süresi ürün detay sayfasından reçete/kalıpla birlikte düzenlenir.</p>
             </>
           )}
+
+          <SectionTitle>Paketleme</SectionTitle>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="package_type">Paket tipi</Label>
+              <Input id="package_type" list="package-types" placeholder="Koli, torba, demet…" {...register("package_type")} />
+              <datalist id="package-types">
+                <option value="Koli" />
+                <option value="Torba" />
+                <option value="Demet" />
+                <option value="Rulo" />
+                <option value="Palet" />
+              </datalist>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="package_qty">Paket içi miktar ({unit === "metre" ? "m" : unit})</Label>
+              <Input id="package_qty" type="number" step="any" {...register("package_qty", { setValueAs: numberOrNull })} className={errors.package_qty ? "border-danger" : ""} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pallet_qty">Palet başına paket</Label>
+              <Input id="pallet_qty" type="number" step="any" {...register("pallet_qty", { setValueAs: numberOrNull })} className={errors.pallet_qty ? "border-danger" : ""} />
+            </div>
+            {(category === "boru" || unit === "metre") && (
+              <div className="space-y-2">
+                <Label htmlFor="pipe_length_m">Boy uzunluğu (m)</Label>
+                <Input id="pipe_length_m" type="number" step="any" placeholder="Örn: 4" {...register("pipe_length_m", { setValueAs: numberOrNull })} className={errors.pipe_length_m ? "border-danger" : ""} />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="package_weight_kg">Paket ağırlığı (kg)</Label>
+              <Input id="package_weight_kg" type="number" step="any" {...register("package_weight_kg", { setValueAs: numberOrNull })} className={errors.package_weight_kg ? "border-danger" : ""} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="barcode">Barkod</Label>
+              <Input id="barcode" {...register("barcode")} />
+            </div>
+            <div className="col-span-2 space-y-2 sm:col-span-3">
+              <Label htmlFor="package_note">Paketleme notu</Label>
+              <Input id="package_note" {...register("package_note")} />
+            </div>
+          </div>
 
           <SectionTitle>Stok sınırları</SectionTitle>
           <div className="grid grid-cols-2 gap-4">
