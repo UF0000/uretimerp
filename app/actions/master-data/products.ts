@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { readAll } from "@/lib/supabase/read-all";
 import { revalidatePath } from "next/cache";
+import { requirePermission } from "@/lib/auth";
 import type { ExcelRow } from "@/lib/excel";
 import { productSchema, ProductFormValues } from "@/lib/validations/master-data";
 
@@ -185,4 +186,27 @@ export async function getProductGroups() {
   const { data, error } = await supabase.from("product_groups").select("code, name").order("code");
   if (error) throw new Error("Grup kodları getirilirken hata oluştu: " + error.message);
   return data;
+}
+
+/** Grup kodu adı ekler / değiştirir. */
+export async function saveProductGroup(code: string, name: string) {
+  await requirePermission("master-data:write");
+  const c = code.trim();
+  const n = name.trim();
+  if (!c) throw new Error("Grup kodu zorunludur.");
+  if (!n) throw new Error("Grup adı zorunludur.");
+  if (c.length > 20 || n.length > 120) throw new Error("Kod en fazla 20, ad en fazla 120 karakter olabilir.");
+  const supabase = await createClient();
+  const { error } = await supabase.from("product_groups").upsert({ code: c, name: n }, { onConflict: "code" });
+  if (error) throw new Error(error.message);
+  revalidatePath("/ana-veri");
+}
+
+/** Grup kodu adını siler; ürünlerdeki grup kodu değeri kalır. */
+export async function deleteProductGroup(code: string) {
+  await requirePermission("master-data:write");
+  const supabase = await createClient();
+  const { error } = await supabase.from("product_groups").delete().eq("code", code);
+  if (error) throw new Error(error.message);
+  revalidatePath("/ana-veri");
 }

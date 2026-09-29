@@ -16,6 +16,7 @@ import { PartnersTab } from "./components/partners-tab";
 import { WarehousesTab } from "./components/warehouses-tab";
 import { EquipmentTab } from "./components/equipment-tab";
 import { ReasonCodesTab } from "./components/reason-codes-tab";
+import { ProductGroupsTab } from "./components/product-groups-tab";
 
 export const metadata: Metadata = {
   title: "Ana Veri",
@@ -33,6 +34,11 @@ export default async function MasterDataPage() {
     getProductGroups(),
   ]);
 
+  // Ürünlerde kullanılan grup kodları ve ürün sayısı
+  const usageMap = new Map<string, number>();
+  for (const p of products) if (p.group_code) usageMap.set(p.group_code, (usageMap.get(p.group_code) ?? 0) + 1);
+  const groupUsage = [...usageMap.entries()].map(([code, count]) => ({ code, count }));
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -49,6 +55,7 @@ export default async function MasterDataPage() {
       <Tabs defaultValue="products" className="w-full">
         <TabsList className="mb-4 max-w-full justify-start overflow-x-auto">
           <TabsTrigger value="products">Ürünler & Hammaddeler</TabsTrigger>
+          <TabsTrigger value="groups">Grup Kodları</TabsTrigger>
           <TabsTrigger value="equipment">Kalıp & Hatlar</TabsTrigger>
           <TabsTrigger value="partners">Cariler</TabsTrigger>
           <TabsTrigger value="warehouses">Depolar</TabsTrigger>
@@ -61,6 +68,10 @@ export default async function MasterDataPage() {
               <ProductsTab data={products} groups={groups} />
             </TabsContent>
             
+            <TabsContent value="groups" className="m-0">
+              <ProductGroupsTab groups={groups} usage={groupUsage} />
+            </TabsContent>
+
             <TabsContent value="equipment" className="m-0">
               <EquipmentTab lines={lines} molds={molds} products={products} />
             </TabsContent>
