@@ -334,7 +334,7 @@ export function MaterialScrapBars({ rows }: { rows: { name: string; lostKg: numb
         <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
           <CartesianGrid vertical={false} stroke="var(--border)" />
           <XAxis dataKey="name" tick={axisTick} tickLine={false} axisLine={false} />
-          <YAxis tick={axisTick} tickLine={false} axisLine={false} width={56} tickFormatter={(v) => formatTR(Number(v), 0)} />
+          <YAxis tick={axisTick} tickLine={false} axisLine={false} width={56} tickFormatter={(v) => formatTR(Number(v), Number(v) % 1 ? 1 : 0)} />
           <Tooltip {...tooltipStyle} cursor={{ fill: "var(--muted)" }} formatter={(v, n) => [`${formatTR(Number(v), 1)} kg`, String(n)]} />
           <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
           <Bar dataKey="lostKg" name="Kayıp fire" stackId="s" fill="var(--danger)" stroke="var(--card)" strokeWidth={1} maxBarSize={110} />
@@ -353,7 +353,7 @@ export function MaterialScrapPct({ rows, target }: { rows: { name: string; pct: 
       <ResponsiveContainer>
         <BarChart data={rows} layout="vertical" margin={{ top: 18, right: 24, bottom: 0, left: 0 }}>
           <CartesianGrid horizontal={false} stroke="var(--border)" />
-          <XAxis type="number" tick={axisTick} tickLine={false} axisLine={false} tickFormatter={(v) => `%${formatTR(Number(v), 0)}`} />
+          <XAxis type="number" domain={[0, (max: number) => Math.max(max, target) * 1.15]} tick={axisTick} tickLine={false} axisLine={false} tickFormatter={(v) => `%${formatTR(Number(v), Number(v) % 1 ? 1 : 0)}`} />
           <YAxis type="category" dataKey="name" width={120} tick={axisTick} tickLine={false} axisLine={false} />
           <Tooltip {...tooltipStyle} cursor={{ fill: "var(--muted)" }} formatter={(v) => [`%${formatTR(Number(v), 2)}`, "Fire oranı"]} />
           <ReferenceLine
@@ -374,11 +374,11 @@ export function ShiftProduction({ data }: { data: { name: string; kg: number; qt
   const mini = (key: "kg" | "qty", title: string, fill: string, unit: string) => (
     <div>
       <h3 className="mb-1 text-xs font-medium text-muted-foreground">{title}</h3>
-      <div className="h-56">
+      <div className="h-36">
         <ResponsiveContainer>
           <BarChart data={data} margin={{ top: 8, right: 4, bottom: 0, left: 0 }}>
             <CartesianGrid vertical={false} stroke="var(--border)" />
-            <XAxis dataKey="name" tick={axisTick} tickLine={false} axisLine={false} />
+            <XAxis dataKey="name" tick={axisTick} tickLine={false} axisLine={false} interval={0} />
             <YAxis tick={axisTick} tickLine={false} axisLine={false} width={52} tickFormatter={(v) => formatTR(Number(v), 0)} />
             <Tooltip {...tooltipStyle} cursor={{ fill: "var(--muted)" }} formatter={(v) => [`${formatTR(Number(v), 0)} ${unit}`, title]} />
             <Bar dataKey={key} fill={fill} radius={[3, 3, 0, 0]} maxBarSize={48} />
@@ -388,7 +388,7 @@ export function ShiftProduction({ data }: { data: { name: string; kg: number; qt
     </div>
   );
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid gap-3">
       {mini("kg", "Sağlam (kg)", "var(--cat-2)", "kg")}
       {mini("qty", "Üretim (adet)", "var(--cat-1)", "adet")}
     </div>
