@@ -120,6 +120,16 @@
   --chart-3: oklch(0.75 0.15 75);
   --chart-4: oklch(0.55 0.22 25);
   --chart-5: oklch(0.55 0.15 310);
+  /* Kategorik palet (dağılım grafikleri): sırayla mavi, yeşil, turuncu, mor, gri, turkuaz, pembe, kahve.
+     Kırmızı bilinçli olarak yok — yalnızca durum rengi (hedef dışı) için. */
+  --cat-1: oklch(0.62 0.15 250);
+  --cat-2: oklch(0.62 0.14 150);
+  --cat-3: oklch(0.76 0.16 60);
+  --cat-4: oklch(0.58 0.18 320);
+  --cat-5: oklch(0.72 0.01 250);
+  --cat-6: oklch(0.66 0.11 200);
+  --cat-7: oklch(0.72 0.13 360);
+  --cat-8: oklch(0.55 0.08 60);
 
   --radius: 0.5rem;
 
@@ -181,6 +191,14 @@
   --chart-3: oklch(0.78 0.14 75);
   --chart-4: oklch(0.60 0.2 25);
   --chart-5: oklch(0.60 0.15 310);
+  --cat-1: oklch(0.68 0.15 250);
+  --cat-2: oklch(0.68 0.14 150);
+  --cat-3: oklch(0.80 0.15 60);
+  --cat-4: oklch(0.66 0.17 320);
+  --cat-5: oklch(0.62 0.01 250);
+  --cat-6: oklch(0.72 0.11 200);
+  --cat-7: oklch(0.76 0.12 360);
+  --cat-8: oklch(0.62 0.08 60);
 
   /* Sidebar — Dark */
   --sidebar: oklch(0.14 0.015 250);

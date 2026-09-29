@@ -77,7 +77,7 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      <Link href="/uretim/fire" className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <Link href="/uretim/analiz" className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">
         <Card className="transition-colors hover:bg-muted/40">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Bu Ay Fire</CardTitle>
@@ -100,7 +100,7 @@ export default async function DashboardPage() {
                 en büyük neden{scrap.topReason ? ` · %${formatTR(scrap.topReason.share * 100, 0)}` : ""}
               </p>
             </div>
-            <span className="ml-auto text-xs text-primary">Fire raporu →</span>
+            <span className="ml-auto text-xs text-primary">Üretim analizi →</span>
           </CardContent>
         </Card>
       </Link>

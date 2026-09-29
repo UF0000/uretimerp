@@ -112,8 +112,7 @@ supabase/
 - [x] Siparişler + net ihtiyaç (`/siparisler/ihtiyac`, hesap `lib/mrp.ts`): mamul üretim ihtiyacı, iş emri açılmalı, hammadde/ticari mal net eksik — tek seviye reçete, birim ağırlık reçeteden
 - [x] İş emri + vardiya bazlı üretim girişi (`record_production_entry`): fire/duruş neden kodu zorunlu, gerçek çevrim, sadece duruşlu vardiya
 - [x] Üretim → stok + lot (vardiya başına) + kalıp atış sayacı, atomik
-- [x] Üretim analizi `/uretim/analiz` (ekstrüder/enjeksiyon panosu, hesap `lib/production-analytics.ts`, `v_production_analytics`): fire/overweight/OEE/verim, NŞA kapasite ve zaman kullanımı (gün bazında geçerli makine kapasitesi × `available_hours()`), referansa göre hız, vardiya karşılaştırması, iş emri bazında durum renkli grafikler, kontrol öncelikleri, PDF/Excel; hedefler Yönetim → Parametreler
-- [x] OEE raporu (`/uretim/oee`, `v_oee_entries`): makine/gün bazında, duruş ve fire Pareto; vardiya süresi `cost_parameters.shift_minutes`, ekstrüzyon performansı için reçetede hedef hız (m/saat)
+- [x] Üretim modülü: üst sekmeler Üretim Analizi | İş Emirleri (`app/(app)/uretim/layout.tsx`). Analiz `/uretim/analiz` tek pano, Boru / Fitting düğmeleri (Fitting şimdilik boş, sonra tasarlanacak). Boru panosu referans görsellere göre (z1–z3, proje kökünde, git dışı): KPI'lar, kapasite, hammadde/fire/duruş pasta grafikleri, vardiya karşılaştırması, fire+OEE trendi, iş emri bazlı fire/overweight (durum renkli), makine/operatör tabloları, kontrol öncelikleri, PDF/Excel. Hesap `lib/production-analytics.ts`, `v_production_analytics`. Ayrı OEE ve fire sayfaları kaldırıldı (panoya yönlendirir). Grafik renkleri: kategorik `--cat-1..8`, durum `--success/--warning/--danger`
 
 **Faz 3 — Maliyet + Kalite**
 - [x] Maliyet: gerçek tüketimden hammadde, fire geri kazanımı, genel gider, plan/gerçekleşen (fiyatlar güncel kart fiyatı)
@@ -121,7 +120,7 @@ supabase/
 
 **Faz 4 — Sağlamlaştırma**
 - [x] İzlenebilirlik `/depo/izlenebilirlik`: lot → iş emri/vardiya/tüketilen hammadde; vardiya girişinde reçine lotu seçilirse kesin (`p_raw_lots`, `v_stock_lot`), seçilmezse "olası lotlar"; hammadde lotundan üretilen lotlar (geri çağırma)
-- [x] Dashboard + fire raporu `/uretim/fire` (hesap `lib/scrap-report.ts`): trend, neden Pareto'su (%80), makine/ürün/vardiya/operatör kırılımı, regrind geri kazanımı/kayıp, nedeni girilmemiş fire; panelde bu ayın fire kartı
+- [x] Dashboard: bu ayın fire kartı (`getScrapSummary`, `lib/scrap-report.ts`) → üretim analizine bağlanır
 - [x] Eksik veri listesi `/ana-veri/eksik-veri` (`lib/data-quality.ts`): hesapları etkileyen reçete/ürün/kalıp/makine/hammadde/depo/kur boşlukları, önem + etkilediği hesap + düzeltme yeri
 - Büyük sorgular `lib/supabase/read-all.ts` (`readAll`/`inChunks`) ile okunur — PostgREST 1.000 satır sınırı
 - [x] RLS gözden geçirme: rol bazlı politikalar (`lib/permissions.ts` ile aynı), arayüzde rol bazlı gizleme

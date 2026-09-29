@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { AlertTriangle, Info } from "lucide-react";
 
 import { getProductionAnalytics } from "@/app/actions/analytics";
@@ -7,19 +6,13 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatTR } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { AnalyticsFilters } from "./components/analytics-filters";
-import {
-  ActualVsExpected,
-  MaterialDonut,
-  ShiftBars,
-  ShiftMaterialStack,
-  StatusBars,
-} from "./components/analytics-charts";
+import { AnalyticsFilters, TypeToggle } from "./components/analytics-filters";
+import { ActualVsExpected, DistributionDonut, ShiftComparison, StatusBars, TrendChart } from "./components/analytics-charts";
 import { STATUS_LABELS, type Status } from "@/lib/analytics-status";
 
 export const metadata: Metadata = {
   title: "Üretim Analizi",
-  description: "Ekstrüder / enjeksiyon üretim, fire, overweight, kapasite ve OEE takip panosu",
+  description: "Boru (ekstrüzyon) ve enjeksiyon üretim takip panosu: üretim, fire, duruş, overweight, kapasite ve OEE",
 };
 
 export const dynamic = "force-dynamic";
@@ -30,19 +23,32 @@ const isDate = (v?: string) => Boolean(v && /^\d{4}-\d{2}-\d{2}$/.test(v));
 const pct = (v: number | null | undefined, d = 1) => (v === null || v === undefined ? "—" : `%${formatTR(v * 100, d)}`);
 const kg = (v: number, d = 0) => `${formatTR(v, d)} kg`;
 
-/** Hedefe göre durum: hedefte ≤ hedef, sınırda ≤ hedef × 1,2, üstü hedef dışı. */
-const statusOf = (valuePct: number | null, targetPct: number): Status => {
-  if (valuePct === null) return "ok";
+/** Hedefe göre durum (küçük iyi): hedefte ≤ hedef, sınırda ≤ hedef × 1,2, üstü hedef dışı. */
+const statusOf = (valuePct: number | null, targetPct: number): Status | undefined => {
+  if (valuePct === null) return undefined;
   if (valuePct <= targetPct) return "ok";
   return valuePct <= targetPct * 1.2 ? "warn" : "bad";
 };
-const STATUS_TEXT: Record<Status, string> = { ok: "text-success", warn: "text-warning", bad: "text-danger" };
+/** Büyük iyi (OEE): hedefte ≥ hedef, sınırda ≥ hedef × 0,85. */
+const statusHigh = (valuePct: number | null, targetPct: number): Status | undefined => {
+  if (valuePct === null) return undefined;
+  if (valuePct >= targetPct) return "ok";
+  return valuePct >= targetPct * 0.85 ? "warn" : "bad";
+};
 
-const Kpi = ({ title, value, hint, status }: { title: string; value: string; hint?: string; status?: Status }) => (
-  <Card className="break-inside-avoid">
+const STATUS_TEXT: Record<Status, string> = { ok: "text-success", warn: "text-warning", bad: "text-danger" };
+const STATUS_BORDER: Record<Status, string> = { ok: "border-l-success", warn: "border-l-warning", bad: "border-l-danger" };
+const STATUS_PILL: Record<Status, string> = {
+  ok: "bg-success/15 text-success",
+  warn: "bg-warning/20 text-warning-foreground",
+  bad: "bg-danger/15 text-danger",
+};
+
+const Kpi = ({ title, value, hint, status, accent }: { title: string; value: string; hint?: string; status?: Status; accent?: string }) => (
+  <Card className={cn("break-inside-avoid border-l-4", status ? STATUS_BORDER[status] : (accent ?? "border-l-border"))}>
     <CardContent className="space-y-1 pt-5">
       <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{title}</div>
-      <div className="text-2xl font-semibold tabular-nums">{value}</div>
+      <div className={cn("text-2xl font-semibold tabular-nums", status && STATUS_TEXT[status])}>{value}</div>
       {(hint || status) && (
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           {status && status !== "ok" && <AlertTriangle className={cn("h-3.5 w-3.5", STATUS_TEXT[status])} aria-hidden />}
@@ -54,40 +60,13 @@ const Kpi = ({ title, value, hint, status }: { title: string; value: string; hin
   </Card>
 );
 
-const ReasonBars = ({ title, rows, unit }: { title: string; rows: { id: string; code: string; label: string; value: number; share: number }[]; unit: string }) => (
-  <Card className="break-inside-avoid">
-    <CardHeader>
-      <CardTitle className="text-base">{title}</CardTitle>
-    </CardHeader>
-    <CardContent>
-      {rows.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">Kayıt yok.</p>
-      ) : (
-        <ol className="space-y-2.5">
-          {rows.slice(0, 10).map((r) => (
-            <li key={r.id} className="space-y-1" title={`${r.code} ${r.label}: ${formatTR(r.value, 1)} ${unit}`}>
-              <div className="flex items-baseline justify-between gap-3 text-sm">
-                <span className="truncate">
-                  <span className="font-medium">{r.code}</span> <span className="text-muted-foreground">{r.label}</span>
-                </span>
-                <span className="shrink-0 tabular-nums">
-                  {formatTR(r.value, 1)} {unit} <span className="text-xs text-muted-foreground">({pct(r.share, 0)})</span>
-                </span>
-              </div>
-              <progress
-                value={r.share * 100}
-                max={100}
-                aria-label={`${r.code} payı`}
-                className="h-1.5 w-full overflow-hidden rounded-full [&::-moz-progress-bar]:bg-primary [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-primary"
-              />
-            </li>
-          ))}
-          {rows.length > 10 && <li className="text-xs text-muted-foreground">+{rows.length - 10} neden daha (Excel çıktısında tamamı var)</li>}
-        </ol>
-      )}
-    </CardContent>
-  </Card>
-);
+/** Durum renkli yüzde hücresi */
+const Pill = ({ value, status, d = 2 }: { value: number | null; status?: Status; d?: number }) =>
+  value === null ? (
+    <span className="text-muted-foreground">—</span>
+  ) : (
+    <span className={cn("inline-block rounded px-1.5 py-0.5 font-medium tabular-nums", status ? STATUS_PILL[status] : "")}>{pct(value, d)}</span>
+  );
 
 const Section = ({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) => (
   <section className="space-y-3">
@@ -99,13 +78,41 @@ const Section = ({ title, description, children }: { title: string; description?
   </section>
 );
 
+const ChartCard = ({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) => (
+  <Card className={cn("break-inside-avoid", className)}>
+    <CardHeader>
+      <CardTitle className="text-base">{title}</CardTitle>
+    </CardHeader>
+    <CardContent>{children}</CardContent>
+  </Card>
+);
+
+const Th = ({ children, right }: { children: React.ReactNode; right?: boolean }) => (
+  <th className={cn("whitespace-nowrap px-3 py-2 font-medium", right && "text-right")}>{children}</th>
+);
+
 export default async function ProductionAnalyticsPage(props: { searchParams: Promise<SearchParams> }) {
   const sp = await props.searchParams;
   // Bugün Türkiye saatine göre (UTC gece yarısından sonraki gece vardiyası girişleri kaçmasın)
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(new Date());
   const from = isDate(sp.bas) ? sp.bas! : `${today.slice(0, 4)}-01-01`;
   const to = isDate(sp.bit) ? sp.bit! : today;
-  const lineType = sp.tur === "enjeksiyon" ? "injection" : "extrusion";
+  const lineType = sp.tur === "fitting" || sp.tur === "enjeksiyon" ? "injection" : "extrusion";
+
+  // Fitting (enjeksiyon) panosu henüz tasarlanmadı: şimdilik boş sayfa
+  if (lineType === "injection") {
+    return (
+      <div className="space-y-8">
+        <PageHeader title="Üretim Analizi — Fitting" description="Enjeksiyon üretim panosu" />
+        <div className="print:hidden">
+          <TypeToggle from={from} to={to} lineType={lineType} />
+        </div>
+        <Card>
+          <CardContent className="py-16 text-center text-sm text-muted-foreground">Fitting panosu hazırlanıyor.</CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const { options, analytics: a, days } = await getProductionAnalytics({
     from,
@@ -121,8 +128,24 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
   const tg = a.targets;
   const isExtrusion = lineType === "extrusion";
   const families = [...new Set(a.shifts.flatMap((s) => Object.keys(s.materialsKg)))];
-  const shiftName = { day: "Gündüz", night: "Gece" } as const;
+  const shiftName = { day: "GÜNDÜZ", night: "GECE" } as const;
   const lineCount = a.capacity.linesWithCapacity + a.capacity.linesWithoutCapacity;
+  const scrapStatus = (v: number | null) => statusOf(v === null ? null : v * 100, tg.scrapPct);
+  const oeeStatus = (v: number | null) => statusHigh(v === null ? null : v * 100, tg.oeePct);
+  const owStatus = (v: number | null) => statusOf(v === null ? null : Math.abs(v * 100), tg.overweightTolerancePct);
+
+  const breakdownSheet = (rows: typeof a.byLine, keyLabel: string) =>
+    rows.map((r) => ({
+      [keyLabel]: r.label,
+      "Tüketim (kg)": r.usedKg,
+      "Sağlam (kg)": r.goodKg,
+      "Fire (kg)": r.scrapKg,
+      "Fire (%)": r.scrapPct === null ? null : r.scrapPct * 100,
+      "OEE (%)": r.oee === null ? null : r.oee * 100,
+      "Duruş (dk)": r.downtimeMin,
+      "En sık fire nedeni": r.topScrapReason,
+      "En sık duruş nedeni": r.topDowntimeReason,
+    }));
 
   const exportSheets = [
     {
@@ -133,6 +156,8 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
         { Gösterge: isExtrusion ? "Üretim (m)" : "Üretim (adet)", Değer: isExtrusion ? t.producedM : t.producedPcs },
         { Gösterge: "Fire (kg)", Değer: t.scrapKg },
         { Gösterge: "Fire (%)", Değer: t.scrapPct === null ? null : t.scrapPct * 100 },
+        { Gösterge: "Regrind'e ayrılan (kg)", Değer: a.scrapRecovery.regrindKg },
+        { Gösterge: "Kayıp / hurda (kg)", Değer: a.scrapRecovery.lostKg },
         { Gösterge: "Overweight (%)", Değer: t.overweightPct === null ? null : t.overweightPct * 100 },
         { Gösterge: "OEE (%)", Değer: t.oee === null ? null : t.oee * 100 },
         { Gösterge: "Materyal verim (%)", Değer: t.materialYield === null ? null : t.materialYield * 100 },
@@ -144,6 +169,9 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
         { Gösterge: "Duruş (saat)", Değer: t.downtimeHours },
       ],
     },
+    { name: a.trendBucket === "week" ? "Haftalık trend" : "Günlük trend", rows: a.trend.map((x) => ({ Dönem: x.period, "Tüketim (kg)": x.usedKg, "Fire (kg)": x.scrapKg, "Fire (%)": x.scrapPct, "OEE (%)": x.oeePct, "Duruş (dk)": x.downtimeMin })) },
+    { name: "Makine", rows: breakdownSheet(a.byLine, "Makine") },
+    { name: "Operatör", rows: breakdownSheet(a.byOperator, "Operatör") },
     {
       name: "Hammadde",
       rows: a.rawMaterials.map((m) => ({
@@ -181,8 +209,8 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
   return (
     <div className="space-y-8">
       <PageHeader
-        title={isExtrusion ? "Ekstrüder — Boru" : "Enjeksiyon"}
-        description={`Üretim, fire, overweight, kapasite ve OEE · ${from.split("-").reverse().join(".")} – ${to.split("-").reverse().join(".")} (${days} gün) · ${a.workOrders.length} iş emri · ${t.entries} vardiya girişi`}
+        title={isExtrusion ? "Üretim Analizi — Boru" : "Üretim Analizi — Fitting"}
+        description={`${from.split("-").reverse().join(".")} – ${to.split("-").reverse().join(".")} (${days} gün) · ${a.workOrders.length} iş emri · ${t.entries} vardiya girişi`}
       />
 
       <AnalyticsFilters from={from} to={to} lineType={lineType} options={options} exportSheets={exportSheets} />
@@ -195,26 +223,23 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
         </Card>
       ) : (
         <>
-          <Section title="Üretim ve kalite özeti" description="Sağlam kütle, tüketim, üretim, fire; fire, overweight, OEE ve malzeme verimi hedefleriyle">
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              <Kpi title="Sağlam (kg)" value={formatTR(t.goodKg, 1)} />
-              <Kpi title="Tüketim (kg)" value={formatTR(t.usedKg, 1)} />
-              <Kpi title={isExtrusion ? "Üretim (m)" : "Üretim (adet)"} value={formatTR(isExtrusion ? t.producedM : t.producedPcs, isExtrusion ? 1 : 0)} />
-              <Kpi title="Fire (kg)" value={formatTR(t.scrapKg, 1)} />
-              <Kpi title="Ort. fire" value={pct(t.scrapPct, 2)} status={statusOf(t.scrapPct === null ? null : t.scrapPct * 100, tg.scrapPct)} hint={`hedef ≤ %${formatTR(tg.scrapPct, 1)}`} />
+          <Section title="Üretim ve kalite özeti" description="Hedeflere göre renkli: yeşil hedefte, turuncu sınırda, kırmızı hedef dışı">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-5">
+              <Kpi title="Sağlam (kg)" value={formatTR(t.goodKg, 0)} accent="border-l-[var(--cat-1)]" />
+              <Kpi title="Tüketim (kg)" value={formatTR(t.usedKg, 0)} accent="border-l-[var(--cat-1)]" />
+              <Kpi title={isExtrusion ? "Üretim (m)" : "Üretim (adet)"} value={formatTR(isExtrusion ? t.producedM : t.producedPcs, 0)} accent="border-l-[var(--cat-2)]" />
+              <Kpi title="Fire (kg)" value={formatTR(t.scrapKg, 0)} hint={`${formatTR(a.scrapRecovery.regrindKg, 0)} kg regrind · ${formatTR(a.scrapRecovery.lostKg, 0)} kg kayıp`} accent="border-l-[var(--cat-3)]" />
+              <Kpi title="Ort. fire" value={pct(t.scrapPct, 2)} status={scrapStatus(t.scrapPct)} hint={`hedef ≤ %${formatTR(tg.scrapPct, 1)}`} />
               <Kpi
                 title="Ort. overweight"
                 value={pct(t.overweightPct, 2)}
-                status={t.overweightPct === null ? undefined : statusOf(Math.abs(t.overweightPct * 100), tg.overweightTolerancePct)}
+                status={owStatus(t.overweightPct)}
                 hint={t.overweightPct === null ? "reçetede birim ağırlık yok" : `tolerans ±%${formatTR(tg.overweightTolerancePct, 1)}`}
               />
-              <Kpi
-                title="OEE"
-                value={pct(t.oee, 1)}
-                status={t.oee === null ? undefined : t.oee * 100 >= tg.oeePct ? "ok" : t.oee * 100 >= tg.oeePct * 0.85 ? "warn" : "bad"}
-                hint={`hedef ≥ %${formatTR(tg.oeePct, 0)}`}
-              />
-              <Kpi title="Materyal verim" value={pct(t.materialYield, 1)} hint="sağlam / tüketim" />
+              <Kpi title="OEE" value={pct(t.oee, 1)} status={oeeStatus(t.oee)} hint={`hedef ≥ %${formatTR(tg.oeePct, 0)}`} />
+              <Kpi title="Kullanılabilirlik" value={pct(t.availability, 1)} hint="çalışma / planlı süre" accent="border-l-[var(--cat-6)]" />
+              <Kpi title="Materyal verim" value={pct(t.materialYield, 1)} hint="sağlam / tüketim" accent="border-l-[var(--cat-6)]" />
+              <Kpi title="Çalışma / duruş" value={`${formatTR(t.runHours, 0)} / ${formatTR(t.downtimeHours, 0)} sa`} accent="border-l-[var(--cat-5)]" />
             </div>
           </Section>
 
@@ -227,20 +252,21 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
               </p>
             ) : (
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-5">
-                <Kpi title="Makine-saat ağırlıklı kapasite" value={a.capacity.weightedCapacityKgPerHour === null ? "—" : `${formatTR(a.capacity.weightedCapacityKgPerHour, 1)} kg/sa`} />
-                <Kpi title="Makine bazlı NŞA kapasite" value={kg(a.capacity.nsaCapacityKg)} hint={`${a.capacity.linesWithCapacity} makine × ${formatTR(lineCount ? a.capacity.availableLineHours / lineCount : 0, 0)} kullanılabilir saat`} />
-                <Kpi title="Kapasite verimi" value={pct(a.capacity.capacityEfficiency)} hint="tüketim / NŞA kapasite" />
-                <Kpi title="Aktif sürede kapasite" value={pct(a.capacity.activeCapacityPct)} hint="çalışılan sürede" />
-                <Kpi title="Zaman kullanımı" value={pct(a.capacity.timeUtilization)} hint="çalışma / kullanılabilir süre" />
-                <Kpi title="OEE performansı" value={pct(t.performance)} hint="ideal / gerçek çalışma süresi" />
+                <Kpi title="Makine-saat ağırlıklı kapasite" value={a.capacity.weightedCapacityKgPerHour === null ? "—" : `${formatTR(a.capacity.weightedCapacityKgPerHour, 1)} kg/sa`} accent="border-l-[var(--cat-4)]" />
+                <Kpi title="Makine bazlı NŞA kapasite" value={kg(a.capacity.nsaCapacityKg)} hint={`${a.capacity.linesWithCapacity} makine × ${formatTR(lineCount ? a.capacity.availableLineHours / lineCount : 0, 0)} kullanılabilir saat`} accent="border-l-[var(--cat-4)]" />
+                <Kpi title="Kapasite verimi" value={pct(a.capacity.capacityEfficiency)} hint="tüketim / NŞA kapasite" accent="border-l-[var(--cat-4)]" />
+                <Kpi title="Aktif sürede kapasite" value={pct(a.capacity.activeCapacityPct)} hint="çalışılan sürede" accent="border-l-[var(--cat-4)]" />
+                <Kpi title="Zaman kullanımı" value={pct(a.capacity.timeUtilization)} hint="çalışma / kullanılabilir süre" accent="border-l-[var(--cat-4)]" />
+                <Kpi title="OEE performansı" value={pct(t.performance)} hint="ideal / gerçek çalışma süresi" accent="border-l-[var(--cat-6)]" />
                 <Kpi
                   title="Referansa göre hız"
                   value={pct(t.speedPerformance)}
                   hint={t.speedPerformance === null ? "referans kapasite yok (Yönetim)" : `girişlerin ${pct(t.referenceCoverage, 0)}'inde referans var`}
+                  accent="border-l-[var(--cat-6)]"
                 />
-                <Kpi title="Referansa göre beklenen" value={kg(t.referenceExpectedKg)} hint="referans × çalışma saati" />
-                <Kpi title="Fiili sürede beklenen" value={kg(a.capacity.expectedKg)} hint="kapasite × çalışma saati" />
-                <Kpi title="Çalışma / duruş" value={`${formatTR(t.runHours, 1)} / ${formatTR(t.downtimeHours, 1)} sa`} />
+                <Kpi title="Referansa göre beklenen" value={kg(t.referenceExpectedKg)} hint="referans × çalışma saati" accent="border-l-[var(--cat-6)]" />
+                <Kpi title="Fiili sürede beklenen" value={kg(a.capacity.expectedKg)} hint="kapasite × çalışma saati" accent="border-l-[var(--cat-4)]" />
+                <Kpi title="Kayıp (hurda) fire" value={kg(a.scrapRecovery.lostKg)} hint={`geri kazanım ${pct(a.scrapRecovery.recoveryPct, 0)}`} accent="border-l-[var(--cat-3)]" />
               </div>
             )}
             {a.capacity.linesWithoutCapacity > 0 && a.capacity.linesWithCapacity > 0 && (
@@ -248,116 +274,124 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
             )}
           </Section>
 
-          <Section title="Dağılım" description="Hammadde tüketimi (aileye göre), fire ve duruş nedenleri">
-            <div className="grid gap-4 lg:grid-cols-3">
-              <Card className="break-inside-avoid">
-                <CardHeader>
-                  <CardTitle className="text-base">Hammadde Tüketimi (kg)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <MaterialDonut data={a.rawMaterials.map((m) => ({ name: m.name, value: m.usedKg }))} />
-                </CardContent>
-              </Card>
-              <ReasonBars title="Fire Nedenleri (kg)" rows={a.scrapReasons} unit="kg" />
-              <ReasonBars title="Duruş Nedenleri (dk)" rows={a.downtimeReasons} unit="dk" />
-            </div>
-          </Section>
+          <div className="grid gap-4 lg:grid-cols-3">
+            <ChartCard title="Hammadde Tüketimi Dağılımı (KG)">
+              <DistributionDonut data={a.rawMaterials.map((m) => ({ name: m.name, value: m.usedKg }))} unit="kg" colorBy="family" empty="Tüketim kaydı yok." />
+            </ChartCard>
+            <ChartCard title="Fire Nedenleri Dağılımı (KG)">
+              <DistributionDonut data={a.scrapReasons.map((r) => ({ name: r.label, value: r.value }))} unit="kg" empty="Nedeni girilmiş fire yok." />
+            </ChartCard>
+            <ChartCard title="Duruş Nedenleri Dağılımı (DK)">
+              <DistributionDonut data={a.downtimeReasons.map((r) => ({ name: r.label, value: r.value }))} unit="dk" empty="Duruş kaydı yok." />
+            </ChartCard>
+          </div>
 
-          <Section title="Vardiya karşılaştırması" description="Gündüz ve gece vardiyasında üretim, hammadde, fire, OEE ve duruş">
-            <Card>
-              <CardContent className="grid gap-6 pt-5 md:grid-cols-2 xl:grid-cols-3">
-                <div>
-                  <h3 className="mb-1 text-sm font-medium">Sağlam (kg)</h3>
-                  <ShiftBars data={a.shifts.map((s) => ({ name: shiftName[s.shift], value: s.goodKg }))} unit="kg" />
-                </div>
-                <div>
-                  <h3 className="mb-1 text-sm font-medium">{isExtrusion ? "Üretim (m)" : "Üretim (adet)"}</h3>
-                  <ShiftBars data={a.shifts.map((s) => ({ name: shiftName[s.shift], value: isExtrusion ? s.producedM : s.producedPcs }))} unit={isExtrusion ? "m" : "adet"} />
-                </div>
-                <div>
-                  <h3 className="mb-1 text-sm font-medium">Hammadde tüketimi (kg)</h3>
-                  <ShiftMaterialStack
-                    families={families}
-                    data={a.shifts.map((s) => ({ name: shiftName[s.shift], ...s.materialsKg }))}
-                  />
-                </div>
-                <div>
-                  <h3 className="mb-1 text-sm font-medium">Ort. fire (%)</h3>
-                  <ShiftBars data={a.shifts.map((s) => ({ name: shiftName[s.shift], value: (s.scrapPct ?? 0) * 100 }))} unit="%" decimals={2} />
-                </div>
-                <div>
-                  <h3 className="mb-1 text-sm font-medium">OEE (%)</h3>
-                  <ShiftBars data={a.shifts.map((s) => ({ name: shiftName[s.shift], value: (s.oee ?? 0) * 100 }))} unit="%" decimals={1} />
-                </div>
-                <div>
-                  <h3 className="mb-1 text-sm font-medium">Duruş (dk)</h3>
-                  <ShiftBars data={a.shifts.map((s) => ({ name: shiftName[s.shift], value: s.downtimeHours * 60 }))} unit="dk" />
-                </div>
-              </CardContent>
-            </Card>
-          </Section>
+          <ChartCard title="Vardiya Karşılaştırması">
+            <ShiftComparison
+              qtyUnit={isExtrusion ? "Metre" : "Adet"}
+              families={families}
+              data={a.shifts.map((s) => ({
+                name: shiftName[s.shift],
+                kg: s.goodKg,
+                qty: isExtrusion ? s.producedM : s.producedPcs,
+                scrapPct: (s.scrapPct ?? 0) * 100,
+                oeePct: (s.oee ?? 0) * 100,
+                downtimeMin: s.downtimeHours * 60,
+                materials: s.materialsKg,
+              }))}
+            />
+          </ChartCard>
 
-          <Section title="İş emri performansı" description="İş emri bazında fire, overweight ve kapasiteye göre tüketim">
-            <div className="grid gap-4 xl:grid-cols-2">
-              <Card className="break-inside-avoid">
-                <CardHeader>
-                  <CardTitle className="text-base">Üretim Emri Bazlı Fire (%)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <StatusBars
-                    rows={a.workOrders
-                      .filter((w) => w.scrapPct !== null)
-                      .map((w) => ({ label: w.workOrderNo, sublabel: w.productCode, value: w.scrapPct! * 100, status: statusOf(w.scrapPct! * 100, tg.scrapPct) }))}
-                    references={[{ value: tg.scrapPct, label: `hedef %${formatTR(tg.scrapPct, 1)}` }]}
-                  />
-                </CardContent>
-              </Card>
-              <Card className="break-inside-avoid">
-                <CardHeader>
-                  <CardTitle className="text-base">Üretim Emri Bazlı Overweight (%)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <StatusBars
-                    diverging
-                    rows={a.workOrders
-                      .filter((w) => w.overweightPct !== null)
-                      .map((w) => ({
-                        label: w.workOrderNo,
-                        sublabel: w.productCode,
-                        value: w.overweightPct! * 100,
-                        status: statusOf(Math.abs(w.overweightPct! * 100), tg.overweightTolerancePct),
-                      }))}
-                    references={[
-                      { value: -tg.overweightTolerancePct, label: `−%${formatTR(tg.overweightTolerancePct, 1)}` },
-                      { value: tg.overweightTolerancePct, label: `+%${formatTR(tg.overweightTolerancePct, 1)}` },
-                    ]}
-                  />
-                </CardContent>
-              </Card>
-              <Card className="break-inside-avoid xl:col-span-2">
-                <CardHeader>
-                  <CardTitle className="text-base">Gerçek Tüketim vs Kapasiteye Göre Beklenen (kg)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ActualVsExpected
-                    rows={a.workOrders
-                      .filter((w) => w.expectedKg > 0)
-                      .sort((x, y) => y.expectedKg - x.expectedKg)
-                      .map((w) => ({ label: w.workOrderNo, actual: w.usedKg, expected: w.expectedKg }))}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          </Section>
+          <ChartCard title={`${a.trendBucket === "week" ? "Haftalık" : "Günlük"} Fire ve OEE Trendi (%)`}>
+            <TrendChart data={a.trend} bucket={a.trendBucket} scrapTarget={tg.scrapPct} oeeTarget={tg.oeePct} />
+          </ChartCard>
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            <ChartCard title="Üretim Emri Bazlı Fire (%)">
+              <StatusBars
+                rows={a.workOrders
+                  .filter((w) => w.scrapPct !== null)
+                  .map((w) => ({ label: w.workOrderNo, sublabel: w.productCode, value: w.scrapPct! * 100, status: scrapStatus(w.scrapPct) ?? "ok" }))}
+                references={[{ value: tg.scrapPct, label: `hedef %${formatTR(tg.scrapPct, 1)}` }]}
+              />
+            </ChartCard>
+            <ChartCard title="Üretim Emri Bazlı Overweight (%)">
+              <StatusBars
+                diverging
+                rows={a.workOrders
+                  .filter((w) => w.overweightPct !== null)
+                  .map((w) => ({ label: w.workOrderNo, sublabel: w.productCode, value: w.overweightPct! * 100, status: owStatus(w.overweightPct) ?? "ok" }))}
+                references={[
+                  { value: -tg.overweightTolerancePct, label: `−%${formatTR(tg.overweightTolerancePct, 1)}` },
+                  { value: tg.overweightTolerancePct, label: `+%${formatTR(tg.overweightTolerancePct, 1)}` },
+                ]}
+              />
+            </ChartCard>
+            <ChartCard title="Gerçek Tüketim vs Kapasiteye Göre Beklenen (kg)" className="xl:col-span-2">
+              <ActualVsExpected
+                rows={a.workOrders
+                  .filter((w) => w.expectedKg > 0)
+                  .sort((x, y) => y.expectedKg - x.expectedKg)
+                  .map((w) => ({ label: w.workOrderNo, actual: w.usedKg, expected: w.expectedKg }))}
+              />
+            </ChartCard>
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            {(
+              [
+                ["Makine Bazında Fire, OEE ve Duruş", a.byLine],
+                ["Operatör Bazında Fire, OEE ve Duruş", a.byOperator],
+              ] as const
+            ).map(([title, rows]) => (
+              <ChartCard key={title} title={title}>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/60 text-left text-muted-foreground">
+                      <tr>
+                        <Th>{title.startsWith("Makine") ? "Makine" : "Operatör"}</Th>
+                        <Th right>Tüketim (kg)</Th>
+                        <Th right>Fire</Th>
+                        <Th right>OEE</Th>
+                        <Th right>Duruş (sa)</Th>
+                        <Th>En sık fire nedeni</Th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.slice(0, 15).map((r) => (
+                        <tr key={r.key} className="border-b border-border last:border-0 even:bg-muted/30">
+                          <td className="max-w-[12rem] truncate px-3 py-2 font-medium" title={r.label}>
+                            {r.label}
+                          </td>
+                          <td className="px-3 py-2 text-right tabular-nums">{formatTR(r.usedKg, 0)}</td>
+                          <td className="px-3 py-2 text-right">
+                            <Pill value={r.scrapPct} status={scrapStatus(r.scrapPct)} />
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            <Pill value={r.oee} status={oeeStatus(r.oee)} d={1} />
+                          </td>
+                          <td className="px-3 py-2 text-right tabular-nums">{formatTR(r.downtimeMin / 60, 1)}</td>
+                          <td className="max-w-[12rem] truncate px-3 py-2 text-xs text-muted-foreground" title={r.topScrapReason ?? ""}>
+                            {r.topScrapReason ?? "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {rows.length > 15 && <p className="pt-2 text-xs text-muted-foreground">+{rows.length - 15} satır daha (Excel çıktısında tamamı var)</p>}
+                </div>
+              </ChartCard>
+            ))}
+          </div>
 
           <Section
             title="Kontrol öncelikleri"
             description={`Hedef dışı iş emirleri, en büyük sapma önce · fire ≤ %${formatTR(tg.scrapPct, 1)} · overweight ±%${formatTR(tg.overweightTolerancePct, 1)}`}
           >
-            <Card>
+            <Card className={cn("border-l-4", a.outOfTargetCount > 0 ? "border-l-danger" : "border-l-success")}>
               <CardContent className="space-y-3 pt-5">
                 <p className="text-sm">
-                  <span className="text-2xl font-semibold tabular-nums">{a.outOfTargetCount}</span>
+                  <span className={cn("text-2xl font-semibold tabular-nums", a.outOfTargetCount > 0 ? "text-danger" : "text-success")}>{a.outOfTargetCount}</span>
                   <span className="text-muted-foreground"> / {a.workOrders.length} iş emri hedef dışında</span>
                 </p>
                 {a.priorities.length === 0 ? (
@@ -369,16 +403,18 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
                         <div>
                           <span className="mr-2 text-muted-foreground">{i + 1}.</span>
                           <span className="font-semibold">{w.workOrderNo}</span>
-                          <span className="ml-2 text-muted-foreground">{w.productCode} {w.productName}</span>
+                          <span className="ml-2 text-muted-foreground">
+                            {w.productCode} {w.productName}
+                          </span>
                         </div>
-                        <div className="flex flex-wrap gap-3 text-xs">
+                        <div className="flex flex-wrap gap-2 text-xs">
                           {w.scrapDeviation !== null && w.scrapDeviation > 0 && (
-                            <span className="text-danger">
+                            <span className={cn("rounded px-1.5 py-0.5", STATUS_PILL.bad)}>
                               Fire {pct(w.scrapPct, 2)} · hedefin +{formatTR(w.scrapDeviation, 2)} puan üstü
                             </span>
                           )}
                           {w.overweightDeviation !== null && w.overweightDeviation > 0 && (
-                            <span className="text-danger">
+                            <span className={cn("rounded px-1.5 py-0.5", STATUS_PILL.bad)}>
                               Overweight {pct(w.overweightPct, 2)} · toleransın {formatTR(w.overweightDeviation, 2)} puan dışı
                             </span>
                           )}
@@ -392,54 +428,62 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
           </Section>
 
           <Section title="Özet tablolar">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Hammadde Özeti</CardTitle>
-              </CardHeader>
-              <CardContent className="overflow-x-auto">
+            <ChartCard title="Hammadde Özeti">
+              <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="text-left text-muted-foreground">
-                    <tr className="border-b border-border">
-                      {["Hammadde", "Tüketim (kg)", "Sağlam çıktı (kg)", "Verim", "Fire (kg)", "Geri dön. (kg)", "Kayıp (kg)", "Fire", "Üretim emri"].map((h, i) => (
-                        <th key={h} className={cn("px-3 py-2 font-medium", i > 0 && "text-right")}>{h}</th>
-                      ))}
+                  <thead className="bg-muted/60 text-left text-muted-foreground">
+                    <tr>
+                      <Th>Hammadde</Th>
+                      <Th right>Tüketim (kg)</Th>
+                      <Th right>Sağlam çıktı (kg)</Th>
+                      <Th right>Verim</Th>
+                      <Th right>Fire (kg)</Th>
+                      <Th right>Geri dön. (kg)</Th>
+                      <Th right>Kayıp (kg)</Th>
+                      <Th right>Fire</Th>
+                      <Th right>Üretim emri</Th>
                     </tr>
                   </thead>
                   <tbody>
                     {a.rawMaterials.map((m) => (
-                      <tr key={m.productId} className="border-b border-border last:border-0">
+                      <tr key={m.productId} className="border-b border-border last:border-0 even:bg-muted/30">
                         <td className="px-3 py-2 font-medium">{m.name}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{formatTR(m.usedKg, 2)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{formatTR(m.goodKg, 2)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatTR(m.usedKg, 0)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatTR(m.goodKg, 0)}</td>
                         <td className="px-3 py-2 text-right tabular-nums">{pct(m.yieldPct, 2)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{formatTR(m.scrapKg, 2)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{formatTR(m.regrindKg, 2)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{formatTR(m.lostKg, 2)}</td>
-                        <td className={cn("px-3 py-2 text-right tabular-nums", STATUS_TEXT[statusOf(m.scrapPct === null ? null : m.scrapPct * 100, tg.scrapPct)])}>{pct(m.scrapPct, 2)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatTR(m.scrapKg, 0)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatTR(m.regrindKg, 0)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatTR(m.lostKg, 0)}</td>
+                        <td className="px-3 py-2 text-right">
+                          <Pill value={m.scrapPct} status={scrapStatus(m.scrapPct)} />
+                        </td>
                         <td className="px-3 py-2 text-right tabular-nums">{m.workOrders}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </CardContent>
-            </Card>
+              </div>
+            </ChartCard>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Üretim Emri Verimliliği (verimi en düşükten)</CardTitle>
-              </CardHeader>
-              <CardContent className="overflow-x-auto">
+            <ChartCard title="Üretim Emri Verimliliği (verimi en düşükten)">
+              <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="text-left text-muted-foreground">
-                    <tr className="border-b border-border">
-                      {["Üretim emri", "Ürün", "Tüketim (kg)", "Sağlam (kg)", "Verim", "Fire", "Overweight", "OEE", "Ref. hız"].map((h, i) => (
-                        <th key={h} className={cn("px-3 py-2 font-medium", i > 1 && "text-right")}>{h}</th>
-                      ))}
+                  <thead className="bg-muted/60 text-left text-muted-foreground">
+                    <tr>
+                      <Th>Üretim emri</Th>
+                      <Th>Ürün</Th>
+                      <Th right>Tüketim (kg)</Th>
+                      <Th right>Sağlam (kg)</Th>
+                      <Th right>Verim</Th>
+                      <Th right>Fire</Th>
+                      <Th right>Overweight</Th>
+                      <Th right>OEE</Th>
+                      <Th right>Ref. hız</Th>
                     </tr>
                   </thead>
                   <tbody>
                     {a.workOrders.map((w) => (
-                      <tr key={w.workOrderId} className="border-b border-border last:border-0">
+                      <tr key={w.workOrderId} className="border-b border-border last:border-0 even:bg-muted/30">
                         <td className="px-3 py-2">
                           <div className="font-medium">{w.workOrderNo}</div>
                           <div className="text-xs text-muted-foreground">{w.bomCode}</div>
@@ -448,27 +492,32 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
                           <div className="font-medium">{w.productCode}</div>
                           <div className="truncate text-xs text-muted-foreground">{w.productName}</div>
                         </td>
-                        <td className="px-3 py-2 text-right tabular-nums">{formatTR(w.usedKg, 1)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{formatTR(w.goodKg, 1)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatTR(w.usedKg, 0)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatTR(w.goodKg, 0)}</td>
                         <td className="px-3 py-2 text-right tabular-nums">{pct(w.materialYield, 2)}</td>
-                        <td className={cn("px-3 py-2 text-right tabular-nums", STATUS_TEXT[statusOf(w.scrapPct === null ? null : w.scrapPct * 100, tg.scrapPct)])}>{pct(w.scrapPct, 2)}</td>
-                        <td className={cn("px-3 py-2 text-right tabular-nums", w.overweightPct !== null && STATUS_TEXT[statusOf(Math.abs(w.overweightPct * 100), tg.overweightTolerancePct)])}>{pct(w.overweightPct, 2)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{pct(w.oee, 1)}</td>
+                        <td className="px-3 py-2 text-right">
+                          <Pill value={w.scrapPct} status={scrapStatus(w.scrapPct)} />
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          <Pill value={w.overweightPct} status={owStatus(w.overweightPct)} />
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          <Pill value={w.oee} status={oeeStatus(w.oee)} d={1} />
+                        </td>
                         <td className="px-3 py-2 text-right tabular-nums">{pct(w.speedPerformance, 1)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </CardContent>
-            </Card>
+              </div>
+            </ChartCard>
           </Section>
 
           <p className="text-xs text-muted-foreground">
-            Hesaplar: sağlam = hammadde − fire; overweight = sağlam / (üretilen × reçete birim ağırlığı) − 1; NŞA kapasite = Σ gün (o gün
-            geçerli makine kapasitesi × kullanılabilir saat; tatil ve kapalı günler düşülür); zaman kullanımı = (vardiya süresi − duruş) /
-            kullanılabilir saat; referansa göre hız = tüketim / (grup·çap·SDR referans kapasitesi × çalışma saati). Hedefler, kapasite ve
-            takvim Yönetim&apos;den değiştirilir. <Link href="/uretim/oee" className="underline-offset-2 hover:underline">OEE raporu</Link> ·{" "}
-            <Link href="/uretim/fire" className="underline-offset-2 hover:underline">Fire raporu</Link>
+            Hesaplar: sağlam = hammadde − fire; overweight = sağlam / (üretilen × reçete birim ağırlığı) − 1; OEE = kullanılabilirlik ×
+            performans × kalite; NŞA kapasite = Σ gün (o gün geçerli makine kapasitesi × kullanılabilir saat; tatil ve kapalı günler
+            düşülür); zaman kullanımı = (vardiya süresi − duruş) / kullanılabilir saat; referansa göre hız = tüketim / (grup·çap·SDR
+            referans kapasitesi × çalışma saati). Hedefler, kapasite ve takvim Yönetim&apos;den değiştirilir.
           </p>
         </>
       )}

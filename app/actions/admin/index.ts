@@ -85,7 +85,6 @@ export async function saveParameters(values: ParametersFormValues) {
 
   revalidatePath("/yonetim");
   revalidatePath("/maliyet");
-  revalidatePath("/uretim/oee");
   revalidatePath("/uretim/analiz");
 }
 

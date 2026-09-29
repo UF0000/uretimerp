@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-// Üretim modülünün giriş noktası iş emirleri listesidir.
+// Üretim modülünün giriş noktası üretim analizi panosudur.
 export default function ProductionRedirectPage() {
-  redirect("/uretim/is-emirleri");
+  redirect("/uretim/analiz");
 }

@@ -94,6 +94,7 @@ export async function getProductionAnalytics(filters: AnalyticsFilters) {
     productUnit: r.product_unit!,
     bomCode: r.bom_code ?? "",
     lineId: r.line_id,
+    operator: r.operator,
     usedKg: Number(r.used_kg ?? 0),
     scrapKg: Number(r.scrap_kg ?? 0),
     goodKg: Number(r.good_kg ?? 0),
@@ -160,6 +161,8 @@ export async function getProductionAnalytics(filters: AnalyticsFilters) {
       availableLineHours: availableHoursTotal * scopeLineIds.length,
       nsaCapacityKg,
     },
+    lineNames: new Map(linesRes.data.map((l) => [l.id, `${l.code} ${l.name}`])),
+    trendBucket: days > 45 ? "week" : "day",
     targets: {
       scrapPct: Number(paramsRes.data?.target_scrap_pct ?? 3),
       overweightTolerancePct: Number(paramsRes.data?.overweight_tolerance_pct ?? 2.5),

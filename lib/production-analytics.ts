@@ -29,6 +29,7 @@ export interface AnalyticsEntry {
   productUnit: string;
   bomCode: string;
   lineId: string | null;
+  operator: string | null;
   usedKg: number;
   scrapKg: number;
   goodKg: number;
@@ -75,6 +76,10 @@ export interface AnalyticsInput {
     nsaCapacityKg: number;
   };
   targets: { scrapPct: number; overweightTolerancePct: number; oeePct: number };
+  /** Makine adı (kod + ad), makine bazlı kırılım için */
+  lineNames: Map<string, string>;
+  /** Trend gruplaması: kısa dönemde gün, uzun dönemde hafta */
+  trendBucket: "day" | "week";
 }
 
 const sum = <T>(xs: T[], f: (x: T) => number) => xs.reduce((s, x) => s + f(x), 0);
@@ -146,7 +151,7 @@ function groupBy<T>(xs: T[], key: (x: T) => string) {
 }
 
 export function computeProductionAnalytics(input: AnalyticsInput) {
-  const { entries, materials, scrapTargets, reasons, capacityScope, targets } = input;
+  const { entries, materials, scrapTargets, reasons, capacityScope, targets, lineNames, trendBucket } = input;
   const total = measure(entries);
 
   // ── Kapasite ──
@@ -251,9 +256,65 @@ export function computeProductionAnalytics(input: AnalyticsInput) {
     .map((w) => ({ ...w, severity: Math.max(w.scrapDeviation ?? -Infinity, w.overweightDeviation ?? -Infinity) }))
     .sort((a, b) => b.severity - a.severity);
 
+  // ── Fire'nin regrind'e dönen kısmı ve kayıp (girişteki fireyi aşmaz) ──
+  const regrindKgOf = (e: AnalyticsEntry) =>
+    Math.min(sum((scrapByEntry.get(e.entryId) ?? []).filter((s) => s.type === "regrind"), (s) => s.kg), e.scrapKg);
+  const regrindKg = sum(entries, regrindKgOf);
+  const scrapRecovery = { regrindKg, lostKg: Math.max(0, total.scrapKg - regrindKg), recoveryPct: ratio(regrindKg, total.scrapKg) };
+
+  // ── Kırılımlar: makine ve operatör (fire, duruş, OEE) ──
+  const topReason = (list: AnalyticsEntry[], pick: (e: AnalyticsEntry) => [string | null, number]) => {
+    const m = new Map<string, number>();
+    for (const e of list) {
+      const [id, v] = pick(e);
+      if (id && v > 0) m.set(id, (m.get(id) ?? 0) + v);
+    }
+    const top = [...m.entries()].sort((a, b) => b[1] - a[1])[0];
+    return top ? (reasons.get(top[0])?.label ?? "Bilinmeyen") : null;
+  };
+  const breakdown = (key: (e: AnalyticsEntry) => string, label: (k: string) => string) =>
+    [...groupBy(entries, key).entries()]
+      .map(([k, list]) => ({
+        key: k,
+        label: label(k),
+        ...measure(list),
+        downtimeMin: sum(list, (e) => e.downtimeMin),
+        topScrapReason: topReason(list, (e) => [e.scrapReasonId, e.scrapKg]),
+        topDowntimeReason: topReason(list, (e) => [e.downtimeReasonId, e.downtimeMin]),
+      }))
+      .sort((a, b) => b.usedKg - a.usedKg);
+  const byLine = breakdown((e) => e.lineId ?? "-", (k) => (k === "-" ? "Makine yok" : (lineNames.get(k) ?? "Bilinmeyen makine")));
+  const byOperator = breakdown((e) => e.operator?.trim().toLocaleUpperCase("tr") || "-", (k) => (k === "-" ? "Belirtilmemiş" : k));
+
+  // ── Trend: gün ya da hafta bazında fire % ve OEE % ──
+  const weekStart = (day: string) => {
+    const d = new Date(day + "T00:00:00Z");
+    d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+    return d.toISOString().slice(0, 10);
+  };
+  const bucketOf = (e: AnalyticsEntry) => (trendBucket === "week" ? weekStart(e.day) : e.day);
+  const trend = [...groupBy(entries, bucketOf).entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([period, list]) => {
+      const m = measure(list);
+      return {
+        period,
+        usedKg: m.usedKg,
+        scrapKg: m.scrapKg,
+        scrapPct: m.scrapPct === null ? null : m.scrapPct * 100,
+        oeePct: m.oee === null ? null : m.oee * 100,
+        downtimeMin: sum(list, (e) => e.downtimeMin),
+      };
+    });
+
   return {
     total,
     capacity,
+    scrapRecovery,
+    byLine,
+    byOperator,
+    trend,
+    trendBucket,
     rawMaterials,
     scrapReasons: pareto((e) => [e.scrapReasonId, e.scrapKg]),
     downtimeReasons: pareto((e) => [e.downtimeReasonId, e.downtimeMin]),

@@ -23,6 +23,33 @@ interface AnalyticsFiltersProps {
 
 const ALL = "";
 
+/** Boru / Fitting geçişi. Tür değişince türe özgü filtreler (hat, ürün, iş emri, hammadde) sıfırlanır. */
+export function TypeToggle({ from, to, lineType }: { from: string; to: string; lineType: "extrusion" | "injection" }) {
+  const router = useRouter();
+  const switchType = (type: "boru" | "fitting") => {
+    const next = new URLSearchParams();
+    next.set("tur", type);
+    next.set("bas", from);
+    next.set("bit", to);
+    router.push(`/uretim/analiz?${next.toString()}`);
+  };
+  return (
+    <div className="inline-flex rounded-lg border border-border p-1" role="group" aria-label="Üretim türü">
+      {(
+        [
+          ["boru", "Boru", "extrusion"],
+          ["fitting", "Fitting", "injection"],
+        ] as const
+      ).map(([slug, label, type]) => (
+        <Button key={slug} variant={lineType === type ? "default" : "ghost"} onClick={() => switchType(slug)} aria-pressed={lineType === type} className="min-w-28">
+          <Factory className="mr-1.5 h-4 w-4" />
+          {label}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
 export function AnalyticsFilters({ from, to, lineType, options, exportSheets }: AnalyticsFiltersProps) {
   const router = useRouter();
   const params = useSearchParams();
@@ -34,22 +61,13 @@ export function AnalyticsFilters({ from, to, lineType, options, exportSheets }: 
     router.push(`/uretim/analiz?${next.toString()}`);
   };
 
-  const switchType = (type: "ekstruzyon" | "enjeksiyon") => {
-    // Tür değişince türe özgü filtreler (hat, ürün, iş emri, hammadde) sıfırlanır
-    const next = new URLSearchParams();
-    next.set("tur", type);
-    next.set("bas", from);
-    next.set("bit", to);
-    router.push(`/uretim/analiz?${next.toString()}`);
-  };
-
   const exportExcel = () => {
     const book = xlsx.utils.book_new();
     for (const sheet of exportSheets) {
       const ws = sheet.rows.length ? xlsx.utils.json_to_sheet(sheet.rows) : xlsx.utils.aoa_to_sheet([["(kayıt yok)"]]);
       xlsx.utils.book_append_sheet(book, ws, sheet.name.slice(0, 31));
     }
-    xlsx.writeFile(book, `uretim-analizi-${lineType === "extrusion" ? "ekstruzyon" : "enjeksiyon"}-${from}-${to}.xlsx`);
+    xlsx.writeFile(book, `uretim-analizi-${lineType === "extrusion" ? "boru" : "fitting"}-${from}-${to}.xlsx`);
   };
 
   const select = (key: string, label: string, opts: Option[], placeholder: string) => (
@@ -67,23 +85,7 @@ export function AnalyticsFilters({ from, to, lineType, options, exportSheets }: 
   return (
     <div className="space-y-4 print:hidden">
       <div className="flex flex-wrap items-center gap-2">
-        {(
-          [
-            ["ekstruzyon", "Ekstrüder", "extrusion"],
-            ["enjeksiyon", "Enjeksiyon", "injection"],
-          ] as const
-        ).map(([slug, label, type]) => (
-          <Button
-            key={slug}
-            size="sm"
-            variant={lineType === type ? "default" : "outline"}
-            onClick={() => switchType(slug)}
-            aria-pressed={lineType === type}
-          >
-            <Factory className="mr-1.5 h-4 w-4" />
-            {label}
-          </Button>
-        ))}
+        <TypeToggle from={from} to={to} lineType={lineType} />
         <span className="flex-1" />
         <Button size="sm" variant="outline" onClick={() => window.print()}>
           <FileText className="mr-1.5 h-4 w-4" />
@@ -126,7 +128,7 @@ export function AnalyticsFilters({ from, to, lineType, options, exportSheets }: 
             variant="ghost"
             size="sm"
             className={cn("w-full", params.size <= 1 && "invisible")}
-            onClick={() => router.push(`/uretim/analiz?tur=${lineType === "extrusion" ? "ekstruzyon" : "enjeksiyon"}`)}
+            onClick={() => router.push(`/uretim/analiz?tur=${lineType === "extrusion" ? "boru" : "fitting"}`)}
           >
             <RotateCcw className="mr-1.5 h-4 w-4" />
             Temizle
