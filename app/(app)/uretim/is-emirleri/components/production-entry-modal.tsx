@@ -4,10 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
-import { Ban, Loader2, Pencil, Plus, Trash2, Wand2, X } from "lucide-react";
+import { Ban, Loader2, Lock, LockOpen, Pencil, Plus, Trash2, Wand2, X } from "lucide-react";
+import { usePermission } from "@/components/shared/role-provider";
 import { toast } from "sonner";
 
-import { cancelProductionEntry, getWorkOrderEntries, saveProductionEntry, type RawLot, type WorkOrderEntries } from "@/app/actions/production";
+import { cancelProductionEntry, closeWorkOrder, getWorkOrderEntries, reopenWorkOrder, saveProductionEntry, type RawLot, type WorkOrderEntries } from "@/app/actions/production";
 import type { WorkOrderRow } from "@/app/actions/work-orders";
 import { entryRange, productionEntryV2Schema, type ProductionEntryV2Values } from "@/lib/validations/production";
 import { entryMetrics, injectionKgPerPart, type EntryMetrics } from "@/lib/entry-metrics";
@@ -123,7 +124,9 @@ const newEntryForm = (entries: Entry[], scrapProductId: string, warehouseId: str
 
 export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts, targetWarehouses, scrapReasons, downtimeReasons, rawLots }: ProductionEntryModalProps) {
   const router = useRouter();
+  const isAdmin = usePermission("admin:all");
   const [data, setData] = useState<WorkOrderEntries | null>(null);
+  const [statusBusy, setStatusBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [busyEntry, setBusyEntry] = useState<string | null>(null);
 
@@ -274,8 +277,41 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
     }
   };
 
+  const reopen = async () => {
+    if (!workOrder) return;
+    const note = prompt("İş emri yeniden açılacak. Neden? (isteğe bağlı)");
+    if (note === null) return;
+    try {
+      setStatusBusy(true);
+      await reopenWorkOrder(workOrder.id, note);
+      toast.success("İş emri yeniden açıldı", { description: "Girişleri düzeltip tekrar kapatabilirsiniz." });
+      await reload();
+      router.refresh();
+    } catch (error) {
+      toast.error("Açılamadı", { description: getErrorMessage(error) });
+    } finally {
+      setStatusBusy(false);
+    }
+  };
+
+  const closeOrder = async () => {
+    if (!workOrder || !confirm("İş emri kapatılsın mı? Kapatılan iş emrine giriş yapılamaz.")) return;
+    try {
+      setStatusBusy(true);
+      await closeWorkOrder(workOrder.id);
+      toast.success("İş emri kapatıldı");
+      await reload();
+      router.refresh();
+    } catch (error) {
+      toast.error("Kapatılamadı", { description: getErrorMessage(error) });
+    } finally {
+      setStatusBusy(false);
+    }
+  };
+
   if (!workOrder) return null;
   const editing = Boolean(f.replaces_entry_id);
+  const isClosed = data?.workOrder.status === "done";
   const operatorOptions = (data?.operators ?? []).map((o) => ({ value: o.id, label: o.name }));
   const targetSpeed = mPerHourToMin(tech?.targetMPerHour);
 
@@ -289,6 +325,22 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
             {data?.workOrder.moldLabel && ` · Kalıp: ${data.workOrder.moldLabel}`}
           </DialogDescription>
         </DialogHeader>
+
+        {isClosed && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-l-4 border-border border-l-warning bg-warning/10 px-4 py-3 text-sm">
+            <span className="flex items-center gap-2">
+              <Lock className="h-4 w-4 text-warning" aria-hidden />
+              Bu iş emri kapatılmış; girişler yalnızca görüntülenebilir.
+              {!isAdmin && " Düzeltme için yöneticinin yeniden açması gerekir."}
+            </span>
+            {isAdmin && (
+              <Button size="sm" onClick={reopen} disabled={statusBusy}>
+                {statusBusy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <LockOpen className="mr-1.5 h-4 w-4" />}
+                Yeniden aç ve düzenle
+              </Button>
+            )}
+          </div>
+        )}
 
         {loading && !data ? (
           <div className="flex items-center justify-center py-16">
@@ -319,7 +371,15 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
 
             {/* ── Yapılan girişler ── */}
             <section className="space-y-2">
-              <h3 className="text-sm font-semibold">Yapılan girişler</h3>
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold">Yapılan girişler</h3>
+                {!isClosed && entries.length > 0 && (
+                  <Button size="sm" variant="secondary" onClick={closeOrder} disabled={statusBusy}>
+                    <Lock className="mr-1.5 h-4 w-4" />
+                    İş emrini kapat
+                  </Button>
+                )}
+              </div>
               {entries.length === 0 ? (
                 <p className="rounded-md border border-dashed border-border py-6 text-center text-sm text-muted-foreground">Henüz giriş yok.</p>
               ) : (
@@ -369,10 +429,10 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
                             </td>
                             <td className="whitespace-nowrap px-2 py-2 text-xs text-muted-foreground">{e.lotNo ?? "—"}</td>
                             <td className="whitespace-nowrap px-2 py-2 text-right">
-                              <Button size="icon" variant="ghost" onClick={() => edit(e)} disabled={busyEntry === e.id} aria-label="Düzelt" title="Düzelt">
+                              <Button size="icon" variant="ghost" onClick={() => edit(e)} disabled={isClosed || busyEntry === e.id} aria-label="Düzelt" title={isClosed ? "Önce iş emrini yeniden açın" : "Düzelt"}>
                                 <Pencil className="h-4 w-4" />
                               </Button>
-                              <Button size="icon" variant="ghost" onClick={() => cancelEntry(e)} disabled={busyEntry === e.id} aria-label="İptal et" title="İptal et">
+                              <Button size="icon" variant="ghost" onClick={() => cancelEntry(e)} disabled={isClosed || busyEntry === e.id} aria-label="İptal et" title={isClosed ? "Önce iş emrini yeniden açın" : "İptal et"}>
                                 {busyEntry === e.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4 text-danger" />}
                               </Button>
                             </td>
@@ -386,6 +446,7 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
             </section>
 
             {/* ── Giriş formu ── */}
+            {!isClosed && (
             <section id="entry-form" className={cn("space-y-4 rounded-lg border p-4", editing ? "border-primary bg-primary/5" : "border-border")}>
               <div className="flex items-center justify-between gap-2">
                 <h3 className="font-semibold">{editing ? "Girişi düzelt" : "Yeni giriş"}</h3>
@@ -603,6 +664,7 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
                 </div>
               </div>
             </section>
+            )}
           </div>
         )}
       </DialogContent>

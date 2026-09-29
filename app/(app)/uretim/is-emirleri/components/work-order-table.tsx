@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Play, Plus, ClipboardPlus, Lock } from "lucide-react";
+import { Play, Plus, ClipboardPlus, Lock, LockOpen, ListChecks } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -14,7 +14,7 @@ import {
   bulkDeleteWorkOrders,
 } from "@/app/actions/work-orders";
 import { ProductionEntryModal } from "./production-entry-modal";
-import { closeWorkOrder, type RawLot } from "@/app/actions/production";
+import { closeWorkOrder, reopenWorkOrder, type RawLot } from "@/app/actions/production";
 import { formatTR } from "@/lib/format";
 
 import { getErrorMessage, one } from "@/lib/utils";
@@ -51,6 +51,7 @@ export function WorkOrderTable({
   rawLots,
 }: WorkOrderTableProps) {
   const canWrite = usePermission("production:write");
+  const isAdmin = usePermission("admin:all");
   const router = useRouter();
   const [completionModalOpen, setCompletionModalOpen] = useState(false);
   const [selectedWorkOrder, setSelectedWorkOrder] =
@@ -100,6 +101,18 @@ export function WorkOrderTable({
     }
   };
 
+  const handleReopen = async (item: WorkOrderRow) => {
+    const note = prompt(`${item.no} yeniden açılacak; girişler düzeltilip tekrar kapatılabilir. Neden? (isteğe bağlı)`);
+    if (note === null) return;
+    try {
+      await reopenWorkOrder(item.id, note);
+      toast.success(`${item.no} yeniden açıldı`, { description: "Girişleri düzeltip iş emrini tekrar kapatabilirsiniz." });
+      handleOpenCompletion(item);
+    } catch (error) {
+      toast.error("Açılamadı", { description: getErrorMessage(error) });
+    }
+  };
+
   const handleOpenCompletion = (item: WorkOrderRow) => {
     setSelectedWorkOrder(item);
     setCompletionModalOpen(true);
@@ -123,6 +136,16 @@ export function WorkOrderTable({
           <Lock className="w-4 h-4 mr-1" /> Kapat
         </Button>
       )}
+      {item.status === "done" && (
+        <Button size="sm" variant="outline" onClick={() => handleOpenCompletion(item)}>
+          <ListChecks className="w-4 h-4 mr-1" /> Girişler
+        </Button>
+      )}
+      {item.status === "done" && isAdmin && (
+        <Button size="sm" variant="outline" onClick={() => handleReopen(item)} title="Kapatılmış iş emrini düzenlemek için yeniden aç">
+          <LockOpen className="w-4 h-4 mr-1" /> Yeniden aç
+        </Button>
+      )}
     </div>
   );
 
@@ -133,7 +156,7 @@ export function WorkOrderTable({
       cell: ({ row }) => (
         <div>
           <span className="font-semibold">{row.original.no}</span>
-          {canWrite && row.original.status !== "done" && (
+          {canWrite && (
             <div className="mt-2 sm:hidden">{renderActions(row.original, "justify-start")}</div>
           )}
         </div>

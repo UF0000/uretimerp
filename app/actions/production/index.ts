@@ -64,6 +64,14 @@ export async function closeWorkOrder(workOrderId: string) {
   revalidateProduction();
 }
 
+/** Kapatılmış iş emrini yeniden açar (yalnızca yönetici); girişler düzeltilebilir, sonra tekrar kapatılır. */
+export async function reopenWorkOrder(workOrderId: string, note?: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("reopen_work_order", { p_work_order_id: workOrderId, p_note: note || undefined });
+  if (error) throw new Error(error.message);
+  revalidateProduction();
+}
+
 /** Hammadde ve regrind depolarında bakiyesi olan lotlar (vardiya girişinde seçim için). */
 export async function getRawLots() {
   const supabase = await createClient();

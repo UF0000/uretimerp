@@ -1478,6 +1478,10 @@ export type Database = {
       }
       work_orders: {
         Row: {
+          reopened_at: string | null
+          reopened_by: string | null
+          reopen_note: string | null
+          reopen_count: number
           id: string
           no: string
           product_id: string
@@ -1491,6 +1495,10 @@ export type Database = {
           order_id: string | null
         }
         Insert: {
+          reopened_at?: string | null
+          reopened_by?: string | null
+          reopen_note?: string | null
+          reopen_count?: number
           id?: string
           no: string
           product_id: string
@@ -1504,6 +1512,10 @@ export type Database = {
           order_id?: string | null
         }
         Update: {
+          reopened_at?: string | null
+          reopened_by?: string | null
+          reopen_note?: string | null
+          reopen_count?: number
           id?: string
           no?: string
           product_id?: string
@@ -1695,6 +1707,13 @@ export type Database = {
           roles: Database["public"]["Enums"]["user_role"][]
         }
         Returns: boolean
+      }
+      reopen_work_order: {
+        Args: {
+          p_work_order_id: string
+          p_note?: string
+        }
+        Returns: undefined
       }
       save_production_entry: {
         Args: {
