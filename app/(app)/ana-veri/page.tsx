@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ListChecks } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,6 +37,12 @@ export default async function MasterDataPage() {
       <PageHeader
         title="Ana Veri"
         description="Sistemdeki temel tanımlamaların yönetimi"
+        actions={
+          <Link href="/ana-veri/eksik-veri" className={buttonVariants({ variant: "outline" })}>
+            <ListChecks className="mr-2 h-4 w-4" aria-hidden />
+            Eksik veri listesi
+          </Link>
+        }
       />
       
       <Tabs defaultValue="products" className="w-full">
