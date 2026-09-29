@@ -93,7 +93,7 @@ supabase/
 
 ## 5. Hafıza / Durum (Memory / Status)
 
-> Son güncelleme: 2026-09-28 — `[~]` = kısmen var, eksiği yanında yazılı.
+> Son güncelleme: 2026-09-29 — `[~]` = kısmen var, eksiği yanında yazılı.
 
 **Faz 0 — İskelet**
 - [x] Next.js + TS + Tailwind + shadcn kurulumu, klasör yapısı
@@ -112,7 +112,7 @@ supabase/
 - [x] Siparişler + net ihtiyaç (`/siparisler/ihtiyac`, hesap `lib/mrp.ts`): mamul üretim ihtiyacı, iş emri açılmalı, hammadde/ticari mal net eksik — tek seviye reçete, birim ağırlık reçeteden
 - [x] İş emri + vardiya bazlı üretim girişi (`record_production_entry`): fire/duruş neden kodu zorunlu, gerçek çevrim, sadece duruşlu vardiya
 - [x] Üretim → stok + lot (vardiya başına) + kalıp atış sayacı, atomik
-- [x] Üretim analizi `/uretim/analiz` (ekstrüder/enjeksiyon panosu, hesap `lib/production-analytics.ts`, `v_production_analytics`): fire/overweight/OEE/verim, hat kapasitesi (kg/sa) ile NŞA kapasite ve zaman kullanımı, vardiya karşılaştırması, iş emri bazında durum renkli grafikler, kontrol öncelikleri, PDF/Excel; hedefler Yönetim → Parametreler
+- [x] Üretim analizi `/uretim/analiz` (ekstrüder/enjeksiyon panosu, hesap `lib/production-analytics.ts`, `v_production_analytics`): fire/overweight/OEE/verim, NŞA kapasite ve zaman kullanımı (gün bazında geçerli makine kapasitesi × `available_hours()`), referansa göre hız, vardiya karşılaştırması, iş emri bazında durum renkli grafikler, kontrol öncelikleri, PDF/Excel; hedefler Yönetim → Parametreler
 - [x] OEE raporu (`/uretim/oee`, `v_oee_entries`): makine/gün bazında, duruş ve fire Pareto; vardiya süresi `cost_parameters.shift_minutes`, ekstrüzyon performansı için reçetede hedef hız (m/saat)
 
 **Faz 3 — Maliyet + Kalite**
@@ -123,7 +123,8 @@ supabase/
 - [x] İzlenebilirlik `/depo/izlenebilirlik`: lot → iş emri/vardiya/tüketilen hammadde; vardiya girişinde reçine lotu seçilirse kesin (`p_raw_lots`, `v_stock_lot`), seçilmezse "olası lotlar"; hammadde lotundan üretilen lotlar (geri çağırma)
 - [~] Dashboard var — fire raporu OEE sayfasındaki fire Pareto ile sınırlı
 - [x] RLS gözden geçirme: rol bazlı politikalar (`lib/permissions.ts` ile aynı), arayüzde rol bazlı gizleme
-- [x] Yönetim: kullanıcı rol/aktiflik (son aktif yönetici DB'de korunur), parametreler (maliyet, kur, vardiya süresi), Excel yedeği (19 tablo)
+- [x] Yönetim: kullanıcı rol/aktiflik (son aktif yönetici DB'de korunur), parametreler (maliyet, kur, vardiya süresi), Excel yedeği (22 tablo)
+- [x] Kapasite (Yönetim sekmeleri): makine kapasitesi tarihli (`line_capacities`, yeni dönem eskisini otomatik bitirir, çakışma DB'de engellenir), referans kapasite grup×çap×SDR×yıl (`reference_capacities`, analizde onaylı en güncel yıl), takvim (`cost_parameters.weekly_off_days` + `calendar_holidays`); ürün kartında `material_group`/`diameter_mm`/`sdr`. `day_shift_start`/`night_shift_start` şemada var, henüz kullanılmıyor
 - [x] Mobil: 375 px'te sayfa taşması yok (13 sayfa ölçüldü), sekmeler kaydırılabilir, tablo sayfalaması dar ekrana uygun, iş emri butonları mobilde no altında
 
 **Alınan kararlar (kalıcı):**

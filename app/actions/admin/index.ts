@@ -109,6 +109,9 @@ const EXPORT_TABLES = [
   ["Kalite kontrol", "quality_checks"],
   ["NCR", "ncr"],
   ["Parametreler", "cost_parameters"],
+  ["Makine kapasiteleri", "line_capacities"],
+  ["Referans kapasiteler", "reference_capacities"],
+  ["Tatiller", "calendar_holidays"],
 ] as const;
 
 /**
