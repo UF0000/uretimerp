@@ -366,29 +366,15 @@ export function BomForm({ initialData, products, lines, molds }: BomFormProps) {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="col-span-2 space-y-2">
-                    <Label>Kullanılacak Kalıp</Label>
-                    <SearchableSelect
-                      value={watch("injection.mold_id") || ""}
-                      onValueChange={(val) => {
-                        setValue("injection.mold_id", val);
-                        // Auto-fill values from the selected mold
-                        const selectedMold = molds.find(m => m.id === val);
-                        if (selectedMold) {
-                          if (selectedMold.cavity_count != null) setValue("injection.cavity_count", selectedMold.cavity_count);
-                          if (selectedMold.cycle_time_sec != null) setValue("injection.cycle_time_sec", selectedMold.cycle_time_sec);
-                          if (selectedMold.sprue_weight_g != null) setValue("injection.runner_sprue_weight_g", selectedMold.sprue_weight_g);
-                          if (selectedMold.product_weight_g != null) setValue("injection.product_weight_g", selectedMold.product_weight_g);
-                        }
-                      }}
-                      options={molds.map(m => ({ 
-                        value: m.id, 
-                        label: `${m.name} (${m.code})`, 
-                        searchString: m.code 
-                      }))}
-                      placeholder="Kalıp seçiniz"
-                    />
-                  </div>
+                  {/* Kalıp elle seçilmez: kalıp kartında bu ürüne bağlı kalıp otomatik kullanılır (atış sayacı için) */}
+                  <p className="col-span-2 self-end text-sm text-muted-foreground md:col-span-4">
+                    {(() => {
+                      const mold = molds.find((m) => m.id === watch("injection.mold_id"));
+                      return mold
+                        ? `Kalıp: ${mold.name} (${mold.code}) — kalıp kartından otomatik`
+                        : "Bu ürüne bağlı kalıp yok; kalıp kartında ürün seçilince otomatik bağlanır.";
+                    })()}
+                  </p>
                   <div className="space-y-2">
                     <Label>Göz Sayısı</Label>
                     <Input type="number" {...register("injection.cavity_count", { valueAsNumber: true })} />

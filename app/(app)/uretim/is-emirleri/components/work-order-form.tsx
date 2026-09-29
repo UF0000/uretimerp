@@ -128,7 +128,7 @@ export function WorkOrderForm({ products, boms, lines, molds, orders }: WorkOrde
                 value={selectedBomId || ""} 
                 onValueChange={(val) => {
                   setValue("bom_id", val ?? "");
-                  // Reçetedeki hat/kalıbı varsayılan olarak forma yaz (kullanıcı değiştirebilir)
+                  // Reçetedeki hat varsayılan (değiştirilebilir); kalıp reçeteden gelir
                   const bom = boms.find((b) => b.id === val);
                   setValue("line_id", one(bom?.extrusion)?.line_id ?? "");
                   setValue("mold_id", one(bom?.injection)?.mold_id ?? "");
@@ -185,17 +185,14 @@ export function WorkOrderForm({ products, boms, lines, molds, orders }: WorkOrde
 
               {selectedBom.production_type === "injection" && (
                 <div className="space-y-2">
-                  <Label>Kullanılacak Kalıp (Opsiyonel)</Label>
-                  <SearchableSelect
-                    value={watch("mold_id") || ""}
-                    onValueChange={(val) => setValue("mold_id", val)}
-                    options={molds.map(m => ({ 
-                      value: m.id, 
-                      label: `${m.name} (${m.code})`, 
-                      searchString: m.code 
-                    }))}
-                    placeholder="Kalıp ataması yapın"
-                  />
+                  <Label>Kalıp</Label>
+                  {/* Reçetedeki (ürüne bağlı) kalıp kullanılır; atış sayacı buna işlenir */}
+                  <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
+                    {(() => {
+                      const mold = molds.find((m) => m.id === watch("mold_id"));
+                      return mold ? `${mold.name} (${mold.code})` : "Reçetede kalıp yok";
+                    })()}
+                  </p>
                 </div>
               )}
             </div>

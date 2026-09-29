@@ -59,6 +59,20 @@ export async function saveBom(data: BomFormValues) {
   if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Geçersiz form verisi.");
   const payload = parsed.data;
 
+  // Kalıp elle seçilmez: enjeksiyonda kalıp kartında bu ürüne bağlı aktif kalıp kullanılır (atış sayacı)
+  let injection = payload.injection ?? null;
+  if (payload.production_type === "injection" && injection && !injection.mold_id) {
+    const { data: mold } = await supabase
+      .from("molds")
+      .select("id")
+      .eq("product_id", payload.product_id)
+      .eq("status", "active")
+      .order("code")
+      .limit(1)
+      .maybeSingle();
+    injection = { ...injection, mold_id: mold?.id ?? null };
+  }
+
   const { data: result, error } = await supabase.rpc("save_bom", {
     p_bom: {
       id: payload.id ?? null,
@@ -77,7 +91,7 @@ export async function saveBom(data: BomFormValues) {
       })),
       parameters: (payload.parameters ?? []).map((p) => ({ key: p.key, value: p.value })),
       extrusion: payload.production_type === "extrusion" ? payload.extrusion ?? null : null,
-      injection: payload.production_type === "injection" ? payload.injection ?? null : null,
+      injection: payload.production_type === "injection" ? injection : null,
     },
   });
   if (error) throw new Error(error.message);

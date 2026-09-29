@@ -109,6 +109,8 @@ supabase/
 - Ekstrüzyon hızı ekranda **m/dk**, veritabanında `bom_extrusion.target_m_per_hour` (m/saat; OEE bu birimle) — dönüşüm `lib/speed.ts` (eski m/dk girişleri `20260929170000` ile ×60 çevrildi)
 - Ürün listesi kaydırmalı (DataTable `scrollable`: sabit başlık, 100'er satır)
 - Ürün kartı ek bölümleri: stok ve rezervasyon (kullanılabilir = kullanılabilir depolar − açık sipariş kalanı; karantina/hurda/regrind hariç), depo/lot, tahmini tükenme (90 gün ort. satış, hammaddede tüketim), üretim performansı (12 ay, `measure()`), kalite geçmişi, gerçekleşen maliyet (`getCompletedWorkOrdersForCosting(productId)`) — `app/actions/product-detail/insights.ts`; paketleme alanları (products.package_*, pipe_length_m, barcode), teknik dokümanlar (`product_documents`, özel bucket `product-documents`, imzalı indirme), tedarikçiler (`product_suppliers` + `supplier_prices`, fiyat eklerken kart fiyatı güncellenebilir) — `extras.ts`
+- Kalıp reçetede/iş emrinde elle seçilmez: kalıp kartındaki ürün bağından otomatik (`saveBom` boşsa ürüne bağlı aktif kalıbı atar); atış sayacı buna işlenir
+- Depo stok listesi: çoklu depo seçimi, tür/aile/grup kodu/stok durumu filtresi, grup kodu sütunu, birim bazında toplam
 - DataTable varsayılanı kaydırmalı liste (`scrollable`); sayfalı gerekirse `scrollable={false}`
 - Tüm DataTable'larda Excel gibi sütun genişliği (sürükle / çift tık sığdır, localStorage) — `components/shared/use-column-widths.ts`
 - [x] Reçete / BOM + versiyonlama (`save_bom`: kullanılmış reçete düzenlenince yeni versiyon)

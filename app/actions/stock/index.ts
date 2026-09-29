@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { readAll } from "@/lib/supabase/read-all";
 import { revalidatePath } from "next/cache";
 import {
   stockMovementSchema,
@@ -14,23 +15,23 @@ import type { Enums, TablesInsert } from "@/lib/supabase/database.types";
 
 export async function getStockOverview() {
   const supabase = await createClient();
-  
-  // 1. Tüm aktif ürünleri getir
-  const { data: products, error: productsError } = await supabase
-    .from("products")
-    .select("id, code, name, type, unit, min_stock, critical_stock")
-    .eq("active", true)
-    .order("code", { ascending: true });
 
-  if (productsError) throw new Error("Ürünler getirilirken hata oluştu: " + productsError.message);
-
-  // 2. Stok bakiyeleri (v_stock) ve depolar
-  const [{ data: stocks, error: stockError }, { data: warehouses, error: warehouseError }] = await Promise.all([
-    supabase.from("v_stock").select("product_id, warehouse_id, qty"),
-    supabase.from("warehouses").select("id, name, type"),
+  // Ürünler, bakiyeler ve depolar (1.000 satır sınırına takılmadan)
+  const [products, stocks, { data: warehouses, error: warehouseError }] = await Promise.all([
+    readAll(
+      (f, t) =>
+        supabase
+          .from("products")
+          .select("id, code, name, type, unit, category, group_code, material_group, min_stock, critical_stock")
+          .eq("active", true)
+          .order("code", { ascending: true })
+          .order("id")
+          .range(f, t),
+      "Ürünler getirilirken hata oluştu",
+    ),
+    readAll((f, t) => supabase.from("v_stock").select("product_id, warehouse_id, qty").order("product_id").order("warehouse_id").range(f, t), "Stok verileri getirilirken hata oluştu"),
+    supabase.from("warehouses").select("id, name, type").order("name"),
   ]);
-
-  if (stockError) throw new Error("Stok verileri getirilirken hata oluştu: " + stockError.message);
   if (warehouseError) throw new Error("Depolar getirilirken hata oluştu: " + warehouseError.message);
 
   const warehouseById = new Map(warehouses.map((w) => [w.id, w]));
@@ -42,7 +43,7 @@ export async function getStockOverview() {
     stocksByProduct.set(s.product_id, list);
   }
 
-  // 3. Ürün başına her depo için bir satır; hiç hareketi olmayan ürün 0 ile listelenir
+  // Ürün başına her depo için bir satır; hiç hareketi olmayan ürün 0 ile listelenir
   return products.flatMap((product) => {
     const productStocks = stocksByProduct.get(product.id);
     if (!productStocks) return [{ product, warehouse: null, qty: 0 }];
@@ -52,6 +53,14 @@ export async function getStockOverview() {
       qty: Number(s.qty ?? 0),
     }));
   });
+}
+
+/** Depo filtresi için depo listesi */
+export async function getWarehouseOptions() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("warehouses").select("id, name, type").order("name");
+  if (error) throw new Error("Depolar getirilirken hata oluştu: " + error.message);
+  return data;
 }
 
 export type StockOverviewRow = Awaited<ReturnType<typeof getStockOverview>>[number];
