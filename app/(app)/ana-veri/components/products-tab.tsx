@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { deleteProduct, bulkImportProducts, bulkDeleteProducts } from "@/app/actions/master-data/products";
 import { ProductFormInput } from "@/lib/validations/master-data";
-import { CATEGORY_LABELS, PRODUCT_TYPE_BADGE, PRODUCT_TYPE_LABELS, PRODUCT_TYPES, categoryLabel, type ProductType } from "@/lib/product-meta";
+import { CATEGORY_LABELS, PRODUCT_TYPE_BADGE, PRODUCT_TYPE_LABELS, PRODUCT_TYPES, categoryLabel, compareByGroup, type ProductType } from "@/lib/product-meta";
 import type { ExcelRow } from "@/lib/excel";
 import type { Tables } from "@/lib/supabase/database.types";
 import { formatTR } from "@/lib/format";
@@ -48,22 +48,23 @@ export function ProductsTab({ data, groups }: ProductsTabProps) {
   const [materialGroup, setMaterialGroup] = useState(ALL);
   const [variant, setVariant] = useState(ALL);
 
-  const groupName = useMemo(() => new Map(groups.map((g) => [g.code, g.name])), [groups]);
   const distinct = (pick: (p: Product) => string | null) => [...new Set(data.map(pick).filter((v): v is string => Boolean(v)))].sort((a, b) => a.localeCompare(b, "tr"));
-  const groupCodes = useMemo(() => [...new Set([...groups.map((g) => g.code), ...distinct((p) => p.group_code)])].sort(), [data, groups]); // eslint-disable-line react-hooks/exhaustive-deps
+  const groupCodes = useMemo(() => [...new Set([...groups.map((g) => g.code), ...distinct((p) => p.group_code)])].sort((a, b) => a.localeCompare(b, "tr", { numeric: true })), [data, groups]); // eslint-disable-line react-hooks/exhaustive-deps
   const materialGroups = useMemo(() => distinct((p) => p.material_group), [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => {
     const tokens = searchTokens(q);
-    return data.filter(
-      (p) =>
-        matchesTokens(tokens, p.code, p.name, p.group_code, p.variant_code, p.material_grade, p.material_group, p.description, p.barcode) &&
-        (!type || p.type === type) &&
-        (!category || p.category === category) &&
-        (!groupCode || p.group_code === groupCode) &&
-        (!materialGroup || p.material_group === materialGroup) &&
-        (!variant || (variant === "var" ? Boolean(p.variant_code) : !p.variant_code)),
-    );
+    return data
+      .filter(
+        (p) =>
+          matchesTokens(tokens, p.code, p.name, p.group_code, p.variant_code, p.material_grade, p.material_group, p.description, p.barcode) &&
+          (!type || p.type === type) &&
+          (!category || p.category === category) &&
+          (!groupCode || p.group_code === groupCode) &&
+          (!materialGroup || p.material_group === materialGroup) &&
+          (!variant || (variant === "var" ? Boolean(p.variant_code) : !p.variant_code)),
+      )
+      .sort(compareByGroup);
   }, [data, q, type, category, groupCode, materialGroup, variant]);
   const anyFilter = Boolean(q || type || category || groupCode || materialGroup || variant);
   const clearFilters = () => {
@@ -150,15 +151,7 @@ F-01\tBoru Firesi\tscrap\tkg\tFire\t\t0\t0\t0`;
     {
       accessorKey: "group_code",
       header: "Grup",
-      cell: ({ row }) =>
-        row.original.group_code ? (
-          <span title={groupName.get(row.original.group_code) ?? ""}>
-            {row.original.group_code}
-            {groupName.has(row.original.group_code) && <span className="ml-1 text-xs text-muted-foreground">{groupName.get(row.original.group_code)}</span>}
-          </span>
-        ) : (
-          "—"
-        ),
+      cell: ({ row }) => row.original.group_code ?? "—",
     },
     { accessorKey: "variant_code", header: "Genel kod", cell: ({ row }) => row.original.variant_code ?? "—" },
     { accessorKey: "unit", header: "Birim" },
@@ -251,7 +244,7 @@ F-01\tBoru Firesi\tscrap\tkg\tFire\t\t0\t0\t0`;
           value={groupCode}
           onValueChange={setGroupCode}
           placeholder="Tüm grup kodları"
-          options={[{ value: ALL, label: "Tüm grup kodları" }, ...groupCodes.map((c) => ({ value: c, label: groupName.has(c) ? `${c} — ${groupName.get(c)}` : c }))]}
+          options={[{ value: ALL, label: "Tüm grup kodları" }, ...groupCodes.map((c) => ({ value: c, label: c }))]}
         />
         <SearchableSelect
           value={materialGroup}

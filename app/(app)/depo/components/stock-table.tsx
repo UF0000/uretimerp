@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import type { StockOverviewRow } from "@/app/actions/stock";
 import { usePermission } from "@/components/shared/role-provider";
-import { CATEGORY_LABELS, PRODUCT_TYPE_LABELS, PRODUCT_TYPES, categoryLabel, type ProductType } from "@/lib/product-meta";
+import { CATEGORY_LABELS, PRODUCT_TYPE_LABELS, PRODUCT_TYPES, categoryLabel, compareByGroup, type ProductType } from "@/lib/product-meta";
 import { formatTR } from "@/lib/format";
 import { matchesTokens, searchTokens } from "@/lib/search";
 import { cn } from "@/lib/utils";
@@ -55,7 +55,6 @@ export function StockTable({ data, warehouses, groups }: StockTableProps) {
   const [groupCode, setGroupCode] = useState(ALL);
   const [status, setStatus] = useState(ALL);
 
-  const groupName = useMemo(() => new Map(groups.map((g) => [g.code, g.name])), [groups]);
   const groupCodes = useMemo(
     () => [...new Set([...groups.map((g) => g.code), ...data.map((r) => r.product.group_code).filter((c): c is string => Boolean(c))])].sort((a, b) => a.localeCompare(b, "tr", { numeric: true })),
     [data, groups],
@@ -74,7 +73,7 @@ export function StockTable({ data, warehouses, groups }: StockTableProps) {
       if (status === "stoksuz" && r.qty !== 0) return false;
       if ((status === "critical" || status === "warning") && statusOf(r) !== status) return false;
       return true;
-    });
+    }).sort((a, b) => compareByGroup(a.product, b.product));
   }, [data, q, type, category, groupCode, status]);
 
   const filtered = useMemo(
@@ -132,12 +131,7 @@ export function StockTable({ data, warehouses, groups }: StockTableProps) {
       cell: ({ row }) => {
         const g = row.original.product.group_code;
         if (!g) return <span className="text-muted-foreground">—</span>;
-        return (
-          <span>
-            <span className="font-medium">{g}</span>
-            {groupName.has(g) && <span className="ml-1 text-xs text-muted-foreground">{groupName.get(g)}</span>}
-          </span>
-        );
+        return <span className="font-medium">{g}</span>;
       },
     },
     { id: "warehouse", accessorFn: (r) => r.warehouse?.name ?? "", header: "Depo", cell: ({ row }) => row.original.warehouse?.name ?? <span className="text-muted-foreground">—</span> },
@@ -211,7 +205,7 @@ export function StockTable({ data, warehouses, groups }: StockTableProps) {
             value={groupCode}
             onValueChange={setGroupCode}
             placeholder="Tüm grup kodları"
-            options={[{ value: ALL, label: "Tüm grup kodları" }, ...groupCodes.map((c) => ({ value: c, label: groupName.has(c) ? `${c} — ${groupName.get(c)}` : c }))]}
+            options={[{ value: ALL, label: "Tüm grup kodları" }, ...groupCodes.map((c) => ({ value: c, label: c }))]}
           />
           <div className="flex gap-2">
             <SearchableSelect value={status} onValueChange={setStatus} placeholder="Stok durumu: hepsi" options={STATUS_OPTIONS} />

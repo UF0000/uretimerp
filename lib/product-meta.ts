@@ -57,6 +57,16 @@ export function groupCodeFromCode(code: string): string | null {
   return null;
 }
 
+/** Ürün sıralaması: grup kodu 01 → 27 (grupsuzlar sonda), grup içinde stok kodu. */
+export const compareByGroup = (a: { group_code: string | null; code: string }, b: { group_code: string | null; code: string }) => {
+  if (a.group_code !== b.group_code) {
+    if (!a.group_code) return 1;
+    if (!b.group_code) return -1;
+    return a.group_code.localeCompare(b.group_code, "tr", { numeric: true });
+  }
+  return a.code.localeCompare(b.code, "tr", { numeric: true });
+};
+
 /**
  * PP varyant kuralı: ilk harf renk, "." sonrası firma eki.
  * V1A012020.HENQ → 1A012020. PE ve kurala uymayan kodlarda null.

@@ -113,7 +113,7 @@ export default async function ProductDetailPage(props: { params: Promise<{ id: s
               </p>
             </div>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3 xl:grid-cols-5">
-              <Field label="Grup kodu" value={p.group_code ? `${p.group_code}${detail.groupName ? ` — ${detail.groupName}` : ""}` : "—"} />
+              <Field label="Grup kodu" value={p.group_code || "—"} />
               <Field label="Genel stok kodu" value={p.variant_code ?? "—"} />
               <Field label="Malzeme" value={[p.material_group, p.material_grade].filter(Boolean).join(" · ") || "—"} />
               <Field label="Boyut" value={size || "—"} />
