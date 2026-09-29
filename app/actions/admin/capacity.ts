@@ -12,6 +12,7 @@ import {
   type LineCapacityFormValues,
   type ReferenceCapacityFormValues,
 } from "@/lib/validations/capacity";
+import { compareMaterialGroups, compareReferenceCapacities } from "@/lib/capacity-sort";
 
 const refresh = () => {
   revalidatePath("/yonetim");
@@ -48,15 +49,17 @@ export async function getCapacitySettings() {
   return {
     lines: lines.data ?? [],
     lineCapacities: (lineCaps.data ?? []).map((c) => ({ ...c, capacity_kg_per_hour: Number(c.capacity_kg_per_hour) })),
-    referenceCapacities: (refCaps.data ?? []).map((r) => ({
-      ...r,
-      diameter_mm: Number(r.diameter_mm),
-      sdr: r.sdr === null ? null : Number(r.sdr),
-      capacity_kg_per_hour: Number(r.capacity_kg_per_hour),
-    })),
+    referenceCapacities: (refCaps.data ?? [])
+      .map((r) => ({
+        ...r,
+        diameter_mm: Number(r.diameter_mm),
+        sdr: r.sdr === null ? null : Number(r.sdr),
+        capacity_kg_per_hour: Number(r.capacity_kg_per_hour),
+      }))
+      .sort(compareReferenceCapacities),
     holidays: (holidays.data ?? []).map((h) => ({ ...h, off_hours: Number(h.off_hours) })),
     weeklyOffDays: params.data?.weekly_off_days ?? [],
-    materialGroups: [...new Set((groups.data ?? []).map((g) => g.material_group!).filter(Boolean))].sort(),
+    materialGroups: [...new Set((groups.data ?? []).map((g) => g.material_group!).filter(Boolean))].sort(compareMaterialGroups),
   };
 }
 

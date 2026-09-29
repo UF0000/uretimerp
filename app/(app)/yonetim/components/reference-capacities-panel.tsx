@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { formatTR } from "@/lib/format";
 import { getErrorMessage } from "@/lib/utils";
+import { compareMaterialGroups } from "@/lib/capacity-sort";
 
 type Row = CapacitySettings["referenceCapacities"][number];
 
@@ -36,7 +37,7 @@ const emptyForm = (): ReferenceCapacityFormValues => ({
 export function ReferenceCapacitiesPanel({ rows, materialGroups }: { rows: Row[]; materialGroups: string[] }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [groupFilter, setGroupFilter] = useState<string>("");
-  const groups = [...new Set([...materialGroups, ...rows.map((r) => r.material_group)])].sort();
+  const groups = [...new Set([...materialGroups, ...rows.map((r) => r.material_group)])].sort(compareMaterialGroups);
   const visible = groupFilter ? rows.filter((r) => r.material_group === groupFilter) : rows;
 
   const {
