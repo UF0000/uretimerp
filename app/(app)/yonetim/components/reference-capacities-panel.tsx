@@ -37,8 +37,25 @@ const emptyForm = (): ReferenceCapacityFormValues => ({
 export function ReferenceCapacitiesPanel({ rows, materialGroups }: { rows: Row[]; materialGroups: string[] }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [groupFilter, setGroupFilter] = useState<string>("");
+  const [showOthers, setShowOthers] = useState(false);
   const groups = [...new Set([...materialGroups, ...rows.map((r) => r.material_group)])].sort(compareMaterialGroups);
-  const visible = groupFilter ? rows.filter((r) => r.material_group === groupFilter) : rows;
+
+  // Rehber: aynı grup × çap × SDR için onaylı ve aktif satırlar içinde en yüksek kapasite (analiz de bunu kullanır).
+  // Aynı ürünün diğer yılları silinmez, varsayılan olarak gizlenir.
+  const keyOf = (r: Row) => `${r.material_group}|${r.diameter_mm}|${r.sdr ?? ""}`;
+  const guideByKey = new Map<string, Row>();
+  for (const r of rows) {
+    if (!r.active || r.approval !== "approved") continue;
+    const best = guideByKey.get(keyOf(r));
+    if (!best || r.capacity_kg_per_hour > best.capacity_kg_per_hour || (r.capacity_kg_per_hour === best.capacity_kg_per_hour && r.year > best.year)) guideByKey.set(keyOf(r), r);
+  }
+  const rowsPerKey = new Map<string, number>();
+  for (const r of rows) rowsPerKey.set(keyOf(r), (rowsPerKey.get(keyOf(r)) ?? 0) + 1);
+  const isGuide = (r: Row) => guideByKey.get(keyOf(r))?.id === r.id;
+  const isHidden = (r: Row) => guideByKey.has(keyOf(r)) && !isGuide(r);
+  const hiddenCount = rows.filter(isHidden).length;
+  const shown = showOthers ? rows : rows.filter((r) => !isHidden(r));
+  const visible = groupFilter ? shown.filter((r) => r.material_group === groupFilter) : shown;
 
   const {
     register,
@@ -89,8 +106,9 @@ export function ReferenceCapacitiesPanel({ rows, materialGroups }: { rows: Row[]
       <p className="flex items-start gap-2 text-sm text-muted-foreground">
         <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
         Ürünün malzeme grubu, çapı ve SDR&apos;sine göre beklenen üretim hızı (kg/saat). Üretim analizinde &quot;hız
-        performansı&quot; bu değerle karşılaştırılır. Aynı ürüne birden çok yıl uyarsa onaylı en güncel yıl kullanılır;
-        SDR boş bırakılırsa o çaptaki tüm SDR&apos;lere uyar.
+        performansı&quot; bu değerle karşılaştırılır. Aynı ürüne birden çok yıl girildiyse onaylı satırlar içinde en yüksek kapasite
+        rehber kabul edilir (o hızla üretildiyse yine üretilebilir); diğer yıllar silinmez, gizlenir. SDR boş bırakılırsa o çaptaki
+        tüm SDR&apos;lere uyar.
       </p>
 
       <datalist id="material-groups">
@@ -164,15 +182,20 @@ export function ReferenceCapacitiesPanel({ rows, materialGroups }: { rows: Row[]
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm text-muted-foreground">Grup:</span>
         <Button type="button" size="sm" variant={groupFilter === "" ? "default" : "outline"} onClick={() => setGroupFilter("")}>
-          Tümü ({rows.length})
+          Tümü ({shown.length})
         </Button>
         {groups
-          .filter((g) => rows.some((r) => r.material_group === g))
+          .filter((g) => shown.some((r) => r.material_group === g))
           .map((g) => (
             <Button key={g} type="button" size="sm" variant={groupFilter === g ? "default" : "outline"} onClick={() => setGroupFilter(g)}>
-              {g} ({rows.filter((r) => r.material_group === g).length})
+              {g} ({shown.filter((r) => r.material_group === g).length})
             </Button>
           ))}
+        {hiddenCount > 0 && (
+          <Button type="button" size="sm" variant="ghost" className="ml-auto" onClick={() => setShowOthers((v) => !v)}>
+            {showOthers ? "Diğer yılları gizle" : `Diğer yılları göster (${hiddenCount})`}
+          </Button>
+        )}
       </div>
 
       <div className="overflow-x-auto rounded-md border border-border">
@@ -199,11 +222,18 @@ export function ReferenceCapacitiesPanel({ rows, materialGroups }: { rows: Row[]
               </tr>
             )}
             {visible.map((r) => (
-              <tr key={r.id} className={r.active ? "border-b border-border last:border-0" : "border-b border-border text-muted-foreground last:border-0"}>
+              <tr key={r.id} className={r.active && !isHidden(r) ? "border-b border-border last:border-0" : "border-b border-border text-muted-foreground last:border-0"}>
                 <td className="px-3 py-2 font-medium">{r.material_group}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{formatTR(r.diameter_mm, 0)}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{r.sdr === null ? "hepsi" : formatTR(r.sdr, 1)}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{formatTR(r.capacity_kg_per_hour, 1)} kg/sa</td>
+                <td className="px-3 py-2 text-right tabular-nums">
+                  {formatTR(r.capacity_kg_per_hour, 1)} kg/sa
+                  {isGuide(r) && (rowsPerKey.get(keyOf(r)) ?? 0) > 1 && (
+                    <Badge variant="secondary" className="ml-2">
+                      Rehber
+                    </Badge>
+                  )}
+                </td>
                 <td className="px-3 py-2 text-right tabular-nums">{r.year}</td>
                 <td className="px-3 py-2 text-xs">{r.source}</td>
                 <td className="px-3 py-2">
