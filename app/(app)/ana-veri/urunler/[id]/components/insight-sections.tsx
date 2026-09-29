@@ -233,9 +233,9 @@ export function PerformanceSection({ insights }: { insights: ProductInsights }) 
         <Kpi title="Sağlam üretim" value={`${n0(p.goodKg)} kg`} hint={`${p.workOrders} iş emri · ${p.entries} vardiya`} />
         <Kpi title="Ort. fire" value={pct(p.scrapPct, 2)} hint={`hedef ≤ %${formatTR(tg.scrapPct, 1)}`} tone={scrapTone} />
         <Kpi title="Ort. overweight" value={pct(p.overweightPct, 2)} hint={`tolerans ±%${formatTR(tg.overweightTolerancePct, 1)}`} tone={owTone} />
-        <Kpi title="OEE" value={pct(p.oee)} hint={`hedef ≥ %${formatTR(tg.oeePct, 0)}`} tone={oeeTone} />
-        <Kpi title="Kullanılabilirlik" value={pct(p.availability)} />
-        <Kpi title="Performans" value={pct(p.performance)} hint="ideal / gerçek süre" />
+        <Kpi title="OEE" value={pct(p.oee)} hint={`çalışma / vardiya · hedef ≥ %${formatTR(tg.oeePct, 0)}`} tone={oeeTone} />
+        <Kpi title="Duruş oranı" value={pct(p.availability === null ? null : 1 - p.availability)} hint="duruş / vardiya süresi" />
+        <Kpi title="Hız performansı" value={pct(p.performance)} hint="ideal / gerçek süre" />
         <Kpi title="Referansa göre hız" value={pct(p.speedPerformance)} />
       </div>
       <div className="grid gap-5 md:grid-cols-2">

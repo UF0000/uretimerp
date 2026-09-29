@@ -4,7 +4,8 @@
  *   Fire %           = fire kg / kullanılan hammadde kg
  *   Overweight       = sağlam kg / nominal − 1
  *     nominal: ekstrüzyon üretilen m × kg/m · enjeksiyon adet × (parça g + yolluk g / göz) / 1000
- *   OEE              = kullanılabilirlik × min(performans, 1) × kalite
+ *   OEE              = (planlı − duruş) / planlı  (fabrika tanımı: çalışma oranı)
+ *   Hız performansı  = ideal süre / çalışma süresi (ayrı gösterge)
  *     enjeksiyon ideal = çevrim × atış (atış: ağırlık biliniyorsa kullanılan kütleden, yoksa adet / göz)
  *     ekstrüzyon ideal = (sağlam m + fire m) / hedef hız
  *   Gerçekleşen      = enjeksiyon: çalışma sn / atış · ekstrüzyon: üretilen m / çalışma dk
@@ -73,7 +74,7 @@ export function entryMetrics(e: EntryInput, t: EntryTech) {
   const availability = ratio(runMin, e.plannedMin);
   const performance = idealSec !== null ? ratio(idealSec, runMin * 60) : null;
   const quality = ratio(goodKg, e.usedKg);
-  const oee = availability !== null && performance !== null && quality !== null ? availability * Math.min(performance, 1) * quality : null;
+  const oee = availability; // fabrika tanımı: çalışma / planlı süre
   const expectedKg = t.capacityKgPerHour && t.capacityKgPerHour > 0 ? (t.capacityKgPerHour * runMin) / 60 : null;
 
   return {

@@ -236,8 +236,8 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
                 status={owStatus(t.overweightPct)}
                 hint={t.overweightPct === null ? "reçetede birim ağırlık yok" : `tolerans ±%${formatTR(tg.overweightTolerancePct, 1)}`}
               />
-              <Kpi title="OEE" value={pct(t.oee, 1)} status={oeeStatus(t.oee)} hint={`hedef ≥ %${formatTR(tg.oeePct, 0)}`} />
-              <Kpi title="Kullanılabilirlik" value={pct(t.availability, 1)} hint="çalışma / planlı süre" accent="border-l-[var(--cat-6)]" />
+              <Kpi title="OEE" value={pct(t.oee, 1)} status={oeeStatus(t.oee)} hint={`çalışma / vardiya süresi · hedef ≥ %${formatTR(tg.oeePct, 0)}`} />
+              <Kpi title="Duruş oranı" value={pct(t.availability === null ? null : 1 - t.availability, 1)} hint="duruş / vardiya süresi" accent="border-l-[var(--cat-5)]" />
               <Kpi title="Materyal verim" value={pct(t.materialYield, 1)} hint="sağlam / tüketim" accent="border-l-[var(--cat-6)]" />
               <Kpi title="Çalışma / duruş" value={`${formatTR(t.runHours, 0)} / ${formatTR(t.downtimeHours, 0)} sa`} accent="border-l-[var(--cat-5)]" />
             </div>
@@ -257,7 +257,7 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
                 <Kpi title="Kapasite verimi" value={pct(a.capacity.capacityEfficiency)} hint="tüketim / NŞA kapasite" accent="border-l-[var(--cat-4)]" />
                 <Kpi title="Aktif sürede kapasite" value={pct(a.capacity.activeCapacityPct)} hint="çalışılan sürede" accent="border-l-[var(--cat-4)]" />
                 <Kpi title="Zaman kullanımı" value={pct(a.capacity.timeUtilization)} hint="çalışma / kullanılabilir süre" accent="border-l-[var(--cat-4)]" />
-                <Kpi title="OEE performansı" value={pct(t.performance)} hint="ideal / gerçek çalışma süresi" accent="border-l-[var(--cat-6)]" />
+                <Kpi title="Hız performansı" value={pct(t.performance)} hint="ideal / gerçek çalışma süresi" accent="border-l-[var(--cat-6)]" />
                 <Kpi
                   title="Referansa göre hız"
                   value={pct(t.speedPerformance)}
@@ -514,8 +514,8 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
           </Section>
 
           <p className="text-xs text-muted-foreground">
-            Hesaplar: sağlam = hammadde − fire; overweight = sağlam / (üretilen × reçete birim ağırlığı) − 1; OEE = kullanılabilirlik ×
-            performans × kalite; NŞA kapasite = Σ gün (o gün geçerli makine kapasitesi × kullanılabilir saat; tatil ve kapalı günler
+            Hesaplar: sağlam = hammadde − fire; overweight = sağlam / (üretilen × reçete birim ağırlığı) − 1; OEE = (vardiya süresi − duruş) /
+            vardiya süresi; hız performansı = ideal süre / çalışma süresi; NŞA kapasite = Σ gün (o gün geçerli makine kapasitesi × kullanılabilir saat; tatil ve kapalı günler
             düşülür); zaman kullanımı = (vardiya süresi − duruş) / kullanılabilir saat; referansa göre hız = tüketim / (grup·çap·SDR
             referans kapasitesi × çalışma saati). Hedefler, kapasite ve takvim Yönetim&apos;den değiştirilir.
           </p>

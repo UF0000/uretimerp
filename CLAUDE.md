@@ -143,6 +143,7 @@ supabase/
 **Bekleyen temizlik:** Ürün kartı test verisi (`20260929150000_test_products.sql`): V9TEST01, A9TEST01.HENQ, D.990.063.99, TEST-HAM-PPR, TEST-MTL-01, KLP-TEST-01, TEST-RCT-* reçeteleri; stok hareketleri `note = 'TEST VERİSİ'`. Ayrıca `20260929190000_test_extras.sql`: cariler "TEST Tedarikçi A.Ş." / "TEST Müşteri Ltd.", sipariş TEST-SIP-001, test tedarikçi fiyatları. Kullanıcı isteyince: hareketleri ters kayıtla sıfırla, ürün/kalıp/reçeteyi pasife al.
 
 **Alınan kararlar (kalıcı):**
+- **OEE fabrika tanımı:** (vardiya/planlı süre − duruş) ÷ vardiya süresi (11 sa / 12 sa = %91,7). Klasik K×P×Q kullanılmaz; hız performansı (ideal/gerçek süre) ve kalite ayrı gösterge (`measure()` ve `entryMetrics()`).
 - Sektör: **plastik imalat** (ekstrüzyon + enjeksiyon).
 - Stok yalnızca append-only `stock_movements` ile değişir.
 - Reçete versiyonlanır; eski üretimlerin maliyeti geçmiş versiyonla hesaplanır.

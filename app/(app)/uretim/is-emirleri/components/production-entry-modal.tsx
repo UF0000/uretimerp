@@ -362,7 +362,7 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
               <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
                 <Kpi label="Giriş sayısı" value={String(entries.length)} hint={`${formatTR(totals.input.usedKg, 0)} kg hammadde`} />
                 <Kpi label="Fire" value={pct(totals.m?.scrapPct ?? null, 2)} hint={`${formatTR(totals.input.scrapKg, 1)} kg · hedef ≤ %${formatTR(targets.scrapPct, 1)}`} tone={scrapTone(totals.m?.scrapPct ?? null, targets)} />
-                <Kpi label="OEE" value={pct(totals.m?.oee ?? null)} hint={`hedef ≥ %${formatTR(targets.oeePct, 0)}`} tone={oeeTone(totals.m?.oee ?? null, targets)} />
+                <Kpi label="OEE" value={pct(totals.m?.oee ?? null)} hint={`çalışma / vardiya · hedef ≥ %${formatTR(targets.oeePct, 0)}`} tone={oeeTone(totals.m?.oee ?? null, targets)} />
                 <Kpi label="Overweight" value={pct(totals.m?.overweightPct ?? null, 2)} hint={`tolerans ±%${formatTR(targets.overweightTolerancePct, 1)}`} tone={owTone(totals.m?.overweightPct ?? null, targets)} />
                 <Kpi label="Kapasite kullanımı" value={pct(totals.m?.capacityUse ?? null, 0)} hint={tech?.capacityKgPerHour ? `makine ${formatTR(tech.capacityKgPerHour, 0)} kg/sa` : "makine kapasitesi yok"} tone={capTone(totals.m?.capacityUse ?? null)} />
                 <Kpi label="Çalışma / duruş" value={`${formatTR((totals.m?.runMin ?? 0) / 60, 1)} / ${formatTR(totals.input.downtimeMin / 60, 1)} sa`} hint={isInjection ? (totals.m?.actualCycleSec ? `ort. çevrim ${formatTR(totals.m.actualCycleSec, 1)} sn` : undefined) : totals.m?.actualSpeedMPerMin ? `ort. hız ${formatTR(totals.m.actualSpeedMPerMin, 2)} m/dk` : undefined} />
@@ -640,7 +640,7 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
                   />
                 )}
                 <Kpi label="Fire" value={pct(live?.scrapPct ?? null, 2)} tone={scrapTone(live?.scrapPct ?? null, targets)} />
-                <Kpi label="OEE" value={pct(live?.oee ?? null)} hint={live ? `K ${pct(live.availability, 0)} · P ${pct(live.performance, 0)} · Q ${pct(live.quality, 0)}` : undefined} tone={oeeTone(live?.oee ?? null, targets)} />
+                <Kpi label="OEE" value={pct(live?.oee ?? null)} hint={live && range ? `${hm(live.runMin)} / ${hm(range.minutes)}${live.performance !== null ? ` · hız perf. ${pct(live.performance, 0)}` : ""}` : undefined} tone={oeeTone(live?.oee ?? null, targets)} />
                 <Kpi label="Overweight" value={pct(live?.overweightPct ?? null, 2)} tone={owTone(live?.overweightPct ?? null, targets)} />
                 <Kpi label="Kapasite kullanımı" value={pct(live?.capacityUse ?? null, 0)} hint={live?.kgPerHour ? `${formatTR(live.kgPerHour, 1)} kg/sa` : undefined} tone={capTone(live?.capacityUse ?? null)} />
               </div>

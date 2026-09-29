@@ -6,7 +6,8 @@
  *   Fire %           = fire / hammadde
  *   Overweight %     = sağlam / nominal − 1   (nominal = üretilen × reçete birim ağırlığı)
  *   Materyal verim   = sağlam / hammadde
- *   OEE              = kullanılabilirlik × performans × kalite (v_oee_entries ile aynı)
+ *   OEE              = (vardiya süresi − duruş) / vardiya süresi  (fabrika tanımı: çalışma oranı)
+ *   Hız performansı  = ideal süre / gerçek çalışma süresi (ayrı gösterge)
  * Kapasite (makine kapasitesi giriş gününde geçerli kayıttan):
  *   NŞA kapasite     = Σ gün Σ makine (o gün geçerli kapasite × kullanılabilir saat); tatil/kapalı gün düşülür
  *   Kapasite verimi  = hammadde / NŞA kapasite
@@ -116,10 +117,8 @@ export function measure(entries: AnalyticsEntry[]) {
   const availability = ratio(runMin, plannedMin);
   const performance = ratio(idealSec, perfRunSec);
   const quality = ratio(goodKg, usedKg);
-  const oee =
-    availability !== null && performance !== null && quality !== null
-      ? availability * Math.min(performance, 1) * quality
-      : null;
+  // OEE fabrika tanımı: çalışma süresi / vardiya (planlı) süresi — 11 sa çalışma / 12 sa = %91,7
+  const oee = availability;
 
   const withCap = entries.filter((e) => e.capacityKgPerHour && e.capacityKgPerHour > 0);
   const expectedKg = sum(withCap, (e) => (e.capacityKgPerHour! * e.runMin) / 60);
