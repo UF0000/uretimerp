@@ -2,7 +2,8 @@
  * Tek üretim girişinin göstergeleri (v_oee_entries / v_production_analytics ile aynı formüller).
  *   Planlı süre      = bitiş − başlangıç (dk);  çalışma = planlı − duruş
  *   Fire %           = fire kg / kullanılan hammadde kg
- *   Overweight       = sağlam kg / (üretilen × reçete birim ağırlığı) − 1
+ *   Overweight       = sağlam kg / nominal − 1
+ *     nominal: ekstrüzyon üretilen m × kg/m · enjeksiyon adet × (parça g + yolluk g / göz) / 1000
  *   OEE              = kullanılabilirlik × min(performans, 1) × kalite
  *     enjeksiyon ideal = çevrim × atış (atış: ağırlık biliniyorsa kullanılan kütleden, yoksa adet / göz)
  *     ekstrüzyon ideal = (sağlam m + fire m) / hedef hız
@@ -31,6 +32,13 @@ export interface EntryInput {
 
 const ratio = (a: number, b: number) => (b > 0 ? a / b : null);
 
+/** İlk pozitif değer (reçetede 0/boş girilmiş alan kalıp kartındaki değere düşer) */
+export const firstPositive = (...values: (number | null | undefined)[]) => values.find((v): v is number => typeof v === "number" && v > 0) ?? null;
+
+/** Enjeksiyonda bir parçanın hammadde tüketimi (kg): parça + yolluk payı */
+export const injectionKgPerPart = (t: Pick<EntryTech, "productWeightG" | "runnerWeightG" | "cavityCount">) =>
+  t.productWeightG && t.productWeightG > 0 ? (t.productWeightG + (t.runnerWeightG ?? 0) / Math.max(1, t.cavityCount ?? 1)) / 1000 : null;
+
 export function entryMetrics(e: EntryInput, t: EntryTech) {
   const runMin = Math.max(0, e.plannedMin - e.downtimeMin);
   const goodKg = Math.max(0, e.usedKg - e.scrapKg);
@@ -49,7 +57,8 @@ export function entryMetrics(e: EntryInput, t: EntryTech) {
     }
     actualSpeedMPerMin = runMin > 0 && e.producedQty > 0 ? e.producedQty / runMin : null;
   } else {
-    if (t.productWeightG && t.productWeightG > 0) nominalKg = (e.producedQty * t.productWeightG) / 1000;
+    const perPart = injectionKgPerPart(t);
+    if (perPart) nominalKg = e.producedQty * perPart;
     if (t.cycleTimeSec && t.cycleTimeSec > 0) {
       const shots =
         t.productWeightG && t.productWeightG > 0 && e.usedKg > 0

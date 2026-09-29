@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { cancelProductionEntry, getWorkOrderEntries, saveProductionEntry, type RawLot, type WorkOrderEntries } from "@/app/actions/production";
 import type { WorkOrderRow } from "@/app/actions/work-orders";
 import { entryRange, productionEntryV2Schema, type ProductionEntryV2Values } from "@/lib/validations/production";
-import { entryMetrics, type EntryMetrics } from "@/lib/entry-metrics";
+import { entryMetrics, injectionKgPerPart, type EntryMetrics } from "@/lib/entry-metrics";
 import { mPerHourToMin } from "@/lib/speed";
 import { formatTR } from "@/lib/format";
 import { cn, getErrorMessage, one } from "@/lib/utils";
@@ -187,7 +187,11 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
   const produced = toNum(f.produced_qty ?? "");
   const used = toNum(f.total_used_kg ?? "");
   const live = tech && range ? entryMetrics({ plannedMin: range.minutes, downtimeMin: liveDown, producedQty: produced, usedKg: used, scrapKg: liveScrap }, tech) : null;
-  const unitKg = tech ? (tech.productionType === "extrusion" ? tech.kgPerMeter : tech.productWeightG ? (tech.productWeightG + (tech.runnerWeightG ?? 0) / Math.max(1, tech.cavityCount ?? 1)) / 1000 : null) : null;
+  // Birim tüketim: ekstrüzyon kg/m · enjeksiyon parça + yolluk payı (yolluk atış başı / göz)
+  const unitKg = tech ? (tech.productionType === "extrusion" ? tech.kgPerMeter : injectionKgPerPart(tech)) : null;
+  const runnerPerPartG = tech?.runnerWeightG ? tech.runnerWeightG / Math.max(1, tech.cavityCount ?? 1) : 0;
+  const expectedGoodKg = unitKg ? produced * unitKg : null;
+  const expectedUsedKg = expectedGoodKg !== null ? expectedGoodKg + liveScrap : null;
   const bomItems = (bom?.items ?? []).filter((i) => Number(i.ratio_pct) > 0);
 
   const suggestUsed = () => {
@@ -432,7 +436,22 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
                       <Wand2 className="h-4 w-4" />
                     </Button>
                   </div>
-                  {unitKg && <p className="text-xs text-muted-foreground">Birim ağırlık {formatTR(unitKg, 4)} kg/{unit}</p>}
+                  {unitKg ? (
+                    <p className="text-xs text-muted-foreground">
+                      {isInjection
+                        ? `Birim: ${formatTR(tech?.productWeightG ?? 0, 1)} g parça + ${formatTR(runnerPerPartG, 1)} g yolluk = ${formatTR(unitKg * 1000, 1)} g`
+                        : `Birim: ${formatTR(unitKg, 3)} kg/m`}
+                      {expectedUsedKg !== null && produced > 0 && (
+                        <>
+                          <br />
+                          Beklenen: {formatTR(produced, 0)} × {formatTR(unitKg * 1000, 1)} g = {formatTR(expectedGoodKg ?? 0, 2)} kg + fire {formatTR(liveScrap, 2)} kg ={" "}
+                          <span className="font-medium text-foreground">{formatTR(expectedUsedKg, 2)} kg</span>
+                        </>
+                      )}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-warning">Reçetede birim ağırlık yok</p>
+                  )}
                 </div>
                 <div className="col-span-2 space-y-1">
                   <Label>Mamulün gireceği depo</Label>

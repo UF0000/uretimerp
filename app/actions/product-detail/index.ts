@@ -9,6 +9,7 @@ import { one } from "@/lib/utils";
 import { computeStandardCost } from "@/lib/product-cost";
 import { variantBaseFromCode } from "@/lib/product-meta";
 import { saveBom } from "@/app/actions/bom";
+import { firstPositive } from "@/lib/entry-metrics";
 
 const num = (v: number | string | null | undefined) => (v === null || v === undefined ? null : Number(v));
 
@@ -114,10 +115,10 @@ export async function getProductDetail(id: string) {
         kgPerMeter: num(ext?.kg_per_meter),
         targetMPerHour: num(ext?.target_m_per_hour),
         mold: mold ? { id: mold.id, code: mold.code, name: mold.name } : null,
-        cavityCount: num(inj?.cavity_count) ?? num(mold?.cavity_count),
-        cycleTimeSec: num(inj?.cycle_time_sec) ?? num(mold?.cycle_time_sec),
-        runnerWeightG: num(inj?.runner_sprue_weight_g) ?? num(mold?.sprue_weight_g),
-        productWeightG: num(inj?.product_weight_g) ?? num(mold?.product_weight_g),
+        cavityCount: firstPositive(num(inj?.cavity_count), num(mold?.cavity_count)),
+        cycleTimeSec: firstPositive(num(inj?.cycle_time_sec), num(mold?.cycle_time_sec)),
+        runnerWeightG: firstPositive(num(inj?.runner_sprue_weight_g), num(mold?.sprue_weight_g)),
+        productWeightG: firstPositive(num(inj?.product_weight_g), num(mold?.product_weight_g)),
       }
     : null;
 

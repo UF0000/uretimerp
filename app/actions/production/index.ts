@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { productionEntrySchema, ProductionEntryFormValues, productionEntryV2Schema, entryRange, type ProductionEntryV2Values } from "@/lib/validations/production";
 import { one } from "@/lib/utils";
-import type { EntryTech } from "@/lib/entry-metrics";
+import { firstPositive, type EntryTech } from "@/lib/entry-metrics";
 
 const revalidateProduction = () => {
   revalidatePath("/uretim/is-emirleri");
@@ -145,10 +145,11 @@ export async function getWorkOrderEntries(workOrderId: string) {
     productionType: bom?.production_type ?? "extrusion",
     kgPerMeter: num(ext?.kg_per_meter),
     targetMPerHour: num(ext?.target_m_per_hour),
-    cycleTimeSec: num(inj?.cycle_time_sec) ?? num(mold?.cycle_time_sec),
-    cavityCount: num(inj?.cavity_count) ?? num(mold?.cavity_count),
-    productWeightG: num(inj?.product_weight_g) ?? num(mold?.product_weight_g),
-    runnerWeightG: num(inj?.runner_sprue_weight_g) ?? num(mold?.sprue_weight_g),
+    // Reçetede 0/boş alan kalıp kartına düşer (reçete formu yolluğu varsayılan 0 kaydeder)
+    cycleTimeSec: firstPositive(num(inj?.cycle_time_sec), num(mold?.cycle_time_sec)),
+    cavityCount: firstPositive(num(inj?.cavity_count), num(mold?.cavity_count)),
+    productWeightG: firstPositive(num(inj?.product_weight_g), num(mold?.product_weight_g)),
+    runnerWeightG: firstPositive(num(inj?.runner_sprue_weight_g), num(mold?.sprue_weight_g)),
     capacityKgPerHour: capacityOn(today),
   };
 
