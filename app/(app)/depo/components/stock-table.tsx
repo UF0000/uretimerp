@@ -55,6 +55,8 @@ export function StockTable({ data, warehouses, groups }: StockTableProps) {
   const [groupCode, setGroupCode] = useState(ALL);
   const [status, setStatus] = useState(ALL);
 
+  // Grup adları yalnızca filtre seçeneklerinde gösterilir (listede sadece kod)
+  const groupName = useMemo(() => new Map(groups.map((g) => [g.code, g.name])), [groups]);
   const groupCodes = useMemo(
     () => [...new Set([...groups.map((g) => g.code), ...data.map((r) => r.product.group_code).filter((c): c is string => Boolean(c))])].sort((a, b) => a.localeCompare(b, "tr", { numeric: true })),
     [data, groups],
@@ -205,7 +207,7 @@ export function StockTable({ data, warehouses, groups }: StockTableProps) {
             value={groupCode}
             onValueChange={setGroupCode}
             placeholder="Tüm grup kodları"
-            options={[{ value: ALL, label: "Tüm grup kodları" }, ...groupCodes.map((c) => ({ value: c, label: c }))]}
+            options={[{ value: ALL, label: "Tüm grup kodları" }, ...groupCodes.map((c) => ({ value: c, label: groupName.has(c) ? `${c} — ${groupName.get(c)}` : c }))]}
           />
           <div className="flex gap-2">
             <SearchableSelect value={status} onValueChange={setStatus} placeholder="Stok durumu: hepsi" options={STATUS_OPTIONS} />

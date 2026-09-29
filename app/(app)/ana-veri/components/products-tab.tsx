@@ -48,6 +48,8 @@ export function ProductsTab({ data, groups }: ProductsTabProps) {
   const [materialGroup, setMaterialGroup] = useState(ALL);
   const [variant, setVariant] = useState(ALL);
 
+  // Grup adları yalnızca filtre seçeneklerinde gösterilir (listede sadece kod)
+  const groupName = useMemo(() => new Map(groups.map((g) => [g.code, g.name])), [groups]);
   const distinct = (pick: (p: Product) => string | null) => [...new Set(data.map(pick).filter((v): v is string => Boolean(v)))].sort((a, b) => a.localeCompare(b, "tr"));
   const groupCodes = useMemo(() => [...new Set([...groups.map((g) => g.code), ...distinct((p) => p.group_code)])].sort((a, b) => a.localeCompare(b, "tr", { numeric: true })), [data, groups]); // eslint-disable-line react-hooks/exhaustive-deps
   const materialGroups = useMemo(() => distinct((p) => p.material_group), [data]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -244,7 +246,7 @@ F-01\tBoru Firesi\tscrap\tkg\tFire\t\t0\t0\t0`;
           value={groupCode}
           onValueChange={setGroupCode}
           placeholder="Tüm grup kodları"
-          options={[{ value: ALL, label: "Tüm grup kodları" }, ...groupCodes.map((c) => ({ value: c, label: c }))]}
+          options={[{ value: ALL, label: "Tüm grup kodları" }, ...groupCodes.map((c) => ({ value: c, label: groupName.has(c) ? `${c} — ${groupName.get(c)}` : c }))]}
         />
         <SearchableSelect
           value={materialGroup}
