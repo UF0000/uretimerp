@@ -85,8 +85,8 @@ export interface AnalyticsInput {
 const sum = <T>(xs: T[], f: (x: T) => number) => xs.reduce((s, x) => s + f(x), 0);
 const ratio = (a: number, b: number) => (b > 0 ? a / b : null);
 
-/** Bir giriş grubunun ortak ölçüleri */
-function measure(entries: AnalyticsEntry[]) {
+/** Bir giriş grubunun ortak ölçüleri (ürün kartı da kullanır) */
+export function measure(entries: AnalyticsEntry[]) {
   const usedKg = sum(entries, (e) => e.usedKg);
   const scrapKg = sum(entries, (e) => e.scrapKg);
   const goodKg = sum(entries, (e) => e.goodKg);

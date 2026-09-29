@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Info } from "lucide-react";
 
 import { getProductDetail } from "@/app/actions/product-detail";
+import { getProductInsights } from "@/app/actions/product-detail/insights";
 import { getProductGroups } from "@/app/actions/master-data/products";
 import { PageHeader } from "@/components/shared/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ import { TechnicalCard } from "./components/technical-card";
 import { MovementChart } from "./components/movement-chart";
 import { VariantsPanel } from "./components/variants-panel";
 import { EditProductButton } from "./components/edit-product-button";
+import { ActualCostSection, PerformanceSection, QualitySection, StockSection } from "./components/insight-sections";
 
 export const metadata: Metadata = { title: "Ürün Ayrıntısı" };
 export const dynamic = "force-dynamic";
@@ -45,6 +47,7 @@ export default async function ProductDetailPage(props: { params: Promise<{ id: s
   const { id } = await props.params;
   const [detail, groups] = await Promise.all([getProductDetail(id), getProductGroups()]);
   if (!detail) notFound();
+  const insights = await getProductInsights(id);
   const { product: p, technical: t, cost, components } = detail;
   const unit = UNIT_LABEL[p.unit] ?? p.unit;
   const type = p.type as ProductType;
@@ -100,7 +103,7 @@ export default async function ProductDetailPage(props: { params: Promise<{ id: s
           <Section title="Stok">
             <div className="space-y-3">
               <div>
-                <div className="text-xs text-muted-foreground">Mevcut stok</div>
+                <div className="text-xs text-muted-foreground">Mevcut stok (tüm depolar)</div>
                 <div
                   className={cn(
                     "text-3xl font-semibold tabular-nums",
@@ -113,6 +116,8 @@ export default async function ProductDetailPage(props: { params: Promise<{ id: s
               <dl className="grid grid-cols-2 gap-3 text-sm">
                 <Field label="Min. stok" value={`${formatTR(p.min_stock, 0)} ${unit}`} />
                 <Field label="Kritik stok" value={`${formatTR(p.critical_stock, 0)} ${unit}`} />
+                <Field label="Kullanılabilir (boşta)" value={<span className={insights.stock.available < 0 ? "text-danger" : ""}>{`${formatTR(insights.stock.available, 0)} ${unit}`}</span>} />
+                <Field label="Tahmini tükenme" value={insights.depletion.daysLeft === null ? "—" : `${formatTR(insights.depletion.daysLeft, 0)} gün`} />
                 <Field label="Kart birim fiyatı" value={p.unit_cost ? `${formatTR(p.unit_cost)} ${p.currency ?? "TRY"}` : "—"} />
               </dl>
             </div>
@@ -178,8 +183,22 @@ export default async function ProductDetailPage(props: { params: Promise<{ id: s
         </Section>
       </div>
 
+      <Section title="Stok ve rezervasyon">
+        <StockSection insights={insights} unit={unit} />
+      </Section>
+
       <Section title="Yıllık hareket (son 12 ay)">
         <MovementChart data={detail.monthly} unit={unit} />
+      </Section>
+
+      {t && (
+        <Section title="Üretim performansı (son 12 ay)">
+          <PerformanceSection insights={insights} />
+        </Section>
+      )}
+
+      <Section title="Kalite geçmişi">
+        <QualitySection insights={insights} />
       </Section>
 
       <div className="grid gap-4 xl:grid-cols-2">
@@ -232,10 +251,14 @@ export default async function ProductDetailPage(props: { params: Promise<{ id: s
           </div>
         </Section>
 
-        <Section title="Varyantlar">
-          <VariantsPanel detail={detail} />
+        <Section title="Gerçekleşen maliyet (biten iş emirleri)">
+          <ActualCostSection insights={insights} standard={cost.total} unit={unit} />
         </Section>
       </div>
+
+      <Section title="Varyantlar">
+        <VariantsPanel detail={detail} />
+      </Section>
     </div>
   );
 }

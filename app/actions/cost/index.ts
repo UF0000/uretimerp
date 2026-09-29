@@ -15,7 +15,7 @@ type PricedProduct = { unit_cost: number | null; currency: string | null } | nul
  *
  * Not: Fiyatlar ürün kartındaki güncel birim maliyetten alınır (geçmiş fiyat tutulmuyor).
  */
-export async function getCompletedWorkOrdersForCosting() {
+export async function getCompletedWorkOrdersForCosting(productId?: string) {
   const supabase = await createClient();
 
   const [{ data: workOrders, error }, { data: costParams }] = await Promise.all([
@@ -36,6 +36,7 @@ export async function getCompletedWorkOrdersForCosting() {
         production:production_entries(produced_qty, scrap_qty)
       `)
       .eq("status", "done")
+      .match(productId ? { product_id: productId } : {})
       .order("finished_at", { ascending: false }),
     supabase.from("cost_parameters").select("*").limit(1).maybeSingle(),
   ]);
