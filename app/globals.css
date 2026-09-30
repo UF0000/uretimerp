@@ -8,7 +8,8 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-app-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono);
+  /* Rakam/kod alanları da uygulama yazı tipiyle; hizayı eşit genişlikli rakamlar sağlar */
+  --font-mono: var(--font-app-sans), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-sans);
 
   /* Sidebar */
@@ -230,12 +231,15 @@
     @apply font-sans;
   }
 
-  /* ERP: Tablo hücreleri 13px, sayısal sütunlar monospace + sağa dayalı */
+  /* ERP: Tablo hücreleri 13px, sayısal sütunlar eşit genişlikli rakam + sağa dayalı */
   table {
     font-size: 13px;
   }
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
   .numeric {
-    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-family: var(--font-app-sans), ui-sans-serif, system-ui, sans-serif;
     text-align: right;
     font-variant-numeric: tabular-nums;
   }

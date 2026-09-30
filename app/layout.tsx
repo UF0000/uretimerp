@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Roboto } from "next/font/google";
+import { Roboto } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
@@ -11,10 +11,6 @@ const appSans = Roboto({
   weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: {
@@ -33,7 +29,7 @@ export default function RootLayout({
   return (
     <html
       lang="tr"
-      className={`${appSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${appSans.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
