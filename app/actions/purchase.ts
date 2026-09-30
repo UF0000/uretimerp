@@ -80,7 +80,7 @@ export async function getPurchaseOrder(id: string) {
   const moves = itemIds.length
     ? await supabase
         .from("stock_movements")
-        .select("id, quantity, direction, lot_no, created_at, source_id, document:stock_documents(no, document_date, cancelled_at), warehouse:warehouses(name)")
+        .select("id, quantity, direction, lot_no, created_at, source_id, document:stock_documents(id, no, document_date, cancelled_at), warehouse:warehouses(name)")
         .eq("source_type", "purchase")
         .in("source_id", itemIds)
         .order("created_at", { ascending: false })

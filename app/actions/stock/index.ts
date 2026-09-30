@@ -278,7 +278,7 @@ export async function saveStockDocument(data: StockDocumentFormValues) {
   revalidatePath("/depo");
   revalidatePath("/depo/hareketler");
   revalidatePath("/depo/fisler");
-  return true;
+  return docData.id as string;
 }
 
 /**
@@ -289,6 +289,10 @@ export async function cancelStockDocument(id: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Oturum bulunamadı.");
+
+  // Sevk irsaliyesine ait fiş irsaliyeden iptal edilir (irsaliye de iptal görünsün)
+  const { data: shipment } = await supabase.from("shipments").select("no").eq("document_id", id).maybeSingle();
+  if (shipment) throw new Error(`Bu fiş ${shipment.no} sevk irsaliyesine ait; Siparişler → Sevkiyatlar'dan irsaliyeyi iptal edin.`);
 
   const { error } = await supabase.rpc("cancel_stock_document", { p_id: id });
   if (error) throw new Error("Fiş iptal edilemedi: " + error.message);

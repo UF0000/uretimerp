@@ -15,27 +15,10 @@ import { cancelStockDocument } from "@/app/actions/stock";
 import type { StockDocumentRow } from "@/app/actions/stock";
 import { getErrorMessage } from "@/lib/utils";
 import { usePermission } from "@/components/shared/role-provider";
-const TYPE_LABELS: Record<string, string> = {
-  in_purchase: "Satınalma Girişi",
-  in_production: "Üretimden Giriş",
-  in_count: "Sayım Fazlası",
-  transfer: "Depo Transferi",
-  out_sale: "Satış Çıkışı",
-  out_consumption: "Sarf / Üretime Çıkış",
-  out_scrap: "Fire / Hurda",
-  out_count: "Sayım Eksiği",
-};
-
-const TYPE_COLORS: Record<string, string> = {
-  in_purchase: "border-success/30 bg-success/10 text-success",
-  in_production: "border-success/30 bg-success/10 text-success",
-  in_count: "border-success/30 bg-success/10 text-success",
-  transfer: "border-info/30 bg-info/10 text-info",
-  out_sale: "border-danger/30 bg-danger/10 text-danger",
-  out_consumption: "border-danger/30 bg-danger/10 text-danger",
-  out_scrap: "border-danger/30 bg-danger/10 text-danger",
-  out_count: "border-danger/30 bg-danger/10 text-danger",
-};
+import { STOCK_DOCUMENT_TYPE_COLORS, STOCK_DOCUMENT_TYPE_LABELS } from "@/lib/stock-documents";
+import Link from "next/link";
+const TYPE_LABELS = STOCK_DOCUMENT_TYPE_LABELS;
+const TYPE_COLORS = STOCK_DOCUMENT_TYPE_COLORS;
 
 export function StockDocumentsTable({ data }: { data: StockDocumentRow[] }) {
   const canWrite = usePermission("stock:write");
@@ -65,15 +48,17 @@ export function StockDocumentsTable({ data }: { data: StockDocumentRow[] }) {
       header: "Fiş No",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          <span
+          <Link
+            href={`/depo/fisler/${row.original.id}`}
             className={
               row.original.cancelled_at
-                ? "font-medium text-muted-foreground line-through"
-                : "font-medium"
+                ? "font-medium text-muted-foreground line-through underline-offset-2 hover:underline"
+                : "font-medium text-primary underline-offset-2 hover:underline"
             }
+            title="Fişi aç / yazdır"
           >
             {row.getValue("no")}
-          </span>
+          </Link>
           {row.original.cancelled_at && (
             <Badge variant="secondary">İptal</Badge>
           )}

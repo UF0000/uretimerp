@@ -83,9 +83,10 @@ export function StockDocumentForm({ products, warehouses }: StockDocumentFormPro
         return;
       }
       
-      await saveStockDocument(data);
-      toast.success("Fiş başarıyla kaydedildi.");
-      router.push("/depo/fisler");
+      const id = await saveStockDocument(data);
+      toast.success("Fiş kaydedildi; yazdırabilirsiniz.");
+      // Kaydedilen fiş yazdırılabilir görünümde açılır
+      router.push(`/depo/fisler/${id}`);
     } catch (error) {
       toast.error("Kaydetme başarısız", { description: getErrorMessage(error) });
     } finally {

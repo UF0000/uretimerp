@@ -148,7 +148,13 @@ export default async function PurchaseOrderPage({ params }: { params: Promise<{ 
               const p = one(item?.product);
               return (
                 <p key={r.id} className={doc?.cancelled_at ? "text-muted-foreground line-through" : ""}>
-                  {formatDateTime(r.created_at ?? "")} · {doc?.no ?? "Fiş iptali (ters kayıt)"} · {p?.code} {r.direction === "in" ? "+" : "−"}
+                  {formatDateTime(r.created_at ?? "")} · {doc ? (
+                    <Link href={`/depo/fisler/${doc.id}`} className="text-primary underline-offset-2 hover:underline">
+                      {doc.no}
+                    </Link>
+                  ) : (
+                    "Fiş iptali (ters kayıt)"
+                  )} · {p?.code} {r.direction === "in" ? "+" : "−"}
                   {qtyText(Number(r.quantity), p?.unit ?? "")} {p?.unit} · {wh?.name} · lot {r.lot_no ?? "—"}
                   {doc?.cancelled_at ? " (fiş iptal)" : ""}
                 </p>

@@ -119,6 +119,7 @@ supabase/
 - DataTable varsayılanı kaydırmalı liste (`scrollable`); sayfalı gerekirse `scrollable={false}`
 - Tüm DataTable'larda Excel gibi sütun genişliği (sürükle / çift tık sığdır, localStorage) — `components/shared/use-column-widths.ts`
 - [x] Reçete / BOM + versiyonlama (`save_bom`: kullanılmış reçete düzenlenince yeni versiyon)
+- [x] **Yazdırılabilir depo fişi** `/depo/fisler/[id]` (giriş / çıkış / transfer başlıklı A4, lot, toplam, imza alanları; `lib/stock-documents.ts`): fiş listesinde no tıklanır, fiş kaydedilince açılır, satın alma teslim kayıtlarından bağlanır; sevkiyat fişi yalnız irsaliyeden iptal edilir
 - [x] Stok defteri append-only (UPDATE/DELETE tetikleyiciyle yasak), iptal = ters kayıt, fiş iptali
 - [x] `v_stock` / `v_stock_lot` + kritik/min rozetleri; regrind/hurda grade = ayrı ürün kartı (material_grade), tipine göre regrind/hurda deposu, stok sayfasında grade özeti
 
