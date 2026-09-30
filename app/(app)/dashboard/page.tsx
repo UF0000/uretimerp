@@ -7,6 +7,7 @@ import { tr } from "date-fns/locale";
 import { getDashboardMetrics } from "@/app/actions/dashboard";
 import { getScrapSummary } from "@/app/actions/scrap";
 import { getMoldMaintenanceAlerts } from "@/app/actions/master-data/equipment";
+import { getNotifications } from "@/app/actions/notifications";
 import { MAINTENANCE_STATE_BADGE, MAINTENANCE_STATE_LABELS, asMaintenanceState } from "@/lib/mold-maintenance";
 import { Badge } from "@/components/ui/badge";
 import { formatTR } from "@/lib/format";
@@ -21,7 +22,15 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardPage() {
-  const [{ metrics, productionTrend, recentCompletedOrders }, scrap, moldAlerts] = await Promise.all([getDashboardMetrics(), getScrapSummary(), getMoldMaintenanceAlerts()]);
+  const [{ metrics, productionTrend, recentCompletedOrders }, scrap, moldAlerts, notifications] = await Promise.all([
+    getDashboardMetrics(),
+    getScrapSummary(),
+    getMoldMaintenanceAlerts(),
+    getNotifications(),
+  ]);
+  // Kritik / minimum altı stok: bildirimlerle aynı hesap (kullanılabilir depolar)
+  const criticalStock = notifications.filter((n) => n.kind === "stok" && n.severity === "danger").length;
+  const minStock = notifications.filter((n) => n.kind === "stok" && n.severity === "warning").length;
   const scrapOver = scrap.scrapPct !== null && scrap.scrapPct * 100 > scrap.targetScrapPct;
 
   return (
@@ -74,8 +83,8 @@ export default async function DashboardPage() {
             <AlertTriangle className="h-4 w-4 text-danger" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-danger">0</div>
-            <p className="text-xs text-muted-foreground">Tükenmek üzere olanlar</p>
+            <div className={cn("text-2xl font-bold", criticalStock > 0 ? "text-danger" : "text-success")}>{criticalStock}</div>
+            <p className="text-xs text-muted-foreground">Kritik seviyede{minStock > 0 ? ` · ${minStock} ürün minimum altında` : ""}</p>
           </CardContent>
         </Card>
       </div>

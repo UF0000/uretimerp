@@ -136,6 +136,7 @@ supabase/
 
 **Faz 4 — Sağlamlaştırma**
 - [x] İzlenebilirlik `/depo/izlenebilirlik`: lot → iş emri/vardiya/tüketilen hammadde; vardiya girişinde reçine lotu seçilirse kesin (`p_raw_lots`, `v_stock_lot`), seçilmezse "olası lotlar"; hammadde lotundan üretilen lotlar (geri çağırma)
+- [x] **Bildirimler** (üst çubukta zil, `notification-bell.tsx`, `getNotifications`): kritik/min altı stok (kullanılabilir depolar), bakımı gelen kalıp, açık NCR, teslim tarihi geçen sipariş; saklanmaz, anlık hesap (5 dk + pencereye dönünce); görülenler localStorage, tıklayınca ilgili sayfa yeni sekmede. Paneldeki Kritik Stoklar kartı aynı hesaptan
 - [x] Dashboard: bu ayın fire kartı (`getScrapSummary`, `lib/scrap-report.ts`) → üretim analizine bağlanır
 - [x] Eksik veri listesi `/ana-veri/eksik-veri` (`lib/data-quality.ts`): hesapları etkileyen reçete/ürün/kalıp/makine/hammadde/depo/kur boşlukları, önem + etkilediği hesap + düzeltme yeri
 - Büyük sorgular `lib/supabase/read-all.ts` (`readAll`/`inChunks`) ile okunur — PostgREST 1.000 satır sınırı

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { toast } from "sonner";
 
 import { UserMenu } from "@/components/shared/user-menu";
+import { NotificationBell } from "@/components/shared/notification-bell";
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { NAV_ITEMS } from "@/components/shared/nav-items";
@@ -397,7 +398,8 @@ export default function Workspace({ initialPath, userName, userRole }: Workspace
           </button>
         </div>
 
-        <div className="mb-2 shrink-0">
+        <div className="mb-2 flex shrink-0 items-center gap-1">
+          <NotificationBell onOpen={(href) => openNew(href)} />
           <UserMenu userName={userName} userRole={userRole} />
         </div>
       </header>
