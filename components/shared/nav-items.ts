@@ -28,7 +28,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/ana-veri", label: "Ana Veri", icon: Database },
   { href: "/recete", label: "Reçete / BOM", icon: ClipboardList },
   { href: "/depo", label: "Depo & Stok", icon: Warehouse },
-  { href: "/siparisler", label: "Siparişler", icon: ShoppingCart },
+  { href: "/siparisler", label: "Siparişler", icon: ShoppingCart, permission: "order:read" },
   { href: "/uretim/analiz", label: "Üretim", icon: Factory, activePrefix: "/uretim" },
   { href: "/maliyet", label: "Maliyet", icon: Calculator },
   { href: "/kalite", label: "Kalite", icon: ShieldCheck },

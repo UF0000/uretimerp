@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { readAll } from "@/lib/supabase/read-all";
 import { formatDate, formatTR } from "@/lib/format";
 import type { AppNotification } from "@/lib/notifications";
+import { hasPermission } from "@/lib/permissions";
 
 /** Stok uyarısında sayılmayan depolar (ürün kartındaki "kullanılabilir stok" ile aynı) */
 const UNUSABLE_WAREHOUSES = new Set(["quarantine", "scrap", "regrind"]);
@@ -81,7 +82,8 @@ export async function getNotifications(): Promise<AppNotification[]> {
     });
   }
 
-  for (const o of orders.data ?? []) {
+  // Sipariş uyarısı yalnız siparişleri görebilen rollere (kalite rolü sipariş sayfasını açamaz)
+  for (const o of hasPermission("order:read", user.role) ? (orders.data ?? []) : []) {
     const partner = Array.isArray(o.partner) ? o.partner[0] : o.partner;
     items.push({
       key: `siparis:${o.id}`,

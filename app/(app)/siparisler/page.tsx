@@ -6,6 +6,7 @@ import { getOrders } from "@/app/actions/orders";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { OrderTable } from "./components/order-table";
+import { requirePermission } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Müşteri Siparişleri",
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default async function OrdersPage() {
+  await requirePermission("order:read");
   const orders = await getOrders();
 
   return (
