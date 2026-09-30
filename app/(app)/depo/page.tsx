@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { GitBranch } from "lucide-react";
+import { ClipboardList, GitBranch } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { getRegrindScrapByGrade, getStockOverview, getWarehouseOptions } from "@/app/actions/stock";
 import { getProductGroups } from "@/app/actions/master-data/products";
@@ -23,10 +23,16 @@ export default async function StockPage() {
         title="Güncel Stok Durumu"
         description="Fabrikadaki tüm malzemelerin anlık stok miktarları ve depo bazlı dağılımları"
         actions={
-          <Link href="/depo/izlenebilirlik" className={buttonVariants({ variant: "outline" })}>
-            <GitBranch className="mr-2 h-4 w-4" />
-            İzlenebilirlik
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/depo/sayim" className={buttonVariants({ variant: "outline" })}>
+              <ClipboardList className="mr-2 h-4 w-4" />
+              Stok sayımı
+            </Link>
+            <Link href="/depo/izlenebilirlik" className={buttonVariants({ variant: "outline" })}>
+              <GitBranch className="mr-2 h-4 w-4" />
+              İzlenebilirlik
+            </Link>
+          </div>
         }
       />
       

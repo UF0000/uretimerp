@@ -1597,6 +1597,154 @@ export type Database = {
           },
         ]
       }
+      stock_count_lines: {
+        Row: {
+          id: string
+          count_id: string
+          product_id: string
+          lot_no: string | null
+          system_qty: number
+          counted_qty: number | null
+          adjusted_qty: number | null
+          added_manually: boolean
+          note: string | null
+          counted_by: string | null
+          counted_at: string | null
+        }
+        Insert: {
+          id?: string
+          count_id: string
+          product_id: string
+          lot_no?: string | null
+          system_qty?: number
+          counted_qty?: number | null
+          adjusted_qty?: number | null
+          added_manually?: boolean
+          note?: string | null
+          counted_by?: string | null
+          counted_at?: string | null
+        }
+        Update: {
+          id?: string
+          count_id?: string
+          product_id?: string
+          lot_no?: string | null
+          system_qty?: number
+          counted_qty?: number | null
+          adjusted_qty?: number | null
+          added_manually?: boolean
+          note?: string | null
+          counted_by?: string | null
+          counted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_count_lines_count_id_fkey"
+            columns: ["count_id"]
+            isOneToOne: false
+            referencedRelation: "stock_counts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_count_lines_counted_by_fkey"
+            columns: ["counted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_count_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_counts: {
+        Row: {
+          id: string
+          no: string
+          warehouse_id: string
+          count_date: string
+          status: string
+          scope: string | null
+          note: string | null
+          created_by: string | null
+          created_at: string
+          completed_at: string | null
+          completed_by: string | null
+          in_document_id: string | null
+          out_document_id: string | null
+        }
+        Insert: {
+          id?: string
+          no: string
+          warehouse_id: string
+          count_date?: string
+          status?: string
+          scope?: string | null
+          note?: string | null
+          created_by?: string | null
+          created_at?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          in_document_id?: string | null
+          out_document_id?: string | null
+        }
+        Update: {
+          id?: string
+          no?: string
+          warehouse_id?: string
+          count_date?: string
+          status?: string
+          scope?: string | null
+          note?: string | null
+          created_by?: string | null
+          created_at?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          in_document_id?: string | null
+          out_document_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_counts_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_counts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_counts_in_document_id_fkey"
+            columns: ["in_document_id"]
+            isOneToOne: false
+            referencedRelation: "stock_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_counts_out_document_id_fkey"
+            columns: ["out_document_id"]
+            isOneToOne: false
+            referencedRelation: "stock_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_counts_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_documents: {
         Row: {
           id: string
@@ -2075,6 +2223,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      complete_stock_count: {
+        Args: {
+          p_id: string
+        }
+        Returns: Json
+      }
       create_ncr: {
         Args: {
           p_product_id: string
@@ -2105,6 +2259,12 @@ export type Database = {
           p_id: string
         }
         Returns: undefined
+      }
+      fmt_tr: {
+        Args: {
+          v: number
+        }
+        Returns: string
       }
       has_role: {
         Args: {
