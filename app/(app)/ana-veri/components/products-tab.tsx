@@ -40,6 +40,7 @@ const ALL = "";
 export function ProductsTab({ data: activeProducts, deleted, groups }: ProductsTabProps) {
   const router = useRouter();
   const canWrite = usePermission("master-data:write");
+  const canSeeCost = usePermission("cost:read");
   const [formOpen, setFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductFormInput | undefined>(undefined);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -187,6 +188,7 @@ F-01\tBoru Firesi\tscrap\tkg\tFire\t\t0\t0\t0`;
       },
     },
     {
+      id: "unit_cost",
       accessorKey: "unit_cost",
       header: "Birim fiyat",
       cell: ({ row }) => {
@@ -294,7 +296,7 @@ F-01\tBoru Firesi\tscrap\tkg\tFire\t\t0\t0\t0`;
 
       <DataTable
         storageKey="products"
-        columns={columns}
+        columns={canSeeCost ? columns : columns.filter((c) => c.id !== "unit_cost")}
         data={filtered}
         onRowDoubleClick={openDetail}
         onDeleteSelected={canWrite && !showDeleted ? handleBulkDelete : undefined}

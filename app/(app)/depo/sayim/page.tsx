@@ -31,7 +31,8 @@ export default async function StockCountsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Stok Sayımı"
+back={{ href: "/depo", label: "Stok durumu" }}
+                title="Stok Sayımı"
         description="Sayım listesi oluşturun, sayılan miktarları girin; tamamlayınca farklar sayım fazlası / eksiği fişiyle stoğa işlenir"
         actions={hasPermission("stock:write", user.role) ? <NewCountDialog warehouses={warehouses.map((w) => ({ id: w.id, name: w.name }))} groups={groups} /> : null}
       />

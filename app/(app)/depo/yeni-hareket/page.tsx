@@ -20,7 +20,8 @@ export default async function NewMovementPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Yeni Stok Fişi"
+back={{ href: "/depo", label: "Stok durumu" }}
+                title="Yeni Stok Fişi"
         description="Depoya manuel giriş veya çıkış hareketlerini buradan ekleyebilirsiniz. Dikkat: Stok hareketleri silinemez."
       />
       

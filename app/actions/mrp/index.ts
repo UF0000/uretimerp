@@ -26,7 +26,7 @@ export async function getMrpReport() {
     supabase
       .from("work_orders")
       .select("product_id, planned_qty, entries:production_entries(produced_qty, cancelled_at)")
-      .neq("status", "done"),
+      .in("status", ["planned", "in_progress"]),
     supabase
       .from("boms")
       .select(`

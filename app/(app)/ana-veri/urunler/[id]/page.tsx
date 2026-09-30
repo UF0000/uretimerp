@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isUuid } from "@/lib/ids";
+import { getCurrentUser } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
 import { ArrowLeft, Info } from "lucide-react";
 
 import { getProductDetail } from "@/app/actions/product-detail";
@@ -66,7 +68,9 @@ const Count = ({ n }: { n: number }) => (n > 0 ? <span className="ml-1.5 rounded
 export default async function ProductDetailPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ sekme?: string }> }) {
   const [{ id }, sp] = await Promise.all([props.params, props.searchParams]);
   if (!isUuid(id)) notFound();
-  const [detail, groups] = await Promise.all([getProductDetail(id), getProductGroups()]);
+  const [detail, groups, user] = await Promise.all([getProductDetail(id), getProductGroups(), getCurrentUser()]);
+  // Maliyet ve fiyatlar yalnız yetkili rolde (yönetici)
+  const canSeeCost = Boolean(user && hasPermission("cost:read", user.role));
   if (!detail) notFound();
   const [insights, extras] = await Promise.all([getProductInsights(id), getProductExtras(id)]);
   const { product: p, technical: t, cost, components } = detail;
@@ -74,13 +78,13 @@ export default async function ProductDetailPage(props: { params: Promise<{ id: s
   const type = p.type as ProductType;
   const isPipe = p.category === "boru" || t?.productionType === "extrusion";
   const isFitting = p.category === "baglanti_parcasi" || t?.productionType === "injection";
-  const isPurchased = type === "raw" || type === "trade" || ["hammadde", "metal", "ambalaj", "sarf_malzeme", "yedek_parca"].includes(p.category ?? "") || extras.suppliers.length > 0;
+  const isPurchased = canSeeCost && (type === "raw" || type === "trade" || ["hammadde", "metal", "ambalaj", "sarf_malzeme", "yedek_parca"].includes(p.category ?? "") || extras.suppliers.length > 0);
   const perPallet = p.package_qty && p.pallet_qty ? Number(p.package_qty) * Number(p.pallet_qty) : null;
   const hasPackaging = [p.bag_type, p.bag_qty, p.package_type, p.package_qty, p.pallet_qty, p.pipe_length_m, p.package_weight_kg, p.barcode, p.package_note].some((v) => v !== null && v !== "");
   const boxType = findBoxType(p.package_type);
   const bagsPerBox = p.bag_qty && p.package_qty ? Number(p.package_qty) / Number(p.bag_qty) : null;
   const pipesPerPack = p.unit === "metre" ? pipesPerPackage(p.package_qty, p.pipe_length_m) : null;
-  const tab = TABS.includes(sp.sekme as (typeof TABS)[number]) && (sp.sekme !== "tedarikciler" || isPurchased) ? sp.sekme! : "stok";
+  const tab = TABS.includes(sp.sekme as (typeof TABS)[number]) && (sp.sekme !== "tedarikciler" || isPurchased) && (sp.sekme !== "maliyet" || canSeeCost) ? sp.sekme! : "stok";
 
   const s = insights.stock;
   const stockTone: Tone = p.critical_stock > 0 && detail.stock <= p.critical_stock ? "bad" : p.min_stock > 0 && detail.stock <= p.min_stock ? "warn" : "ok";
@@ -119,14 +123,14 @@ export default async function ProductDetailPage(props: { params: Promise<{ id: s
               <Field label="Genel stok kodu" value={p.variant_code ?? "—"} />
               <Field label="Malzeme" value={[p.material_group, p.material_grade].filter(Boolean).join(" · ") || "—"} />
               <Field label="Boyut" value={size || "—"} />
-              <Field label="Kart fiyatı" value={p.unit_cost ? `${formatTR(p.unit_cost)} ${p.currency ?? "TRY"}` : "—"} />
+              {canSeeCost && <Field label="Kart fiyatı" value={p.unit_cost ? `${formatTR(p.unit_cost)} ${p.currency ?? "TRY"}` : "—"} />}
               {p.description && <Field label="Açıklama" value={p.description} className="col-span-2 sm:col-span-3 xl:col-span-5" />}
             </dl>
             <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
               <Headline label="Mevcut stok" value={`${formatTR(detail.stock, 0)} ${unit}`} hint={`min ${formatTR(p.min_stock, 0)} · kritik ${formatTR(p.critical_stock, 0)}`} tone={stockTone} />
               <Headline label="Kullanılabilir (boşta)" value={`${formatTR(s.available, 0)} ${unit}`} hint={s.reserved > 0 ? `${formatTR(s.reserved, 0)} ${unit} siparişe ayrılmış` : "ayrılmış sipariş yok"} tone={availTone} />
               <Headline label="Tahmini tükenme" value={d.daysLeft === null ? "—" : `${formatTR(d.daysLeft, 0)} gün`} hint={d.daysLeft === null ? "son 90 günde çıkış yok" : "son 90 gün ortalamasıyla"} tone={depTone} />
-              <Headline label="Standart birim maliyet" value={tl(cost.total)} hint={cost.missing.length ? "eksik veriyle hesaplandı" : `/ ${unit}`} tone={cost.missing.length ? "warn" : "neutral"} />
+              {canSeeCost && <Headline label="Standart birim maliyet" value={tl(cost.total)} hint={cost.missing.length ? "eksik veriyle hesaplandı" : `/ ${unit}`} tone={cost.missing.length ? "warn" : "neutral"} />}
             </div>
           </div>
         </CardContent>
@@ -142,7 +146,7 @@ export default async function ProductDetailPage(props: { params: Promise<{ id: s
             Kalite
             <Count n={qcCount} />
           </TabsTrigger>
-          <TabsTrigger value="maliyet">Maliyet</TabsTrigger>
+          {canSeeCost && <TabsTrigger value="maliyet">Maliyet</TabsTrigger>}
           <TabsTrigger value="paketleme">Paketleme</TabsTrigger>
           <TabsTrigger value="dokumanlar">
             Dokümanlar
@@ -203,7 +207,7 @@ export default async function ProductDetailPage(props: { params: Promise<{ id: s
                       <tr>
                         <th className="px-3 py-2 font-medium">Hammadde</th>
                         <th className="px-3 py-2 text-right font-medium">Oran</th>
-                        <th className="px-3 py-2 text-right font-medium">Kart fiyatı</th>
+                        {canSeeCost && <th className="px-3 py-2 text-right font-medium">Kart fiyatı</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -216,7 +220,7 @@ export default async function ProductDetailPage(props: { params: Promise<{ id: s
                             <span className="text-muted-foreground">{c.name}</span>
                           </td>
                           <td className="px-3 py-2 text-right tabular-nums">{c.ratioPct !== null ? `%${formatTR(c.ratioPct, 1)}` : formatTR(c.quantity, 3)}</td>
-                          <td className={cn("px-3 py-2 text-right tabular-nums", !c.unitCost && "text-danger")}>{c.unitCost ? `${formatTR(c.unitCost)} ${c.currency ?? "TRY"}` : "fiyat yok"}</td>
+                          {canSeeCost && <td className={cn("px-3 py-2 text-right tabular-nums", !c.unitCost && "text-danger")}>{c.unitCost ? `${formatTR(c.unitCost)} ${c.currency ?? "TRY"}` : "fiyat yok"}</td>}
                         </tr>
                       ))}
                     </tbody>
@@ -239,6 +243,7 @@ export default async function ProductDetailPage(props: { params: Promise<{ id: s
           </Panel>
         </TabsContent>
 
+        {canSeeCost && (
         <TabsContent value="maliyet" className="m-0">
           <div className="grid gap-4 xl:grid-cols-2">
             <Panel title="Standart maliyet (otomatik, birim başına)">
@@ -286,6 +291,7 @@ export default async function ProductDetailPage(props: { params: Promise<{ id: s
             </Panel>
           </div>
         </TabsContent>
+        )}
 
         <TabsContent value="paketleme" className="m-0">
           <Panel title="Paketleme">

@@ -29,7 +29,8 @@ export default async function PurchaseOrdersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Satın Alma Siparişleri"
+back={{ href: "/siparisler", label: "Siparişler" }}
+                title="Satın Alma Siparişleri"
         description="Tedarikçilere verilen siparişler; teslim alınınca stok girişi otomatik yapılır"
         actions={
           <div className="flex flex-wrap gap-2">

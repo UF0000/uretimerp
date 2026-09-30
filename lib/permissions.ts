@@ -26,6 +26,8 @@ const ROLE_PERMISSIONS = {
   // Sipariş
   "order:read": ["operator", "warehouse", "admin"],
   "order:write": ["admin"],
+  // Maliyet, birim fiyat ve tedarikçi fiyatları
+  "cost:read": ["admin"],
   // Yönetim
   "admin:all": ["admin"],
 } as const satisfies Record<string, readonly UserRole[]>;

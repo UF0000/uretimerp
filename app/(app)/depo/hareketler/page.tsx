@@ -15,7 +15,8 @@ export default async function MovementsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Stok Hareket Defteri (Ledger)"
+back={{ href: "/depo", label: "Stok durumu" }}
+                title="Stok Hareket Defteri (Ledger)"
         description="Sistemdeki tüm giren ve çıkan stok hareketlerinin kronolojik listesi"
       />
       

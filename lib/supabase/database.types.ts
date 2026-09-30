@@ -1983,6 +1983,9 @@ export type Database = {
           reopened_by: string | null
           reopen_note: string | null
           reopen_count: number
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancel_note: string | null
         }
         Insert: {
           id?: string
@@ -2000,6 +2003,9 @@ export type Database = {
           reopened_by?: string | null
           reopen_note?: string | null
           reopen_count?: number
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancel_note?: string | null
         }
         Update: {
           id?: string
@@ -2017,6 +2023,9 @@ export type Database = {
           reopened_by?: string | null
           reopen_note?: string | null
           reopen_count?: number
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancel_note?: string | null
         }
         Relationships: [
           {
@@ -2024,6 +2033,13 @@ export type Database = {
             columns: ["bom_id"]
             isOneToOne: false
             referencedRelation: "boms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
@@ -2207,6 +2223,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      cancel_work_order: {
+        Args: {
+          p_work_order_id: string
+          p_note: string
+        }
+        Returns: undefined
+      }
       close_ncr: {
         Args: {
           p_id: string
@@ -2351,7 +2374,7 @@ export type Database = {
       unit_type: "adet" | "kg" | "metre"
       user_role: "operator" | "warehouse" | "quality" | "admin"
       warehouse_type: "raw" | "finished" | "quarantine" | "scrap" | "regrind"
-      work_order_status: "planned" | "in_progress" | "done"
+      work_order_status: "planned" | "in_progress" | "done" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never

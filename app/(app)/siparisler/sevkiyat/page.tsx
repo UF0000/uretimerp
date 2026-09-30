@@ -21,7 +21,8 @@ export default async function ShipmentsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Sevkiyatlar" description="Siparişlere yapılan sevkiyatlar; yeni sevkiyat Siparişler listesinde siparişin “Sevk et” düğmesiyle yapılır" />
+      <PageHeader back={{ href: "/siparisler", label: "Siparişler" }}
+        title="Sevkiyatlar" description="Siparişlere yapılan sevkiyatlar; yeni sevkiyat Siparişler listesinde siparişin “Sevk et” düğmesiyle yapılır" />
       <Card>
         <CardContent className="overflow-x-auto pt-6">
           {shipments.length === 0 ? (

@@ -72,6 +72,14 @@ export async function reopenWorkOrder(workOrderId: string, note?: string) {
   revalidateProduction();
 }
 
+/** İş emri iptali (yalnız yönetici, neden zorunlu; geçerli girişi olan iş emri iptal edilemez) */
+export async function cancelWorkOrder(workOrderId: string, note: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("cancel_work_order", { p_work_order_id: workOrderId, p_note: note });
+  if (error) throw new Error(error.message);
+  revalidateProduction();
+}
+
 /** Hammadde ve regrind depolarında bakiyesi olan lotlar (vardiya girişinde seçim için). */
 export async function getRawLots() {
   const supabase = await createClient();

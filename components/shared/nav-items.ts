@@ -30,7 +30,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/depo", label: "Depo & Stok", icon: Warehouse },
   { href: "/siparisler", label: "Siparişler", icon: ShoppingCart, permission: "order:read" },
   { href: "/uretim/analiz", label: "Üretim", icon: Factory, activePrefix: "/uretim" },
-  { href: "/maliyet", label: "Maliyet", icon: Calculator },
+  { href: "/maliyet", label: "Maliyet", icon: Calculator, permission: "cost:read" },
   { href: "/kalite", label: "Kalite", icon: ShieldCheck },
   { href: "/yonetim", label: "Yönetim", icon: Settings, permission: "admin:all" },
 ];

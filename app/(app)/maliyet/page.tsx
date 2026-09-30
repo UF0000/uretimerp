@@ -1,3 +1,4 @@
+import { requirePermission } from "@/lib/auth";
 import { Metadata } from "next";
 import { getCompletedWorkOrdersForCosting } from "@/app/actions/cost";
 import { PageHeader } from "@/components/shared/page-header";
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CostPage() {
+  await requirePermission("cost:read");
   const costingData = await getCompletedWorkOrdersForCosting();
 
   return (

@@ -3,6 +3,7 @@ import { getWarehouses } from "@/app/actions/master-data/warehouses";
 import { StockDocumentForm } from "../components/stock-document-form";
 
 import { requirePermission } from "@/lib/auth";
+import { BackLink } from "@/components/shared/back-link";
 export const dynamic = "force-dynamic";
 
 export default async function NewStockDocumentPage() {
@@ -14,6 +15,7 @@ export default async function NewStockDocumentPage() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
+      <BackLink href="/depo/fisler" label="Stok fişleri" />
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Yeni Stok Fişi</h1>
         <p className="text-sm text-muted-foreground">

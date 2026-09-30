@@ -330,7 +330,8 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
 
   if (!workOrder) return null;
   const editing = Boolean(f.replaces_entry_id);
-  const isClosed = data?.workOrder.status === "done";
+  // Tamamlanmış ya da iptal edilmiş iş emrinde girişler salt okunur
+  const isClosed = data?.workOrder.status === "done" || data?.workOrder.status === "cancelled";
   const operatorOptions = (data?.operators ?? []).map((o) => ({ value: o.id, label: o.name }));
   const targetSpeed = mPerHourToMin(tech?.targetMPerHour);
 
@@ -345,7 +346,13 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
           </DialogDescription>
         </DialogHeader>
 
-        {isClosed && (
+        {data?.workOrder.status === "cancelled" && (
+          <div className="flex items-center gap-2 rounded-md border border-l-4 border-border border-l-danger bg-danger/10 px-4 py-3 text-sm">
+            <Lock className="h-4 w-4 text-danger" aria-hidden />
+            Bu iş emri iptal edilmiş; girişler yalnızca görüntülenebilir ve iş emri geri açılamaz.
+          </div>
+        )}
+        {isClosed && data?.workOrder.status !== "cancelled" && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-l-4 border-border border-l-warning bg-warning/10 px-4 py-3 text-sm">
             <span className="flex items-center gap-2">
               <Lock className="h-4 w-4 text-warning" aria-hidden />

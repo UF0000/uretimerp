@@ -12,7 +12,8 @@ export default async function NewPurchaseOrderPage() {
   const data = await getPurchaseFormData();
   return (
     <div className="space-y-6">
-      <PageHeader title="Yeni Satın Alma Siparişi" description="Taslak olarak kaydedilir; tedarikçiye verince “Sipariş verildi” ile işaretleyin" />
+      <PageHeader back={{ href: "/siparisler/satin-alma", label: "Satın alma siparişleri" }}
+        title="Yeni Satın Alma Siparişi" description="Taslak olarak kaydedilir; tedarikçiye verince “Sipariş verildi” ile işaretleyin" />
       <PurchaseOrderForm data={data} />
     </div>
   );

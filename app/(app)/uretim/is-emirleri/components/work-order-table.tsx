@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Play, Plus, ClipboardPlus, Lock, LockOpen, ListChecks } from "lucide-react";
+import { Ban, Play, Plus, ClipboardPlus, Lock, LockOpen, ListChecks } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -14,7 +14,7 @@ import {
   bulkDeleteWorkOrders,
 } from "@/app/actions/work-orders";
 import { ProductionEntryModal } from "./production-entry-modal";
-import { closeWorkOrder, reopenWorkOrder, type RawLot } from "@/app/actions/production";
+import { cancelWorkOrder, closeWorkOrder, reopenWorkOrder, type RawLot } from "@/app/actions/production";
 import { formatTR } from "@/lib/format";
 
 import { getErrorMessage, one } from "@/lib/utils";
@@ -41,6 +41,7 @@ const STATUS_LABELS: Record<
   planned: { label: "Planlandı", variant: "secondary" },
   in_progress: { label: "Üretimde", variant: "default" },
   done: { label: "Tamamlandı", variant: "outline" },
+  cancelled: { label: "İptal", variant: "destructive" },
 };
 
 export function WorkOrderTable({
@@ -113,6 +114,22 @@ export function WorkOrderTable({
     }
   };
 
+  const handleCancel = async (item: WorkOrderRow) => {
+    const note = prompt(`${item.no} iptal edilecek. İptal edilen iş emrine giriş yapılamaz ve geri açılamaz. Neden?`);
+    if (note === null) return;
+    if (!note.trim()) {
+      toast.error("İptal nedeni yazılmalıdır.");
+      return;
+    }
+    try {
+      await cancelWorkOrder(item.id, note);
+      toast.success(`${item.no} iptal edildi.`);
+      router.refresh();
+    } catch (error) {
+      toast.error("İptal edilemedi", { description: getErrorMessage(error) });
+    }
+  };
+
   const handleOpenCompletion = (item: WorkOrderRow) => {
     setSelectedWorkOrder(item);
     setCompletionModalOpen(true);
@@ -126,7 +143,7 @@ export function WorkOrderTable({
           <Play className="w-4 h-4 mr-1" /> Başlat
         </Button>
       )}
-      {item.status !== "done" && (
+      {(item.status === "planned" || item.status === "in_progress") && (
         <Button size="sm" onClick={() => handleOpenCompletion(item)}>
           <ClipboardPlus className="w-4 h-4 mr-1" /> Üretim Gir
         </Button>
@@ -136,9 +153,14 @@ export function WorkOrderTable({
           <Lock className="w-4 h-4 mr-1" /> Kapat
         </Button>
       )}
-      {item.status === "done" && (
+      {(item.status === "done" || item.status === "cancelled") && (
         <Button size="sm" variant="outline" onClick={() => handleOpenCompletion(item)}>
           <ListChecks className="w-4 h-4 mr-1" /> Girişler
+        </Button>
+      )}
+      {(item.status === "planned" || item.status === "in_progress") && isAdmin && (
+        <Button size="sm" variant="outline" onClick={() => handleCancel(item)} title="Yanlışlıkla açılan / vazgeçilen iş emrini iptal et">
+          <Ban className="w-4 h-4 mr-1 text-danger" /> İptal et
         </Button>
       )}
       {item.status === "done" && isAdmin && (
