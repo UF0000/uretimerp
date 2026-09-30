@@ -1,7 +1,12 @@
 "use client";
 
 import { Fragment, useMemo, useState } from "react";
-import { FileSpreadsheet, Info, ShoppingBag } from "lucide-react";
+import { FilePlus2, FileSpreadsheet, Info, Loader2, ShoppingBag } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { createDraftsFromSuggestion } from "@/app/actions/purchase";
+import { usePermission } from "@/components/shared/role-provider";
+import { getErrorMessage } from "@/lib/utils";
 import * as xlsx from "xlsx";
 
 import type { PurchaseData } from "@/app/actions/mrp";
@@ -29,6 +34,9 @@ const parseQty = (v: string) => (v.includes(",") ? parseTR(v) : Number(v));
 const needBy = (r: PurchaseRow) => r.earliestDue ?? (r.supplier?.leadTimeDays ? addDays(r.supplier.leadTimeDays) : null);
 
 export function PurchaseSuggestions({ data }: { data: PurchaseData }) {
+  const router = useRouter();
+  const canOrder = usePermission("order:write");
+  const [creating, setCreating] = useState(false);
   const [topUp, setTopUp] = useState(true);
   const [edits, setEdits] = useState<Record<string, string>>({});
   // Reçetesi olmayan mamuller varsayılan olarak listede değil (satın alma değil, reçete açılmalı)
@@ -81,6 +89,40 @@ export function PurchaseSuggestions({ data }: { data: PurchaseData }) {
     return [...t.entries()].map(([c, v]) => `${formatTR(v)} ${c}`).join(" + ") || "—";
   };
 
+  /** Seçili kalemlerden tedarikçi başına taslak satın alma siparişi */
+  const createDrafts = async () => {
+    const withSupplier = selected.filter((r) => r.supplier?.partnerId);
+    const skipped = selected.length - withSupplier.length;
+    if (!withSupplier.length) {
+      toast.error("Seçili kalemlerin tedarikçisi tanımlı değil", { description: "Ürün kartı → Tedarikçiler'den ana tedarikçi ekleyin." });
+      return;
+    }
+    const byPartner = new Map<string, PurchaseRow[]>();
+    for (const r of withSupplier) byPartner.set(r.supplier!.partnerId, [...(byPartner.get(r.supplier!.partnerId) ?? []), r]);
+    const drafts = [...byPartner.entries()].map(([partnerId, list]) => {
+      // Para birimi: fiyatı olan ilk kalemin birimi; farklı birimdeki fiyatlar taslağa yazılmaz
+      const currency = (list.find((r) => r.supplier?.currency)?.supplier?.currency ?? "TRY") as "TRY" | "USD" | "EUR";
+      const due = list.map(needBy).filter((d): d is string => Boolean(d)).sort()[0] ?? null;
+      return {
+        partner_id: partnerId,
+        currency,
+        expected_date: due,
+        items: list.map((r) => ({ product_id: r.product.id, quantity: qtyOf(r), unit_price: r.supplier?.currency === currency ? r.supplier.price : null })),
+      };
+    });
+    if (!confirm(`${drafts.length} tedarikçi için taslak satın alma siparişi oluşturulsun mu?${skipped ? ` (${skipped} kalemin tedarikçisi yok, atlanacak)` : ""}`)) return;
+    try {
+      setCreating(true);
+      const n = await createDraftsFromSuggestion(drafts);
+      toast.success(`${n} taslak satın alma siparişi oluşturuldu.`);
+      router.push("/siparisler/satin-alma");
+    } catch (error) {
+      toast.error("Taslak oluşturulamadı", { description: getErrorMessage(error) });
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const exportExcel = () => {
     const toRow = (r: PurchaseRow) => {
       const q = qtyOf(r);
@@ -125,10 +167,16 @@ export function PurchaseSuggestions({ data }: { data: PurchaseData }) {
             <Switch checked={topUp} onCheckedChange={setTopUp} />
             Minimum stoğa tamamla
           </label>
-          <Button onClick={exportExcel} disabled={selected.length === 0}>
+          <Button variant="outline" onClick={exportExcel} disabled={selected.length === 0}>
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Excel&apos;e aktar ({selected.length})
           </Button>
+          {canOrder && (
+            <Button onClick={createDrafts} disabled={selected.length === 0 || creating}>
+              {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FilePlus2 className="mr-2 h-4 w-4" />}
+              Taslak sipariş oluştur
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-3">

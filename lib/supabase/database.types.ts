@@ -1268,6 +1268,111 @@ export type Database = {
           },
         ]
       }
+      purchase_order_items: {
+        Row: {
+          id: string
+          purchase_order_id: string
+          product_id: string
+          quantity: number
+          unit_price: number | null
+          note: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          purchase_order_id: string
+          product_id: string
+          quantity: number
+          unit_price?: number | null
+          note?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          purchase_order_id?: string
+          product_id?: string
+          quantity?: number
+          unit_price?: number | null
+          note?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          id: string
+          no: string
+          partner_id: string
+          status: string
+          order_date: string
+          expected_date: string | null
+          currency: string
+          note: string | null
+          created_by: string | null
+          created_at: string
+          ordered_at: string | null
+          closed_at: string | null
+        }
+        Insert: {
+          id?: string
+          no: string
+          partner_id: string
+          status?: string
+          order_date?: string
+          expected_date?: string | null
+          currency?: string
+          note?: string | null
+          created_by?: string | null
+          created_at?: string
+          ordered_at?: string | null
+          closed_at?: string | null
+        }
+        Update: {
+          id?: string
+          no?: string
+          partner_id?: string
+          status?: string
+          order_date?: string
+          expected_date?: string | null
+          currency?: string
+          note?: string | null
+          created_by?: string | null
+          created_at?: string
+          ordered_at?: string | null
+          closed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quality_checks: {
         Row: {
           id: string
@@ -1794,6 +1899,19 @@ export type Database = {
         }
         Relationships: []
       }
+      v_purchase_order_items: {
+        Row: {
+          id: string | null
+          purchase_order_id: string | null
+          product_id: string | null
+          quantity: number | null
+          unit_price: number | null
+          note: string | null
+          received_qty: number | null
+          remaining_qty: number | null
+        }
+        Relationships: []
+      }
       v_stock: {
         Row: {
           product_id: string | null
@@ -1881,6 +1999,16 @@ export type Database = {
       pp_variant_base: {
         Args: {
           p_code: string
+        }
+        Returns: string
+      }
+      receive_purchase_order: {
+        Args: {
+          p_po_id: string
+          p_warehouse_id: string
+          p_date: string
+          p_lines: Json
+          p_note?: string
         }
         Returns: string
       }

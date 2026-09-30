@@ -78,3 +78,23 @@ export function buildPurchaseSuggestions(input: PurchaseInput): PurchaseRow[] {
     (a, b) => (a.supplier?.partnerName ?? "~").localeCompare(b.supplier?.partnerName ?? "~", "tr") || a.product.code.localeCompare(b.product.code, "tr", { numeric: true }),
   );
 }
+
+// ─── Satın alma siparişi durumları ───
+
+export type PurchaseOrderStatus = "draft" | "ordered" | "closed" | "cancelled";
+export const PO_STATUS_LABELS: Record<PurchaseOrderStatus, string> = {
+  draft: "Taslak",
+  ordered: "Sipariş verildi",
+  closed: "Kapandı",
+  cancelled: "İptal",
+};
+export const PO_STATUS_BADGE: Record<PurchaseOrderStatus, "default" | "secondary" | "outline" | "destructive"> = {
+  draft: "outline",
+  ordered: "default",
+  closed: "secondary",
+  cancelled: "destructive",
+};
+export const poStatusLabel = (s: string) => PO_STATUS_LABELS[s as PurchaseOrderStatus] ?? s;
+export const poStatusBadge = (s: string) => PO_STATUS_BADGE[s as PurchaseOrderStatus] ?? "outline";
+
+export const DELIVERY_LABELS = { none: "Teslim alınmadı", partial: "Kısmi teslim", full: "Tamamı teslim alındı" } as const;
