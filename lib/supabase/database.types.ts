@@ -22,6 +22,12 @@ export type Database = {
           action: string
           detail: string | null
           created_at: string | null
+          table_name: string | null
+          record_id: string | null
+          record_label: string | null
+          operation: string | null
+          changes: Json | null
+          txid: number | null
         }
         Insert: {
           id?: string
@@ -29,6 +35,12 @@ export type Database = {
           action: string
           detail?: string | null
           created_at?: string | null
+          table_name?: string | null
+          record_id?: string | null
+          record_label?: string | null
+          operation?: string | null
+          changes?: Json | null
+          txid?: number | null
         }
         Update: {
           id?: string
@@ -36,6 +48,12 @@ export type Database = {
           action?: string
           detail?: string | null
           created_at?: string | null
+          table_name?: string | null
+          record_id?: string | null
+          record_label?: string | null
+          operation?: string | null
+          changes?: Json | null
+          txid?: number | null
         }
         Relationships: [
           {
@@ -426,7 +444,6 @@ export type Database = {
           id: string
           code: string
           name: string
-          operation_mode: string | null
           product_id: string | null
           cavity_count: number
           cycle_time_sec: number
@@ -436,12 +453,12 @@ export type Database = {
           status: Database["public"]["Enums"]["equipment_status"]
           product_weight_g: number | null
           sprue_weight_g: number | null
+          operation_mode: string | null
         }
         Insert: {
           id?: string
           code: string
           name: string
-          operation_mode?: string | null
           product_id?: string | null
           cavity_count: number
           cycle_time_sec: number
@@ -451,12 +468,12 @@ export type Database = {
           status?: Database["public"]["Enums"]["equipment_status"]
           product_weight_g?: number | null
           sprue_weight_g?: number | null
+          operation_mode?: string | null
         }
         Update: {
           id?: string
           code?: string
           name?: string
-          operation_mode?: string | null
           product_id?: string | null
           cavity_count?: number
           cycle_time_sec?: number
@@ -466,6 +483,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["equipment_status"]
           product_weight_g?: number | null
           sprue_weight_g?: number | null
+          operation_mode?: string | null
         }
         Relationships: [
           {
@@ -580,6 +598,27 @@ export type Database = {
           },
         ]
       }
+      operators: {
+        Row: {
+          id: string
+          name: string
+          active: boolean
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          active?: boolean
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          active?: boolean
+          created_at?: string | null
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           id: string
@@ -681,251 +720,6 @@ export type Database = {
         }
         Relationships: []
       }
-      operators: {
-        Row: {
-          id: string
-          name: string
-          active: boolean
-          created_at: string | null
-        }
-        Insert: {
-          id?: string
-          name: string
-          active?: boolean
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          name?: string
-          active?: boolean
-          created_at?: string | null
-        }
-        Relationships: []
-      }
-      production_entry_scraps: {
-        Row: {
-          id: string
-          entry_id: string
-          reason_code_id: string
-          kg: number
-        }
-        Insert: {
-          id?: string
-          entry_id: string
-          reason_code_id: string
-          kg: number
-        }
-        Update: {
-          id?: string
-          entry_id?: string
-          reason_code_id?: string
-          kg?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "production_entry_scraps_entry_id_fkey"
-            columns: ["entry_id"]
-            isOneToOne: false
-            referencedRelation: "production_entries"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "production_entry_scraps_reason_code_id_fkey"
-            columns: ["reason_code_id"]
-            isOneToOne: false
-            referencedRelation: "reason_codes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      production_entry_downtimes: {
-        Row: {
-          id: string
-          entry_id: string
-          reason_code_id: string
-          minutes: number
-        }
-        Insert: {
-          id?: string
-          entry_id: string
-          reason_code_id: string
-          minutes: number
-        }
-        Update: {
-          id?: string
-          entry_id?: string
-          reason_code_id?: string
-          minutes?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "production_entry_downtimes_entry_id_fkey"
-            columns: ["entry_id"]
-            isOneToOne: false
-            referencedRelation: "production_entries"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "production_entry_downtimes_reason_code_id_fkey"
-            columns: ["reason_code_id"]
-            isOneToOne: false
-            referencedRelation: "reason_codes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      production_entries: {
-        Row: {
-          start_at: string | null
-          end_at: string | null
-          operator_id: string | null
-          mold_id: string | null
-          mold_shots: number
-          cancelled_at: string | null
-          cancelled_by: string | null
-          cancel_note: string | null
-          replaced_by_entry_id: string | null
-          id: string
-          work_order_id: string
-          shift: Database["public"]["Enums"]["shift_type"]
-          produced_qty: number
-          scrap_qty: number
-          scrap_reason_code_id: string | null
-          downtime_min: number
-          downtime_reason_code_id: string | null
-          actual_cycle_time_sec: number | null
-          operator: string | null
-          entry_time: string | null
-          total_used_kg: number
-          lot_no: string | null
-          user_id: string | null
-        }
-        Insert: {
-          start_at?: string | null
-          end_at?: string | null
-          operator_id?: string | null
-          mold_id?: string | null
-          mold_shots?: number
-          cancelled_at?: string | null
-          cancelled_by?: string | null
-          cancel_note?: string | null
-          replaced_by_entry_id?: string | null
-          id?: string
-          work_order_id: string
-          shift: Database["public"]["Enums"]["shift_type"]
-          produced_qty: number
-          scrap_qty?: number
-          scrap_reason_code_id?: string | null
-          downtime_min?: number
-          downtime_reason_code_id?: string | null
-          actual_cycle_time_sec?: number | null
-          operator?: string | null
-          entry_time?: string | null
-          total_used_kg?: number
-          lot_no?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          start_at?: string | null
-          end_at?: string | null
-          operator_id?: string | null
-          mold_id?: string | null
-          mold_shots?: number
-          cancelled_at?: string | null
-          cancelled_by?: string | null
-          cancel_note?: string | null
-          replaced_by_entry_id?: string | null
-          id?: string
-          work_order_id?: string
-          shift?: Database["public"]["Enums"]["shift_type"]
-          produced_qty?: number
-          scrap_qty?: number
-          scrap_reason_code_id?: string | null
-          downtime_min?: number
-          downtime_reason_code_id?: string | null
-          actual_cycle_time_sec?: number | null
-          operator?: string | null
-          entry_time?: string | null
-          total_used_kg?: number
-          lot_no?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "production_entries_downtime_reason_code_id_fkey"
-            columns: ["downtime_reason_code_id"]
-            isOneToOne: false
-            referencedRelation: "reason_codes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "production_entries_scrap_reason_code_id_fkey"
-            columns: ["scrap_reason_code_id"]
-            isOneToOne: false
-            referencedRelation: "reason_codes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "production_entries_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "production_entries_work_order_id_fkey"
-            columns: ["work_order_id"]
-            isOneToOne: false
-            referencedRelation: "work_orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      production_lines: {
-        Row: {
-          id: string
-          code: string
-          name: string
-          head_type: string | null
-          status: Database["public"]["Enums"]["equipment_status"]
-          line_type: Database["public"]["Enums"]["production_type"] | null
-        }
-        Insert: {
-          id?: string
-          code: string
-          name: string
-          head_type?: string | null
-          status?: Database["public"]["Enums"]["equipment_status"]
-          line_type?: Database["public"]["Enums"]["production_type"] | null
-        }
-        Update: {
-          id?: string
-          code?: string
-          name?: string
-          head_type?: string | null
-          status?: Database["public"]["Enums"]["equipment_status"]
-          line_type?: Database["public"]["Enums"]["production_type"] | null
-        }
-        Relationships: []
-      }
-      product_groups: {
-        Row: {
-          code: string
-          name: string
-          created_at: string | null
-        }
-        Insert: {
-          code: string
-          name: string
-          created_at?: string | null
-        }
-        Update: {
-          code?: string
-          name?: string
-          created_at?: string | null
-        }
-        Relationships: []
-      }
       product_documents: {
         Row: {
           id: string
@@ -961,6 +755,39 @@ export type Database = {
           mime_type?: string | null
           size_bytes?: number | null
           uploaded_by?: string | null
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_documents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_groups: {
+        Row: {
+          code: string
+          name: string
+          created_at: string | null
+        }
+        Insert: {
+          code: string
+          name: string
+          created_at?: string | null
+        }
+        Update: {
+          code?: string
+          name?: string
           created_at?: string | null
         }
         Relationships: []
@@ -1007,7 +834,248 @@ export type Database = {
             referencedRelation: "partners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "product_suppliers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      production_entries: {
+        Row: {
+          id: string
+          work_order_id: string
+          shift: Database["public"]["Enums"]["shift_type"]
+          produced_qty: number
+          scrap_qty: number
+          scrap_reason_code_id: string | null
+          downtime_min: number
+          downtime_reason_code_id: string | null
+          actual_cycle_time_sec: number | null
+          operator: string | null
+          entry_time: string | null
+          total_used_kg: number
+          lot_no: string | null
+          user_id: string | null
+          start_at: string | null
+          end_at: string | null
+          operator_id: string | null
+          mold_id: string | null
+          mold_shots: number
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancel_note: string | null
+          replaced_by_entry_id: string | null
+        }
+        Insert: {
+          id?: string
+          work_order_id: string
+          shift: Database["public"]["Enums"]["shift_type"]
+          produced_qty: number
+          scrap_qty?: number
+          scrap_reason_code_id?: string | null
+          downtime_min?: number
+          downtime_reason_code_id?: string | null
+          actual_cycle_time_sec?: number | null
+          operator?: string | null
+          entry_time?: string | null
+          total_used_kg?: number
+          lot_no?: string | null
+          user_id?: string | null
+          start_at?: string | null
+          end_at?: string | null
+          operator_id?: string | null
+          mold_id?: string | null
+          mold_shots?: number
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancel_note?: string | null
+          replaced_by_entry_id?: string | null
+        }
+        Update: {
+          id?: string
+          work_order_id?: string
+          shift?: Database["public"]["Enums"]["shift_type"]
+          produced_qty?: number
+          scrap_qty?: number
+          scrap_reason_code_id?: string | null
+          downtime_min?: number
+          downtime_reason_code_id?: string | null
+          actual_cycle_time_sec?: number | null
+          operator?: string | null
+          entry_time?: string | null
+          total_used_kg?: number
+          lot_no?: string | null
+          user_id?: string | null
+          start_at?: string | null
+          end_at?: string | null
+          operator_id?: string | null
+          mold_id?: string | null
+          mold_shots?: number
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancel_note?: string | null
+          replaced_by_entry_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_entries_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entries_downtime_reason_code_id_fkey"
+            columns: ["downtime_reason_code_id"]
+            isOneToOne: false
+            referencedRelation: "reason_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entries_mold_id_fkey"
+            columns: ["mold_id"]
+            isOneToOne: false
+            referencedRelation: "molds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entries_operator_id_fkey"
+            columns: ["operator_id"]
+            isOneToOne: false
+            referencedRelation: "operators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entries_replaced_by_entry_id_fkey"
+            columns: ["replaced_by_entry_id"]
+            isOneToOne: false
+            referencedRelation: "production_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entries_scrap_reason_code_id_fkey"
+            columns: ["scrap_reason_code_id"]
+            isOneToOne: false
+            referencedRelation: "reason_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entries_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_entry_downtimes: {
+        Row: {
+          id: string
+          entry_id: string
+          reason_code_id: string
+          minutes: number
+        }
+        Insert: {
+          id?: string
+          entry_id: string
+          reason_code_id: string
+          minutes: number
+        }
+        Update: {
+          id?: string
+          entry_id?: string
+          reason_code_id?: string
+          minutes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_entry_downtimes_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "production_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entry_downtimes_reason_code_id_fkey"
+            columns: ["reason_code_id"]
+            isOneToOne: false
+            referencedRelation: "reason_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_entry_scraps: {
+        Row: {
+          id: string
+          entry_id: string
+          reason_code_id: string
+          kg: number
+        }
+        Insert: {
+          id?: string
+          entry_id: string
+          reason_code_id: string
+          kg: number
+        }
+        Update: {
+          id?: string
+          entry_id?: string
+          reason_code_id?: string
+          kg?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_entry_scraps_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "production_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entry_scraps_reason_code_id_fkey"
+            columns: ["reason_code_id"]
+            isOneToOne: false
+            referencedRelation: "reason_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_lines: {
+        Row: {
+          id: string
+          code: string
+          name: string
+          head_type: string | null
+          status: Database["public"]["Enums"]["equipment_status"]
+          line_type: Database["public"]["Enums"]["production_type"] | null
+        }
+        Insert: {
+          id?: string
+          code: string
+          name: string
+          head_type?: string | null
+          status?: Database["public"]["Enums"]["equipment_status"]
+          line_type?: Database["public"]["Enums"]["production_type"] | null
+        }
+        Update: {
+          id?: string
+          code?: string
+          name?: string
+          head_type?: string | null
+          status?: Database["public"]["Enums"]["equipment_status"]
+          line_type?: Database["public"]["Enums"]["production_type"] | null
+        }
+        Relationships: []
       }
       products: {
         Row: {
@@ -1036,10 +1104,10 @@ export type Database = {
           pallet_qty: number | null
           pipe_length_m: number | null
           package_weight_kg: number | null
-          bag_qty: number | null
-          bag_type: string | null
           barcode: string | null
           package_note: string | null
+          bag_type: string | null
+          bag_qty: number | null
         }
         Insert: {
           id?: string
@@ -1067,10 +1135,10 @@ export type Database = {
           pallet_qty?: number | null
           pipe_length_m?: number | null
           package_weight_kg?: number | null
-          bag_qty?: number | null
-          bag_type?: string | null
           barcode?: string | null
           package_note?: string | null
+          bag_type?: string | null
+          bag_qty?: number | null
         }
         Update: {
           id?: string
@@ -1098,50 +1166,12 @@ export type Database = {
           pallet_qty?: number | null
           pipe_length_m?: number | null
           package_weight_kg?: number | null
-          bag_qty?: number | null
-          bag_type?: string | null
           barcode?: string | null
           package_note?: string | null
+          bag_type?: string | null
+          bag_qty?: number | null
         }
         Relationships: []
-      }
-      supplier_prices: {
-        Row: {
-          id: string
-          product_supplier_id: string
-          price: number
-          currency: string
-          valid_from: string
-          note: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: string
-          product_supplier_id: string
-          price: number
-          currency?: string
-          valid_from?: string
-          note?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          product_supplier_id?: string
-          price?: number
-          currency?: string
-          valid_from?: string
-          note?: string | null
-          created_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "supplier_prices_product_supplier_id_fkey"
-            columns: ["product_supplier_id"]
-            isOneToOne: false
-            referencedRelation: "product_suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       profiles: {
         Row: {
@@ -1467,6 +1497,44 @@ export type Database = {
           },
         ]
       }
+      supplier_prices: {
+        Row: {
+          id: string
+          product_supplier_id: string
+          price: number
+          currency: string
+          valid_from: string
+          note: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          product_supplier_id: string
+          price: number
+          currency?: string
+          valid_from?: string
+          note?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          product_supplier_id?: string
+          price?: number
+          currency?: string
+          valid_from?: string
+          note?: string | null
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_prices_product_supplier_id_fkey"
+            columns: ["product_supplier_id"]
+            isOneToOne: false
+            referencedRelation: "product_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       warehouses: {
         Row: {
           id: string
@@ -1487,10 +1555,6 @@ export type Database = {
       }
       work_orders: {
         Row: {
-          reopened_at: string | null
-          reopened_by: string | null
-          reopen_note: string | null
-          reopen_count: number
           id: string
           no: string
           product_id: string
@@ -1502,12 +1566,12 @@ export type Database = {
           started_at: string | null
           finished_at: string | null
           order_id: string | null
+          reopened_at: string | null
+          reopened_by: string | null
+          reopen_note: string | null
+          reopen_count: number
         }
         Insert: {
-          reopened_at?: string | null
-          reopened_by?: string | null
-          reopen_note?: string | null
-          reopen_count?: number
           id?: string
           no: string
           product_id: string
@@ -1519,12 +1583,12 @@ export type Database = {
           started_at?: string | null
           finished_at?: string | null
           order_id?: string | null
-        }
-        Update: {
           reopened_at?: string | null
           reopened_by?: string | null
           reopen_note?: string | null
           reopen_count?: number
+        }
+        Update: {
           id?: string
           no?: string
           product_id?: string
@@ -1536,6 +1600,10 @@ export type Database = {
           started_at?: string | null
           finished_at?: string | null
           order_id?: string | null
+          reopened_at?: string | null
+          reopened_by?: string | null
+          reopen_note?: string | null
+          reopen_count?: number
         }
         Relationships: [
           {
@@ -1571,6 +1639,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_reopened_by_fkey"
+            columns: ["reopened_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -1672,6 +1747,13 @@ export type Database = {
         }
         Returns: string[]
       }
+      cancel_production_entry: {
+        Args: {
+          p_entry_id: string
+          p_note?: string
+        }
+        Returns: undefined
+      }
       cancel_stock_document: {
         Args: {
           p_id: string
@@ -1718,25 +1800,11 @@ export type Database = {
         }
         Returns: boolean
       }
-      reopen_work_order: {
+      pp_variant_base: {
         Args: {
-          p_work_order_id: string
-          p_note?: string
+          p_code: string
         }
-        Returns: undefined
-      }
-      save_production_entry: {
-        Args: {
-          p: Json
-        }
-        Returns: Json
-      }
-      cancel_production_entry: {
-        Args: {
-          p_entry_id: string
-          p_note?: string
-        }
-        Returns: undefined
+        Returns: string
       }
       record_production_entry: {
         Args: {
@@ -1757,6 +1825,13 @@ export type Database = {
         }
         Returns: Json
       }
+      reopen_work_order: {
+        Args: {
+          p_work_order_id: string
+          p_note?: string
+        }
+        Returns: undefined
+      }
       reverse_stock_movements: {
         Args: {
           p_ids: string[]
@@ -1767,6 +1842,12 @@ export type Database = {
       save_bom: {
         Args: {
           p_bom: Json
+        }
+        Returns: Json
+      }
+      save_production_entry: {
+        Args: {
+          p: Json
         }
         Returns: Json
       }

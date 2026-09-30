@@ -12,6 +12,7 @@ import { ExportPanel } from "./components/export-panel";
 import { LineCapacitiesPanel } from "./components/line-capacities-panel";
 import { ReferenceCapacitiesPanel } from "./components/reference-capacities-panel";
 import { CalendarPanel } from "./components/calendar-panel";
+import { ActivityPanel } from "./components/activity-panel";
 
 export const metadata: Metadata = {
   title: "Yönetim",
@@ -38,6 +39,7 @@ export default async function ManagementPage() {
               <TabsTrigger value="line-capacity">Makine Kapasitesi</TabsTrigger>
               <TabsTrigger value="reference-capacity">Referans Kapasite</TabsTrigger>
               <TabsTrigger value="calendar">Çalışma Takvimi</TabsTrigger>
+              <TabsTrigger value="activity">İşlem Geçmişi</TabsTrigger>
               <TabsTrigger value="export">Dışa Aktarım / Yedek</TabsTrigger>
             </TabsList>
             <TabsContent value="users" className="m-0">
@@ -54,6 +56,9 @@ export default async function ManagementPage() {
             </TabsContent>
             <TabsContent value="calendar" className="m-0">
               <CalendarPanel weeklyOffDays={capacity.weeklyOffDays} holidays={capacity.holidays} />
+            </TabsContent>
+            <TabsContent value="activity" className="m-0">
+              <ActivityPanel users={users.map((u) => ({ id: u.id, name: u.name }))} />
             </TabsContent>
             <TabsContent value="export" className="m-0">
               <ExportPanel />
