@@ -172,15 +172,15 @@ export default function Workspace({ initialPath, userName, userRole }: Workspace
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       {/* Üst çubuk: ana sayfa · sekmeler · yeni sekme · kullanıcı */}
-      <header className="flex h-12 shrink-0 items-end gap-2 border-b border-border bg-muted/40 px-2 print:hidden">
+      <header className="flex h-16 shrink-0 items-end gap-3 border-b border-border bg-muted/40 px-2 print:hidden">
         <button
           type="button"
           onClick={() => openNew(null)}
           title="Ana sayfa"
           aria-label="Ana sayfa"
-          className="mb-1 flex h-10 shrink-0 items-center rounded-md border border-border bg-logo-surface px-2 transition-shadow hover:shadow-sm"
+          className="mb-2 flex h-10 shrink-0 items-center rounded-md border border-border bg-logo-surface px-1.5 sm:mb-1.5 sm:h-12 sm:px-2 transition-shadow hover:shadow-sm"
         >
-          <Image src="/logo-sifonik.png" alt="Sifonik" width={319} height={89} priority className="h-7 w-auto sm:h-8" />
+          <Image src="/logo-sifonik.png" alt="Sifonik" width={319} height={89} priority className="h-7 w-auto sm:h-10" />
         </button>
 
         <div className="flex min-w-0 flex-1 items-end gap-1 overflow-x-auto" role="tablist" aria-label="Açık sayfalar">
@@ -191,7 +191,7 @@ export default function Workspace({ initialPath, userName, userRole }: Workspace
                 key={t.id}
                 data-tab-id={t.id}
                 className={cn(
-                  "group flex h-9 max-w-[220px] shrink-0 items-center gap-1 rounded-t-md border border-b-0 pl-3 pr-1 text-sm",
+                  "group flex h-11 max-w-[260px] shrink-0 items-center gap-1.5 rounded-t-md border border-b-0 pl-4 pr-1.5 text-base",
                   isActive ? "border-border bg-background font-medium text-foreground" : "border-transparent text-muted-foreground hover:bg-background/60",
                 )}
               >
@@ -204,16 +204,16 @@ export default function Workspace({ initialPath, userName, userRole }: Workspace
                   onClick={() => setActiveId(t.id)}
                   onAuxClick={(e) => e.button === 1 && closeTab(t.id)}
                 >
-                  {!t.path && <House className="h-3.5 w-3.5 shrink-0" />}
+                  {!t.path && <House className="h-4 w-4 shrink-0" />}
                   <span className="truncate">{t.title}</span>
                 </button>
                 <button
                   type="button"
                   aria-label={`${t.title} sekmesini kapat`}
-                  className={cn("rounded p-0.5 hover:bg-muted", isActive ? "opacity-100" : "opacity-60 group-hover:opacity-100")}
+                  className={cn("rounded p-1 hover:bg-muted", isActive ? "opacity-100" : "opacity-60 group-hover:opacity-100")}
                   onClick={() => closeTab(t.id)}
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             );
@@ -222,14 +222,14 @@ export default function Workspace({ initialPath, userName, userRole }: Workspace
             type="button"
             aria-label="Yeni sekme"
             title="Yeni sekme"
-            className="mb-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-background hover:text-foreground"
+            className="mb-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-background hover:text-foreground"
             onClick={() => openNew(null)}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="mb-1 shrink-0">
+        <div className="mb-2 shrink-0">
           <UserMenu userName={userName} userRole={userRole} />
         </div>
       </header>

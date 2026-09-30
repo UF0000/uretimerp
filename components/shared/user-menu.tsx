@@ -42,16 +42,16 @@ export const UserMenu = ({ userName, userRole }: UserMenuProps) => {
   return (
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-accent transition-colors outline-none cursor-pointer">
-              <Avatar className="w-7 h-7">
+              <Avatar className="w-9 h-9">
                 <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                   {initials}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden sm:flex flex-col items-start">
-                <span className="text-sm font-medium text-foreground leading-tight">
+                <span className="text-base font-medium text-foreground leading-tight">
                   {userName ?? "Kullanıcı"}
                 </span>
-                <span className="text-xs text-muted-foreground leading-tight">
+                <span className="text-sm text-muted-foreground leading-tight">
                   {userRole ? ROLE_LABELS[userRole] ?? userRole : ""}
                 </span>
               </div>
