@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { TABS_STORAGE_KEY } from "@/lib/workspace";
 import { createClient } from "@/lib/supabase/client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -68,8 +69,17 @@ export default function LoginPage() {
       description: "Panel'e yönlendiriliyorsunuz...",
     });
 
-    // Sekme içinde (oturum süresi dolmuşsa) sayfaya dön; değilse çalışma alanını aç
-    router.push(window.parent !== window ? "/dashboard" : "/calisma");
+    // Sekme içinde (oturum süresi dolmuşsa) sayfaya dön; değilse ana sayfa ekranıyla başla
+    if (window.parent !== window) {
+      router.push("/dashboard");
+    } else {
+      try {
+        window.sessionStorage.removeItem(TABS_STORAGE_KEY);
+      } catch {
+        // saklama kapalı: zaten boş başlar
+      }
+      router.push("/calisma");
+    }
     router.refresh();
   };
 

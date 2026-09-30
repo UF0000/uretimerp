@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { LogOut, User } from "lucide-react";
-import { MobileNav } from "@/components/shared/mobile-nav";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,14 +13,14 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ROLE_LABELS, type UserRole } from "@/lib/permissions";
 
-// ─── Topbar Bileşeni ───────────────────────────────
+// ─── Kullanıcı menüsü (çalışma alanı üst çubuğunda) ─
 
-interface TopbarProps {
+interface UserMenuProps {
   userName?: string;
   userRole?: UserRole;
 }
 
-export const Topbar = ({ userName, userRole }: TopbarProps) => {
+export const UserMenu = ({ userName, userRole }: UserMenuProps) => {
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -41,17 +40,9 @@ export const Topbar = ({ userName, userRole }: TopbarProps) => {
     : "?";
 
   return (
-    <header className="flex items-center justify-between h-16 px-4 md:px-6 border-b border-border bg-card print:hidden">
-      {/* Sol: Mobil menü + Sayfa alanı */}
-      <div className="flex items-center gap-3">
-        <MobileNav />
-      </div>
-
-      {/* Sağ: Kullanıcı */}
-      <div className="flex items-center gap-3">
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-accent transition-colors outline-none cursor-pointer">
-              <Avatar className="w-8 h-8">
+              <Avatar className="w-7 h-7">
                 <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                   {initials}
                 </AvatarFallback>
@@ -80,7 +71,5 @@ export const Topbar = ({ userName, userRole }: TopbarProps) => {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
-    </header>
   );
 };

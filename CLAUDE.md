@@ -67,6 +67,7 @@ app/
   (auth)/login/              # Giriş
   (app)/
     dashboard/               # Panel
+  (workspace)/calisma/       # Sekmeli çalışma alanı (sayfalar sekme içinde açılır)
     ana-veri/                # Ürün, hammadde, cari, depo
     recete/                  # BOM / reçete
     depo/                    # Stok, hareketler, sayım, izlenebilirlik
@@ -102,7 +103,7 @@ supabase/
 - [x] Supabase bağlantısı, Auth + proxy; profil yoksa/pasifse uygulamaya giriş yok
 - [x] DB tipleri `lib/supabase/database.types.ts` (`npm run db:types`), migration CI
 
-- [x] **Sekmeli çalışma alanı** `/calisma` (`components/shared/workspace.tsx`): menü + üst bar + sekme çubuğu; her sekme bir sayfayı iframe'de açık tutar (form durumu korunur), "+" → menü kartları, sekmeler sessionStorage'da. Sayfalar `(app)` yerleşiminde yalnızca içerik + `EmbedBridge` (adres/başlık bildirir, başka bölüme giden bağlantı ve Ctrl+tık yeni sekme, sekmeye dönünce `router.refresh`). Doğrudan açılan sayfa `proxy` (Sec-Fetch-Dest: document) ile `/calisma?ac=…`'ya yönlenir
+- [x] **Sekmeli çalışma alanı** `/calisma` (`components/shared/workspace.tsx`): yan menü yok, tam ekran; tek üst çubuk (logo = ana sayfa, sekmeler, +, `UserMenu`); girişte ana sayfa (menü simgeleri ortada, `Launcher`); her sekme bir sayfayı iframe'de açık tutar (form durumu korunur), "+" → menü kartları, sekmeler sessionStorage'da. Sayfalar `(app)` yerleşiminde yalnızca içerik + `EmbedBridge` (adres/başlık bildirir, başka bölüme giden bağlantı ve Ctrl+tık yeni sekme, sekmeye dönünce `router.refresh`). Doğrudan açılan sayfa `proxy` (Sec-Fetch-Dest: document) ile `/calisma?ac=…`'ya yönlenir
 
 **Faz 1 — Omurga**
 - [x] Ana veri CRUD (ürün/hammadde/kalıp/hat/cari/depo/neden kodları) + Excel içe aktarım

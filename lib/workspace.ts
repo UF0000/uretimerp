@@ -6,6 +6,8 @@
 
 export const WORKSPACE_PATH = "/calisma";
 export const APP_TITLE_SUFFIX = " | Üretim ERP";
+/** Açık sekmeler (oturum hafızası); girişte temizlenir → ana sayfayla başlanır */
+export const TABS_STORAGE_KEY = "uretim-erp:sekmeler";
 
 /** Sayfa (iframe) → çalışma alanı */
 export type FrameMessage =
