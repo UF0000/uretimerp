@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
-import { Edit2, Eye, ImageOff, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
+import { Edit2, Eye, ImageOff, ListChecks, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { DataTable } from "@/components/shared/data-table";
@@ -21,6 +21,7 @@ import { formatTR } from "@/lib/format";
 import { matchesTokens, searchTokens } from "@/lib/search";
 import { ProductForm } from "./product-form";
 import { ExcelImportButton } from "./excel-import-button";
+import { BulkUpdateDialog } from "./bulk-update-dialog";
 import { getErrorMessage } from "@/lib/utils";
 import { usePermission } from "@/components/shared/role-provider";
 
@@ -39,6 +40,8 @@ export function ProductsTab({ data, groups }: ProductsTabProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductFormInput | undefined>(undefined);
   const [isDeleting, setIsDeleting] = useState(false);
+  // Toplu özellik güncelleme: seçili ürün id'leri + seçimi temizleme
+  const [bulk, setBulk] = useState<{ ids: string[]; clear: () => void } | null>(null);
 
   // ── Filtreler ──
   const [q, setQ] = useState("");
@@ -280,8 +283,31 @@ F-01\tBoru Firesi\tscrap\tkg\tFire\t\t0\t0\t0`;
         onRowDoubleClick={openDetail}
         onDeleteSelected={canWrite ? handleBulkDelete : undefined}
         isDeleting={isDeleting}
+        selectionActions={
+          canWrite
+            ? (rows, clear) => (
+                <Button variant="outline" size="sm" onClick={() => setBulk({ ids: rows.map((r) => r.id), clear })}>
+                  <ListChecks className="mr-2 h-4 w-4" />
+                  Toplu güncelle ({rows.length})
+                </Button>
+              )
+            : undefined
+        }
         toolbar={<span className="text-sm text-muted-foreground">{filtered.length} / {data.length} ürün</span>}
       />
+
+      {bulk && (
+        <BulkUpdateDialog
+          open
+          onOpenChange={(o) => !o && setBulk(null)}
+          ids={bulk.ids}
+          groups={groups}
+          onDone={() => {
+            bulk.clear();
+            router.refresh();
+          }}
+        />
+      )}
 
       {formOpen && <ProductForm open={formOpen} onOpenChange={setFormOpen} initialData={editingProduct} groups={groups} />}
     </div>

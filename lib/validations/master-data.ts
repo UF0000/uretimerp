@@ -1,5 +1,5 @@
 import { z } from "@/lib/zod";
-import { PRODUCT_TYPES } from "@/lib/product-meta";
+import { CATEGORY_LABELS, PRODUCT_TYPES } from "@/lib/product-meta";
 
 export const productSchema = z.object({
   id: z.string().optional(),
@@ -37,6 +37,26 @@ export const productSchema = z.object({
 
 export type ProductFormValues = z.infer<typeof productSchema>;
 export type ProductFormInput = z.input<typeof productSchema>;
+
+/** Toplu özellik güncelleme: tek alan, value = null → temizle (yalnızca boş bırakılabilen alanlarda) */
+const categoryKeys = Object.keys(CATEGORY_LABELS) as [string, ...string[]];
+const code = (max: number) => z.string().trim().min(1, "Değer girin").max(max).transform((v) => v.toUpperCase());
+const size = z.number().positive("0'dan büyük olmalıdır");
+export const bulkProductUpdateSchema = z.discriminatedUnion("field", [
+  z.object({ field: z.literal("category"), value: z.enum(categoryKeys).nullable() }),
+  z.object({ field: z.literal("type"), value: z.enum(PRODUCT_TYPES) }),
+  z.object({ field: z.literal("unit"), value: z.enum(["adet", "kg", "metre"]) }),
+  z.object({ field: z.literal("group_code"), value: code(20).nullable() }),
+  z.object({ field: z.literal("variant_code"), value: code(60).nullable() }),
+  z.object({ field: z.literal("material_group"), value: code(40).nullable() }),
+  z.object({ field: z.literal("diameter_mm"), value: size.nullable() }),
+  z.object({ field: z.literal("sdr"), value: size.nullable() }),
+  z.object({ field: z.literal("wall_thickness_mm"), value: size.nullable() }),
+  z.object({ field: z.literal("pipe_length_m"), value: size.nullable() }),
+  z.object({ field: z.literal("min_stock"), value: z.number().min(0, "0 veya daha büyük olmalıdır") }),
+  z.object({ field: z.literal("critical_stock"), value: z.number().min(0, "0 veya daha büyük olmalıdır") }),
+]);
+export type BulkProductUpdate = z.input<typeof bulkProductUpdateSchema>;
 
 export const partnerSchema = z.object({
   id: z.string().optional(),

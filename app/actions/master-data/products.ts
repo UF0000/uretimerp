@@ -1,11 +1,12 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { readAll } from "@/lib/supabase/read-all";
+import { inChunks, readAll } from "@/lib/supabase/read-all";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "@/lib/auth";
 import type { ExcelRow } from "@/lib/excel";
-import { productSchema, ProductFormValues } from "@/lib/validations/master-data";
+import type { TablesUpdate } from "@/lib/supabase/database.types";
+import { productSchema, ProductFormValues, bulkProductUpdateSchema, type BulkProductUpdate } from "@/lib/validations/master-data";
 
 export async function getProducts() {
   const supabase = await createClient();
@@ -119,6 +120,20 @@ export async function bulkDeleteProducts(ids: string[]) {
   if (error) throw new Error("Toplu silme başarısız: " + error.message);
   
   revalidatePath("/ana-veri");
+}
+
+/** Seçili ürünlerde tek bir özelliği toplu atar ya da temizler (value = null). */
+export async function bulkUpdateProducts(ids: string[], update: BulkProductUpdate) {
+  await requirePermission("master-data:write");
+  const parsed = bulkProductUpdateSchema.safeParse(update);
+  if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Geçersiz değer.");
+  if (ids.length === 0) throw new Error("Ürün seçilmedi.");
+  const { field, value } = parsed.data;
+  const supabase = await createClient();
+  const patch = { [field]: value } as TablesUpdate<"products">;
+  const updated = await inChunks(ids, 200, (chunk) => supabase.from("products").update(patch).in("id", chunk).select("id"));
+  revalidatePath("/ana-veri");
+  return updated.length;
 }
 
 export async function bulkImportProducts(productsData: ExcelRow[]) {

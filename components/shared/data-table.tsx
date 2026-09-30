@@ -50,6 +50,8 @@ interface DataTableProps<TData, TValue> {
   storageKey?: string;
   /** Kaydırmalı liste (varsayılan): başlık sabit, satırlar aşağı kaydırdıkça yüklenir. false = sayfalı */
   scrollable?: boolean;
+  /** Satır seçilince gösterilecek ek toplu işlemler (ör. toplu güncelle); seçim kutucuklarını da açar */
+  selectionActions?: (selected: TData[], clearSelection: () => void) => React.ReactNode;
 }
 
 const SCROLL_STEP = 100;
@@ -68,6 +70,7 @@ export function DataTable<TData, TValue>({
   onRowDoubleClick,
   storageKey,
   scrollable = true,
+  selectionActions,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -89,9 +92,10 @@ export function DataTable<TData, TValue>({
   }, [data, search, searchIndex]);
   const [rowSelection, setRowSelection] = React.useState({});
 
-  // Eğer toplu silme fonksiyonu verildiyse Checkbox sütununu başa ekle
+  // Toplu silme veya toplu işlem verildiyse Checkbox sütununu başa ekle
+  const selectable = Boolean(onDeleteSelected || selectionActions);
   const finalColumns = React.useMemo(() => {
-    if (!onDeleteSelected) return columns;
+    if (!selectable) return columns;
 
     const selectColumn: ColumnDef<TData, TValue> = {
       id: "select",
@@ -114,7 +118,7 @@ export function DataTable<TData, TValue>({
     };
 
     return [selectColumn, ...columns];
-  }, [columns, onDeleteSelected]);
+  }, [columns, selectable]);
 
   const table = useReactTable({
     data: searched,
@@ -122,6 +126,8 @@ export function DataTable<TData, TValue>({
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onRowSelectionChange: setRowSelection,
+    // Seçim kayıt id'sine bağlı: filtre/arama değişince yanlış satır seçili kalmasın
+    getRowId: (row, index) => (row as { id?: string }).id ?? String(index),
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: disablePagination || scrollable ? undefined : getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -201,6 +207,8 @@ export function DataTable<TData, TValue>({
             Sütunları sıfırla
           </Button>
         )}
+
+        {selectedRows.length > 0 && selectionActions?.(selectedRows.map((r) => r.original), () => table.resetRowSelection())}
 
         {selectedRows.length > 0 && onDeleteSelected && (
           <Button 
