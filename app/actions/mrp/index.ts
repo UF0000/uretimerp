@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { one } from "@/lib/utils";
 import { bomKgPerUnit, computeMrp, type MrpBom, type MrpProduct } from "@/lib/mrp";
+import type { PurchaseProduct, PurchaseSupplier } from "@/lib/purchase";
+import { requirePermission } from "@/lib/auth";
 
 /** Stok ihtiyacına sayılmayan depo tipleri */
 const EXCLUDED_WAREHOUSE_TYPES = new Set(["scrap", "quarantine"]);
@@ -113,3 +115,66 @@ export async function getMrpReport() {
 }
 
 export type MrpReport = Awaited<ReturnType<typeof getMrpReport>>;
+
+/** Satın alma önerisi için veri: MRP eksikleri + minimum altı hammadde/ticari mal + ana tedarikçi ve son fiyat */
+export async function getPurchaseData(mrp?: MrpReport) {
+  await requirePermission("order:read");
+  const supabase = await createClient();
+  // Sayfa raporu zaten hesapladıysa tekrar hesaplanmaz
+  const report = mrp ?? (await getMrpReport());
+  const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Istanbul" });
+
+  const [productsRes, stockRes, warehousesRes, suppliersRes] = await Promise.all([
+    supabase.from("products").select("id, code, name, unit, type, min_stock").eq("active", true).in("type", ["raw", "trade"]),
+    supabase.from("v_stock").select("product_id, warehouse_id, qty"),
+    supabase.from("warehouses").select("id, type"),
+    supabase
+      .from("product_suppliers")
+      .select("product_id, is_primary, supplier_code, lead_time_days, min_order_qty, created_at, partner:partners(id, name), prices:supplier_prices(price, currency, valid_from)"),
+  ]);
+  for (const res of [productsRes, stockRes, warehousesRes, suppliersRes]) {
+    if (res.error) throw new Error("Satın alma verileri getirilirken hata oluştu: " + res.error.message);
+  }
+
+  const excluded = new Set((warehousesRes.data ?? []).filter((w) => EXCLUDED_WAREHOUSE_TYPES.has(w.type)).map((w) => w.id));
+  const stock = new Map<string, number>();
+  for (const s of stockRes.data ?? []) {
+    if (!s.product_id || !s.warehouse_id || excluded.has(s.warehouse_id)) continue;
+    sumInto(stock, s.product_id, Number(s.qty ?? 0));
+  }
+
+  // Ürün başına: ana tedarikçi (yoksa ilk eklenen) + bugüne kadar geçerli en yeni fiyat
+  const suppliers: Record<string, PurchaseSupplier> = {};
+  const sorted = [...(suppliersRes.data ?? [])].sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || (a.created_at ?? "").localeCompare(b.created_at ?? ""));
+  for (const s of sorted) {
+    if (suppliers[s.product_id]) continue;
+    const partner = one(s.partner);
+    const price = (s.prices ?? []).filter((p) => p.valid_from <= today).sort((a, b) => b.valid_from.localeCompare(a.valid_from))[0];
+    suppliers[s.product_id] = {
+      partnerId: partner?.id ?? "",
+      partnerName: partner?.name ?? "Tedarikçi",
+      supplierCode: s.supplier_code,
+      leadTimeDays: s.lead_time_days,
+      minOrderQty: s.min_order_qty !== null ? Number(s.min_order_qty) : null,
+      price: price ? Number(price.price) : null,
+      currency: price?.currency ?? null,
+    };
+  }
+
+  // Ürün kartları: satın alınan türler + MRP eksiklerinde geçen her ürün
+  const products: Record<string, PurchaseProduct> = {};
+  for (const p of productsRes.data ?? []) products[p.id] = { id: p.id, code: p.code, name: p.name, unit: p.unit, type: p.type, minStock: Number(p.min_stock) || 0 };
+  const shortages = report.materials
+    .filter((m) => m.net > 0)
+    .map((m) => {
+      products[m.product.id] ??= { id: m.product.id, code: m.product.code, name: m.product.name, unit: m.product.unit, type: m.product.type, minStock: 0 };
+      return { productId: m.product.id, net: m.net, stock: m.stock, earliestDue: m.earliestDue };
+    });
+  const belowMin = (productsRes.data ?? [])
+    .filter((p) => Number(p.min_stock) > 0 && (stock.get(p.id) ?? 0) < Number(p.min_stock))
+    .map((p) => ({ productId: p.id, stock: stock.get(p.id) ?? 0 }));
+
+  return { shortages, belowMin, products, suppliers };
+}
+
+export type PurchaseData = Awaited<ReturnType<typeof getPurchaseData>>;

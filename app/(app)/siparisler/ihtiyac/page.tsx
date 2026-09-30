@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
 
-import { getMrpReport } from "@/app/actions/mrp";
+import { getMrpReport, getPurchaseData } from "@/app/actions/mrp";
+import { PurchaseSuggestions } from "./components/purchase-suggestions";
 import { requirePermission } from "@/lib/auth";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +30,7 @@ const Th = ({ children, right }: { children: React.ReactNode; right?: boolean })
 export default async function MrpPage() {
   await requirePermission("order:read");
   const report = await getMrpReport();
+  const purchase = await getPurchaseData(report);
   const toSchedule = report.finished.filter((f) => f.toSchedule > 0).length;
   const shortages = report.materials.filter((m) => m.net > 0).length;
   const warnings = report.finished.filter((f) => f.warning);
@@ -196,6 +198,8 @@ export default async function MrpPage() {
           )}
         </CardContent>
       </Card>
+
+      <PurchaseSuggestions data={purchase} />
 
       <p className="flex items-start gap-2 text-xs text-muted-foreground">
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />

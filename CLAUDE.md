@@ -124,6 +124,7 @@ supabase/
 
 **Faz 2 — MRP çekirdeği**
 - [x] Siparişler + net ihtiyaç (`/siparisler/ihtiyac`, hesap `lib/mrp.ts`): mamul üretim ihtiyacı, iş emri açılmalı, hammadde/ticari mal net eksik — tek seviye reçete, birim ağırlık reçeteden
+- [x] **Satın alma önerisi** (net ihtiyaç sayfası, `purchase-suggestions.tsx`, `lib/purchase.ts`, `getPurchaseData`): MRP eksikleri + minimum altı hammadde/ticari mal; miktar = net eksik (+ ops. min stok) / min − stok, en az sipariş miktarına yuvarlanır; ana tedarikçi + güncel fiyat + teslim süresi; reçetesiz mamul "Reçete yok" (varsayılan hariç); düzenlenebilir miktar, Excel (tedarikçi başına sayfa). Kalıcı satın alma siparişi henüz yok
 - [x] İş emri + vardiya bazlı üretim girişi (`record_production_entry`): fire/duruş neden kodu zorunlu, gerçek çevrim, sadece duruşlu vardiya
 - [x] Üretim → stok + lot (vardiya başına) + kalıp atış sayacı, atomik
 - [x] Kapatılan iş emri yeniden açılabilir: yalnızca admin, `reopen_work_order` (işlem içi `app.reopen_work_order` bayrağıyla guard'ı geçer; reopened_at/by/note/count). Kapalı iş emrinde giriş penceresi salt okunur; düzeltmeden sonra pencereden tekrar kapatılır
