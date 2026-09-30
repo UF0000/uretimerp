@@ -103,7 +103,7 @@ supabase/
 - [x] Supabase bağlantısı, Auth + proxy; profil yoksa/pasifse uygulamaya giriş yok
 - [x] DB tipleri `lib/supabase/database.types.ts` (`npm run db:types`), migration CI
 
-- [x] **Sekmeli çalışma alanı** `/calisma` (`components/shared/workspace.tsx`): yan menü yok, tam ekran; tek üst çubuk (logo = ana sayfa, sekmeler, +, `UserMenu`); girişte ana sayfa (menü simgeleri ortada, `Launcher`); her sekme bir sayfayı iframe'de açık tutar (form durumu korunur), "+" → menü kartları, sekmeler sessionStorage'da. Sayfalar `(app)` yerleşiminde yalnızca içerik + `EmbedBridge` (adres/başlık bildirir, başka bölüme giden bağlantı ve Ctrl+tık yeni sekme, sekmeye dönünce `router.refresh`). Doğrudan açılan sayfa `proxy` (Sec-Fetch-Dest: document) ile `/calisma?ac=…`'ya yönlenir
+- [x] **Sekmeli çalışma alanı** `/calisma` (`components/shared/workspace.tsx`): yan menü yok, tam ekran; tek üst çubuk (logo = ana sayfa, sekmeler, +, `UserMenu`); girişte ana sayfa (menü simgeleri ortada, `Launcher`); her sekme bir sayfayı iframe'de açık tutar (form durumu korunur), "+" → menü kartları, sekmeler sessionStorage'da; sekmeye sağ tık (`components/ui/context-menu.tsx`): yenile, çoğalt, sabitle (solda, kapatılamaz, localStorage `uretim-erp:sabit-sekmeler` ile girişte de açılır), kapat / diğerlerini / sağdakileri kapat; sürükleyerek sıra. Sayfalar `(app)` yerleşiminde yalnızca içerik + `EmbedBridge` (adres/başlık bildirir, başka bölüme giden bağlantı ve Ctrl+tık yeni sekme, sekmeye dönünce `router.refresh`). Doğrudan açılan sayfa `proxy` (Sec-Fetch-Dest: document) ile `/calisma?ac=…`'ya yönlenir
 
 **Faz 1 — Omurga**
 - [x] Ana veri CRUD (ürün/hammadde/kalıp/hat/cari/depo/neden kodları) + Excel içe aktarım
