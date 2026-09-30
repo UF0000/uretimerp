@@ -262,7 +262,10 @@ export default function Workspace({ initialPath, userName, userRole }: Workspace
                 onAuxClick={(e) => e.button === 1 && closeTab(t.id)}
                 className={cn(
                   "group flex h-11 max-w-[260px] shrink-0 cursor-pointer select-none items-center gap-1.5 rounded-t-md border border-b-0 pl-4 pr-1.5 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  isActive ? "border-border bg-background font-medium text-foreground" : "border-transparent text-muted-foreground hover:bg-background/60",
+                  // Her sekmenin çerçevesi görünür; etkin sekme üstte marka rengi çizgiyle ve açık zeminle ayrılır
+                  isActive
+                    ? "border-foreground/25 border-t-2 border-t-primary bg-background font-medium text-foreground shadow-sm"
+                    : "border-foreground/20 bg-muted text-muted-foreground hover:border-foreground/35 hover:bg-background/70 hover:text-foreground",
                   draggingId === t.id && "cursor-grabbing opacity-70 shadow-sm",
                 )}
               >
