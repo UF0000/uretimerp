@@ -28,3 +28,7 @@ export function recordText(value: unknown, depth = 0): string {
   if (typeof value === "object") return Object.values(value as Record<string, unknown>).map((v) => recordText(v, depth + 1)).join(" ");
   return "";
 }
+
+/** Çoklu seçim filtresi: hiçbiri seçili değilse hepsi geçer */
+export const inSelection = (selected: string[], value: string | null | undefined) =>
+  selected.length === 0 || (value != null && selected.includes(value));

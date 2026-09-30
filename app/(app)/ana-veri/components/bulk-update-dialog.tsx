@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { bulkUpdateProducts } from "@/app/actions/master-data/products";
@@ -34,6 +34,8 @@ export function BulkUpdateDialog({ open, onOpenChange, ids, groups, onDone }: Bu
   const [mode, setMode] = useState<Mode>("set");
   const [value, setValue] = useState("");
   const [saving, setSaving] = useState(false);
+  // Bu pencerede yapılan güncellemeler: pencere açık kalır, sıradaki özelliğe geçilir
+  const [done, setDone] = useState<string[]>([]);
 
   const def = BULK_FIELDS.find((f) => f.field === field) ?? BULK_FIELDS[0];
   const clearing = mode === "clear" && def.clearable;
@@ -82,8 +84,11 @@ export function BulkUpdateDialog({ open, onOpenChange, ids, groups, onDone }: Bu
       setSaving(true);
       const n = await bulkUpdateProducts(ids, { field, value: raw } as BulkProductUpdate);
       toast.success(`${n} ürün güncellendi.`);
+      const shown = clearing ? "temizlendi" : (opts.find((o) => o.value === value)?.label ?? value);
+      setDone((d) => [...d, `${def.label}: ${shown} (${n} ürün)`]);
+      setMode("set");
+      setValue("");
       onDone();
-      onOpenChange(false);
     } catch (error) {
       toast.error("Toplu güncelleme başarısız", { description: getErrorMessage(error) });
     } finally {
@@ -128,6 +133,19 @@ export function BulkUpdateDialog({ open, onOpenChange, ids, groups, onDone }: Bu
             </div>
           )}
 
+          {done.length > 0 && (
+            <div className="space-y-1 rounded-md border border-border bg-muted/40 p-3 text-sm">
+              <p className="font-medium">Yapılan güncellemeler</p>
+              {done.map((d, i) => (
+                <p key={i} className="flex items-center gap-2 text-muted-foreground">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
+                  {d}
+                </p>
+              ))}
+              <p className="pt-1 text-xs text-muted-foreground">Başka bir özellik seçip devam edebilir ya da pencereyi kapatabilirsiniz.</p>
+            </div>
+          )}
+
           {clearing && field === "variant_code" && (
             <p className="text-xs text-muted-foreground">PP kodlarında genel kod boşaltılınca stok kodundan otomatik yeniden hesaplanır.</p>
           )}
@@ -138,7 +156,7 @@ export function BulkUpdateDialog({ open, onOpenChange, ids, groups, onDone }: Bu
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            Vazgeç
+            {done.length ? "Kapat" : "Vazgeç"}
           </Button>
           <Button onClick={submit} disabled={saving}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

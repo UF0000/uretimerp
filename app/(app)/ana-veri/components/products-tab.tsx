@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import { DataTable } from "@/components/shared/data-table";
 import { SearchableSelect } from "@/components/shared/searchable-select";
+import { MultiSelect } from "@/components/shared/multi-select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -18,7 +19,7 @@ import { CATEGORY_LABELS, PRODUCT_TYPE_BADGE, PRODUCT_TYPE_LABELS, PRODUCT_TYPES
 import type { ExcelRow } from "@/lib/excel";
 import type { Tables } from "@/lib/supabase/database.types";
 import { formatTR } from "@/lib/format";
-import { matchesTokens, searchTokens } from "@/lib/search";
+import { inSelection, matchesTokens, searchTokens } from "@/lib/search";
 import { ProductForm } from "./product-form";
 import { ExcelImportButton } from "./excel-import-button";
 import { BulkUpdateDialog } from "./bulk-update-dialog";
@@ -40,15 +41,16 @@ export function ProductsTab({ data, groups }: ProductsTabProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductFormInput | undefined>(undefined);
   const [isDeleting, setIsDeleting] = useState(false);
-  // Toplu özellik güncelleme: seçili ürün id'leri + seçimi temizleme
-  const [bulk, setBulk] = useState<{ ids: string[]; clear: () => void } | null>(null);
+  // Toplu özellik güncelleme: seçili ürün id'leri (pencere kapanınca seçim korunur)
+  const [bulkIds, setBulkIds] = useState<string[] | null>(null);
 
   // ── Filtreler ──
   const [q, setQ] = useState("");
-  const [type, setType] = useState(ALL);
-  const [category, setCategory] = useState(ALL);
-  const [groupCode, setGroupCode] = useState(ALL);
-  const [materialGroup, setMaterialGroup] = useState(ALL);
+  // Çoklu seçim: boş = hepsi
+  const [types, setTypes] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [groupCodesSel, setGroupCodesSel] = useState<string[]>([]);
+  const [materialGroupsSel, setMaterialGroupsSel] = useState<string[]>([]);
   const [variant, setVariant] = useState(ALL);
 
   // Grup adları yalnızca filtre seçeneklerinde gösterilir (listede sadece kod)
@@ -63,21 +65,21 @@ export function ProductsTab({ data, groups }: ProductsTabProps) {
       .filter(
         (p) =>
           matchesTokens(tokens, p.code, p.name, p.group_code, p.variant_code, p.material_grade, p.material_group, p.description, p.barcode) &&
-          (!type || p.type === type) &&
-          (!category || p.category === category) &&
-          (!groupCode || p.group_code === groupCode) &&
-          (!materialGroup || p.material_group === materialGroup) &&
+          inSelection(types, p.type) &&
+          inSelection(categories, p.category) &&
+          inSelection(groupCodesSel, p.group_code) &&
+          inSelection(materialGroupsSel, p.material_group) &&
           (!variant || (variant === "var" ? Boolean(p.variant_code) : !p.variant_code)),
       )
       .sort(compareByGroup);
-  }, [data, q, type, category, groupCode, materialGroup, variant]);
-  const anyFilter = Boolean(q || type || category || groupCode || materialGroup || variant);
+  }, [data, q, types, categories, groupCodesSel, materialGroupsSel, variant]);
+  const anyFilter = Boolean(q || types.length || categories.length || groupCodesSel.length || materialGroupsSel.length || variant);
   const clearFilters = () => {
     setQ("");
-    setType(ALL);
-    setCategory(ALL);
-    setGroupCode(ALL);
-    setMaterialGroup(ALL);
+    setTypes([]);
+    setCategories([]);
+    setGroupCodesSel([]);
+    setMaterialGroupsSel([]);
     setVariant(ALL);
   };
 
@@ -233,30 +235,15 @@ F-01\tBoru Firesi\tscrap\tkg\tFire\t\t0\t0\t0`;
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ara: kelimeler ayrı ayrı aranır (ör. henq sdr 6)" className="pl-9" />
         </div>
-        <SearchableSelect
-          value={type}
-          onValueChange={setType}
-          placeholder="Tüm türler"
-          options={[{ value: ALL, label: "Tüm türler" }, ...PRODUCT_TYPES.map((t) => ({ value: t, label: PRODUCT_TYPE_LABELS[t] }))]}
-        />
-        <SearchableSelect
-          value={category}
-          onValueChange={setCategory}
-          placeholder="Tüm aileler"
-          options={[{ value: ALL, label: "Tüm aileler" }, ...Object.entries(CATEGORY_LABELS).map(([k, v]) => ({ value: k, label: v }))]}
-        />
-        <SearchableSelect
-          value={groupCode}
-          onValueChange={setGroupCode}
+        <MultiSelect value={types} onValueChange={setTypes} placeholder="Tüm türler" options={PRODUCT_TYPES.map((t) => ({ value: t, label: PRODUCT_TYPE_LABELS[t] }))} />
+        <MultiSelect value={categories} onValueChange={setCategories} placeholder="Tüm aileler" options={Object.entries(CATEGORY_LABELS).map(([k, v]) => ({ value: k, label: v }))} />
+        <MultiSelect
+          value={groupCodesSel}
+          onValueChange={setGroupCodesSel}
           placeholder="Tüm grup kodları"
-          options={[{ value: ALL, label: "Tüm grup kodları" }, ...groupCodes.map((c) => ({ value: c, label: groupName.has(c) ? `${c} — ${groupName.get(c)}` : c }))]}
+          options={groupCodes.map((c) => ({ value: c, label: groupName.has(c) ? `${c} — ${groupName.get(c)}` : c }))}
         />
-        <SearchableSelect
-          value={materialGroup}
-          onValueChange={setMaterialGroup}
-          placeholder="Tüm malzeme grupları"
-          options={[{ value: ALL, label: "Tüm malzeme grupları" }, ...materialGroups.map((m) => ({ value: m, label: m }))]}
-        />
+        <MultiSelect value={materialGroupsSel} onValueChange={setMaterialGroupsSel} placeholder="Tüm malzeme grupları" options={materialGroups.map((m) => ({ value: m, label: m }))} />
         <div className="flex gap-2">
           <SearchableSelect
             value={variant}
@@ -285,8 +272,8 @@ F-01\tBoru Firesi\tscrap\tkg\tFire\t\t0\t0\t0`;
         isDeleting={isDeleting}
         selectionActions={
           canWrite
-            ? (rows, clear) => (
-                <Button variant="outline" size="sm" onClick={() => setBulk({ ids: rows.map((r) => r.id), clear })}>
+            ? (rows) => (
+                <Button variant="outline" size="sm" onClick={() => setBulkIds(rows.map((r) => r.id))}>
                   <ListChecks className="mr-2 h-4 w-4" />
                   Toplu güncelle ({rows.length})
                 </Button>
@@ -296,18 +283,7 @@ F-01\tBoru Firesi\tscrap\tkg\tFire\t\t0\t0\t0`;
         toolbar={<span className="text-sm text-muted-foreground">{filtered.length} / {data.length} ürün</span>}
       />
 
-      {bulk && (
-        <BulkUpdateDialog
-          open
-          onOpenChange={(o) => !o && setBulk(null)}
-          ids={bulk.ids}
-          groups={groups}
-          onDone={() => {
-            bulk.clear();
-            router.refresh();
-          }}
-        />
-      )}
+      {bulkIds && <BulkUpdateDialog open onOpenChange={(o) => !o && setBulkIds(null)} ids={bulkIds} groups={groups} onDone={() => router.refresh()} />}
 
       {formOpen && <ProductForm open={formOpen} onOpenChange={setFormOpen} initialData={editingProduct} groups={groups} />}
     </div>

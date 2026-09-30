@@ -28,7 +28,7 @@ export const PRODUCT_TYPE_BADGE: Record<ProductType, "default" | "secondary" | "
 /** Ürün ailesi: kartta gösterilecek teknik alanları belirler (boru → hız, fitting → çevrim/yolluk). */
 export const CATEGORY_LABELS: Record<string, string> = {
   boru: "Boru",
-  baglanti_parcasi: "Fitting (bağlantı parçası)",
+  baglanti_parcasi: "Fitting",
   metal: "Metal",
   hammadde: "Hammadde",
   ambalaj: "Ambalaj / Paketleme",

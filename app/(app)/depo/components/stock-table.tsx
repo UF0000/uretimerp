@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 
 import { DataTable } from "@/components/shared/data-table";
 import { SearchableSelect } from "@/components/shared/searchable-select";
+import { MultiSelect } from "@/components/shared/multi-select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,7 @@ import type { StockOverviewRow } from "@/app/actions/stock";
 import { usePermission } from "@/components/shared/role-provider";
 import { CATEGORY_LABELS, PRODUCT_TYPE_LABELS, PRODUCT_TYPES, categoryLabel, compareByGroup, type ProductType } from "@/lib/product-meta";
 import { formatTR } from "@/lib/format";
-import { matchesTokens, searchTokens } from "@/lib/search";
+import { inSelection, matchesTokens, searchTokens } from "@/lib/search";
 import { cn } from "@/lib/utils";
 
 interface StockTableProps {
@@ -50,9 +51,10 @@ export function StockTable({ data, warehouses, groups }: StockTableProps) {
 
   const [q, setQ] = useState("");
   const [selectedWh, setSelectedWh] = useState<Set<string>>(new Set());
-  const [type, setType] = useState(ALL);
-  const [category, setCategory] = useState(ALL);
-  const [groupCode, setGroupCode] = useState(ALL);
+  // Çoklu seçim: boş = hepsi
+  const [types, setTypes] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [groupCodesSel, setGroupCodesSel] = useState<string[]>([]);
   const [status, setStatus] = useState(ALL);
 
   // Grup adları yalnızca filtre seçeneklerinde gösterilir (listede sadece kod)
@@ -68,15 +70,13 @@ export function StockTable({ data, warehouses, groups }: StockTableProps) {
     return data.filter((r) => {
       const p = r.product;
       if (!matchesTokens(tokens, p.code, p.name, p.group_code, p.material_group, r.warehouse?.name)) return false;
-      if (type && p.type !== type) return false;
-      if (category && p.category !== category) return false;
-      if (groupCode && p.group_code !== groupCode) return false;
+      if (!inSelection(types, p.type) || !inSelection(categories, p.category) || !inSelection(groupCodesSel, p.group_code)) return false;
       if (status === "stokta" && r.qty <= 0) return false;
       if (status === "stoksuz" && r.qty !== 0) return false;
       if ((status === "critical" || status === "warning") && statusOf(r) !== status) return false;
       return true;
     }).sort((a, b) => compareByGroup(a.product, b.product));
-  }, [data, q, type, category, groupCode, status]);
+  }, [data, q, types, categories, groupCodesSel, status]);
 
   const filtered = useMemo(
     () => (selectedWh.size ? baseFiltered.filter((r) => selectedWh.has(r.warehouse?.id ?? NO_WAREHOUSE)) : baseFiltered),
@@ -106,12 +106,12 @@ export function StockTable({ data, warehouses, groups }: StockTableProps) {
       return next;
     });
 
-  const anyFilter = Boolean(q || type || category || groupCode || status || selectedWh.size);
+  const anyFilter = Boolean(q || types.length || categories.length || groupCodesSel.length || status || selectedWh.size);
   const clear = () => {
     setQ("");
-    setType(ALL);
-    setCategory(ALL);
-    setGroupCode(ALL);
+    setTypes([]);
+    setCategories([]);
+    setGroupCodesSel([]);
     setStatus(ALL);
     setSelectedWh(new Set());
   };
@@ -201,13 +201,13 @@ export function StockTable({ data, warehouses, groups }: StockTableProps) {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ara: kelimeler ayrı ayrı aranır (ör. henq sdr 6)" className="pl-9" />
           </div>
-          <SearchableSelect value={type} onValueChange={setType} placeholder="Tüm türler" options={[{ value: ALL, label: "Tüm türler" }, ...PRODUCT_TYPES.map((t) => ({ value: t, label: PRODUCT_TYPE_LABELS[t] }))]} />
-          <SearchableSelect value={category} onValueChange={setCategory} placeholder="Tüm aileler" options={[{ value: ALL, label: "Tüm aileler" }, ...Object.entries(CATEGORY_LABELS).map(([k, v]) => ({ value: k, label: v }))]} />
-          <SearchableSelect
-            value={groupCode}
-            onValueChange={setGroupCode}
+          <MultiSelect value={types} onValueChange={setTypes} placeholder="Tüm türler" options={PRODUCT_TYPES.map((t) => ({ value: t, label: PRODUCT_TYPE_LABELS[t] }))} />
+          <MultiSelect value={categories} onValueChange={setCategories} placeholder="Tüm aileler" options={Object.entries(CATEGORY_LABELS).map(([k, v]) => ({ value: k, label: v }))} />
+          <MultiSelect
+            value={groupCodesSel}
+            onValueChange={setGroupCodesSel}
             placeholder="Tüm grup kodları"
-            options={[{ value: ALL, label: "Tüm grup kodları" }, ...groupCodes.map((c) => ({ value: c, label: groupName.has(c) ? `${c} — ${groupName.get(c)}` : c }))]}
+            options={groupCodes.map((c) => ({ value: c, label: groupName.has(c) ? `${c} — ${groupName.get(c)}` : c }))}
           />
           <div className="flex gap-2">
             <SearchableSelect value={status} onValueChange={setStatus} placeholder="Stok durumu: hepsi" options={STATUS_OPTIONS} />
