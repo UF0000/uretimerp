@@ -129,6 +129,8 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
   const [statusBusy, setStatusBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [busyEntry, setBusyEntry] = useState<string | null>(null);
+  // Hammadde kutusu elle değiştirildiyse otomatik hesap durur; sihirli değnek otomatiğe döndürür
+  const [usedManual, setUsedManual] = useState(false);
 
   const bom = one(workOrder?.bom);
   const defaultScrapProduct = (bom?.production_type === "injection" ? one(bom?.bom_injection)?.scrap_product_id : one(bom?.bom_extrusion)?.scrap_product_id) ?? "";
@@ -151,6 +153,7 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
         if (!alive) return;
         setData(d);
         reset(newEntryForm(d.entries, defaultScrapProduct, defaultWarehouse));
+        setUsedManual(false);
       })
       .catch((error) => toast.error("Girişler yüklenemedi", { description: getErrorMessage(error) }));
     return () => {
@@ -197,9 +200,22 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
   const expectedUsedKg = expectedGoodKg !== null ? expectedGoodKg + liveScrap : null;
   const bomItems = (bom?.items ?? []).filter((i) => Number(i.ratio_pct) > 0);
 
+  // Otomatik hammadde = sağlam üretim × birim ağırlık + fire (üretim/fire değiştikçe güncellenir)
+  const autoUsed = expectedUsedKg !== null && (produced > 0 || liveScrap > 0) ? String(Math.round(expectedUsedKg * 1000) / 1000) : "";
+  useEffect(() => {
+    if (usedManual || !unitKg) return;
+    if (getValues("total_used_kg") !== autoUsed) setValue("total_used_kg", autoUsed);
+  }, [usedManual, unitKg, autoUsed, getValues, setValue]);
+
   const suggestUsed = () => {
     if (!unitKg) return toast.info("Reçetede birim ağırlık yok; hammaddeyi elle girin.");
-    setValue("total_used_kg", String(Math.round((produced * unitKg + liveScrap) * 1000) / 1000));
+    setUsedManual(false);
+    setValue("total_used_kg", autoUsed);
+  };
+
+  const resetForm = (list: Entry[]) => {
+    reset(emptyForm(list));
+    setUsedManual(false);
   };
 
   const edit = (e: Entry) => {
@@ -217,6 +233,9 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
       scraps: e.scraps.length ? e.scraps.map((x) => ({ reason_code_id: x.reasonCodeId, kg: String(x.kg) })) : [{ reason_code_id: "", kg: "" }],
       downtimes: e.downtimes.length ? e.downtimes.map((x) => ({ reason_code_id: x.reasonCodeId, minutes: String(x.minutes) })) : [{ reason_code_id: "", minutes: "" }],
     });
+    // Kayıtlı değer otomatik hesaptan farklıysa elle girilmiş sayılır, korunur
+    const auto = unitKg ? e.producedQty * unitKg + e.scrapKg : null;
+    setUsedManual(auto === null || Math.abs(auto - e.usedKg) > 0.001);
     document.getElementById("entry-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -227,7 +246,7 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
       await cancelProductionEntry(e.id, "İptal");
       toast.success("Giriş iptal edildi");
       const d = await reload();
-      if (getValues("replaces_entry_id") === e.id) reset(emptyForm(d?.entries ?? []));
+      if (getValues("replaces_entry_id") === e.id) resetForm(d?.entries ?? []);
       router.refresh();
     } catch (error) {
       toast.error("İptal edilemedi", { description: getErrorMessage(error) });
@@ -269,7 +288,7 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
       router.refresh();
       if (r.closed) return onClose();
       const d = await reload();
-      reset(emptyForm(d?.entries ?? []));
+      resetForm(d?.entries ?? []);
     } catch (error) {
       toast.error("Kaydedilemedi", { description: getErrorMessage(error) });
     } finally {
@@ -451,7 +470,7 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
               <div className="flex items-center justify-between gap-2">
                 <h3 className="font-semibold">{editing ? "Girişi düzelt" : "Yeni giriş"}</h3>
                 {editing && (
-                  <Button size="sm" variant="ghost" onClick={() => reset(emptyForm(entries))}>
+                  <Button size="sm" variant="ghost" onClick={() => resetForm(entries)}>
                     <X className="mr-1 h-4 w-4" />
                     Düzeltmeden vazgeç
                   </Button>
@@ -492,8 +511,8 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
                 <div className="space-y-1">
                   <Label htmlFor="pe-used">Kullanılan hammadde (kg)</Label>
                   <div className="flex gap-1">
-                    <Input id="pe-used" type="number" step="0.001" min="0" {...register("total_used_kg")} />
-                    <Button type="button" variant="outline" size="icon" onClick={suggestUsed} title="Reçeteden hesapla: üretim × birim ağırlık + fire">
+                    <Input id="pe-used" type="number" step="0.001" min="0" {...register("total_used_kg", { onChange: () => setUsedManual(true) })} />
+                    <Button type="button" variant={usedManual ? "default" : "outline"} size="icon" onClick={suggestUsed} title="Otomatik hesaba dön: üretim × birim ağırlık + fire">
                       <Wand2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -513,6 +532,11 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
                   ) : (
                     <p className="text-xs text-warning">Reçetede birim ağırlık yok</p>
                   )}
+                  {unitKg ? (
+                    <p className={cn("text-xs", usedManual ? "text-warning" : "text-muted-foreground")}>
+                      {usedManual ? "Elle girildi — otomatiğe dönmek için değneğe basın" : "Otomatik: üretim ve fire girdikçe hesaplanır"}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="col-span-2 space-y-1">
                   <Label>Mamulün gireceği depo</Label>

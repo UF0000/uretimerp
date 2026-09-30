@@ -17,6 +17,25 @@ export async function getProducts() {
   );
 }
 
+/** Silinen (pasife alınmış) ürünler — geri alma listesi */
+export async function getDeletedProducts() {
+  const supabase = await createClient();
+  return readAll(
+    (from, to) => supabase.from("products").select("*").eq("active", false).order("name").order("id").range(from, to),
+    "Silinen ürünler getirilirken bir hata oluştu",
+  );
+}
+
+/** Silinen ürünleri geri alır (tekrar aktif yapar). */
+export async function restoreProducts(ids: string[]) {
+  await requirePermission("master-data:write");
+  if (ids.length === 0) throw new Error("Ürün seçilmedi.");
+  const supabase = await createClient();
+  const restored = await inChunks(ids, 200, (chunk) => supabase.from("products").update({ active: true }).in("id", chunk).select("id"));
+  revalidatePath("/ana-veri");
+  return restored.length;
+}
+
 export async function saveProduct(data: ProductFormValues) {
   const supabase = await createClient();
   const parsed = productSchema.safeParse(data);

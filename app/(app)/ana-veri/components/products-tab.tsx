@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
-import { Edit2, Eye, ImageOff, ListChecks, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
+import { ArchiveRestore, Edit2, Eye, ImageOff, ListChecks, Plus, RotateCcw, Search, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { DataTable } from "@/components/shared/data-table";
@@ -13,7 +13,7 @@ import { MultiSelect } from "@/components/shared/multi-select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { deleteProduct, bulkImportProducts, bulkDeleteProducts } from "@/app/actions/master-data/products";
+import { deleteProduct, bulkImportProducts, bulkDeleteProducts, restoreProducts } from "@/app/actions/master-data/products";
 import { ProductFormInput } from "@/lib/validations/master-data";
 import { CATEGORY_LABELS, PRODUCT_TYPE_BADGE, PRODUCT_TYPE_LABELS, PRODUCT_TYPES, categoryLabel, compareByGroup, type ProductType } from "@/lib/product-meta";
 import type { ExcelRow } from "@/lib/excel";
@@ -30,12 +30,14 @@ type Product = Tables<"products">;
 
 interface ProductsTabProps {
   data: Product[];
+  /** Silinen (pasif) ürünler: "Silinen ürünler" görünümünden geri alınır */
+  deleted: Product[];
   groups: { code: string; name: string }[];
 }
 
 const ALL = "";
 
-export function ProductsTab({ data, groups }: ProductsTabProps) {
+export function ProductsTab({ data: activeProducts, deleted, groups }: ProductsTabProps) {
   const router = useRouter();
   const canWrite = usePermission("master-data:write");
   const [formOpen, setFormOpen] = useState(false);
@@ -43,6 +45,9 @@ export function ProductsTab({ data, groups }: ProductsTabProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   // Toplu özellik güncelleme: seçili ürün id'leri (pencere kapanınca seçim korunur)
   const [bulkIds, setBulkIds] = useState<string[] | null>(null);
+  // Silinen ürünler görünümü: liste pasif ürünleri gösterir, seçilenler geri alınır
+  const [showDeleted, setShowDeleted] = useState(false);
+  const data = showDeleted ? deleted : activeProducts;
 
   // ── Filtreler ──
   const [q, setQ] = useState("");
@@ -116,6 +121,16 @@ export function ProductsTab({ data, groups }: ProductsTabProps) {
       toast.error("Toplu silme başarısız", { id: "bulk-delete-products", description: getErrorMessage(error) });
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleRestore = async (ids: string[]) => {
+    try {
+      const n = await restoreProducts(ids);
+      toast.success(`${n} ürün geri alındı.`);
+      router.refresh();
+    } catch (error) {
+      toast.error("Geri alma başarısız", { description: getErrorMessage(error) });
     }
   };
 
@@ -196,7 +211,13 @@ F-01\tBoru Firesi\tscrap\tkg\tFire\t\t0\t0\t0`;
             <Button variant="ghost" size="icon" onClick={() => openDetail(product)} aria-label="Ayrıntı">
               <Eye className="h-4 w-4 text-muted-foreground" />
             </Button>
-            {canWrite && (
+            {canWrite && showDeleted && (
+              <Button variant="ghost" size="sm" onClick={() => handleRestore([product.id])}>
+                <Undo2 className="mr-1 h-4 w-4" />
+                Geri al
+              </Button>
+            )}
+            {canWrite && !showDeleted && (
               <>
                 <Button variant="ghost" size="icon" onClick={() => handleEdit(product)} aria-label="Düzenle">
                   <Edit2 className="h-4 w-4 text-muted-foreground" />
@@ -216,11 +237,19 @@ F-01\tBoru Firesi\tscrap\tkg\tFire\t\t0\t0\t0`;
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-lg font-medium tracking-tight">Ürünler ve Hammaddeler</h2>
-          <p className="text-sm text-muted-foreground">Ayrıntı için satıra çift tıklayın · sütun kenarlarını sürükleyerek genişliği ayarlayın</p>
+          <h2 className="text-lg font-medium tracking-tight">{showDeleted ? "Silinen ürünler" : "Ürünler ve Hammaddeler"}</h2>
+          <p className="text-sm text-muted-foreground">
+            {showDeleted
+              ? "Silinen ürünler kaybolmaz, pasif durur · seçip \"Geri al\" ile listeye döndürün"
+              : "Ayrıntı için satıra çift tıklayın · sütun kenarlarını sürükleyerek genişliği ayarlayın"}
+          </p>
         </div>
         {canWrite && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button variant={showDeleted ? "default" : "outline"} onClick={() => setShowDeleted((v) => !v)} aria-pressed={showDeleted}>
+              <ArchiveRestore className="mr-2 h-4 w-4" />
+              {showDeleted ? "Ürünlere dön" : `Silinen ürünler (${deleted.length})`}
+            </Button>
             <ExcelImportButton onImport={handleImport} sampleFormat={sampleFormat} />
             <Button onClick={handleAdd}>
               <Plus className="mr-2 h-4 w-4" />
@@ -268,16 +297,30 @@ F-01\tBoru Firesi\tscrap\tkg\tFire\t\t0\t0\t0`;
         columns={columns}
         data={filtered}
         onRowDoubleClick={openDetail}
-        onDeleteSelected={canWrite ? handleBulkDelete : undefined}
+        onDeleteSelected={canWrite && !showDeleted ? handleBulkDelete : undefined}
+        bulkConfirmText="Seçili {n} ürün silinecek (pasife alınacak). Yanlışlıkla silerseniz 'Silinen ürünler' bölümünden geri alabilirsiniz. Devam edilsin mi?"
         isDeleting={isDeleting}
         selectionActions={
           canWrite
-            ? (rows) => (
-                <Button variant="outline" size="sm" onClick={() => setBulkIds(rows.map((r) => r.id))}>
-                  <ListChecks className="mr-2 h-4 w-4" />
-                  Toplu güncelle ({rows.length})
-                </Button>
-              )
+            ? (rows, clear) =>
+                showDeleted ? (
+                  <Button
+                    size="sm"
+                    onClick={async () => {
+                      if (!confirm(`Seçili ${rows.length} ürün geri alınsın mı?`)) return;
+                      await handleRestore(rows.map((r) => r.id));
+                      clear();
+                    }}
+                  >
+                    <Undo2 className="mr-2 h-4 w-4" />
+                    Seçilenleri geri al ({rows.length})
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" onClick={() => setBulkIds(rows.map((r) => r.id))}>
+                    <ListChecks className="mr-2 h-4 w-4" />
+                    Toplu güncelle ({rows.length})
+                  </Button>
+                )
             : undefined
         }
         toolbar={<span className="text-sm text-muted-foreground">{filtered.length} / {data.length} ürün</span>}
