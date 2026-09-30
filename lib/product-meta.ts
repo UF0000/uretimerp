@@ -85,13 +85,12 @@ export const compareByGroup = (a: { group_code: string | null; code: string }, b
 };
 
 /**
- * PP varyant kuralı: ilk harf renk, son "." sonrası firma eki.
- * V1A012020.HENQ → 1A012020. PE ve kurala uymayan kodlarda null.
- * Migration 20260930150000 (pp_variant_base) aynı kuralı SQL'de uygular.
+ * PP varyant kuralı: ilk harf renk, ilk "." sonrası firma/ek; son rakamdan sonra ek kalmaz.
+ * V1A012020.HENQ → 1A012020, V1A0320L4.UR.R → 1A0320L4. PE ve kurala uymayan kodlarda null.
+ * Migration 20260930160000 (pp_variant_base) aynı kuralı SQL'de uygular.
  */
 export function variantBaseFromCode(code: string): string | null {
   const c = code.trim().toUpperCase();
   if (!/^[A-Z]1[ABC][0-9]/.test(c)) return null;
-  const dot = c.lastIndexOf(".");
-  return (dot > 0 ? c.slice(0, dot) : c).slice(1);
+  return c.split(".")[0].replace(/[^0-9]+$/, "").slice(1);
 }
