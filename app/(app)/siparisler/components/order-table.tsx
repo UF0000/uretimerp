@@ -3,7 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
-import { Plus } from "lucide-react";
+import { Plus, Truck } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { DataTable } from "@/components/shared/data-table";
@@ -36,6 +36,7 @@ const STATUS_LABELS: Record<
 
 export function OrderTable({ data }: OrderTableProps) {
   const canWrite = usePermission("order:write");
+  const canShip = usePermission("stock:write");
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -104,6 +105,32 @@ export function OrderTable({ data }: OrderTableProps) {
           variant: "default",
         };
         return <Badge variant={config.variant}>{config.label}</Badge>;
+      },
+    },
+    {
+      id: "delivery",
+      header: "Sevk",
+      cell: ({ row }) => {
+        const items = row.original.items || [];
+        const ordered = items.reduce((s, i) => s + Number(i.quantity), 0);
+        const delivered = items.reduce((s, i) => s + Number(i.delivered_qty ?? 0), 0);
+        return <span className="text-sm tabular-nums text-muted-foreground">%{ordered > 0 ? Math.round((Math.min(delivered, ordered) / ordered) * 100) : 0}</span>;
+      },
+    },
+    {
+      id: "actions",
+      header: "",
+      enableSorting: false,
+      cell: ({ row }) => {
+        const o = row.original;
+        const open = (o.items || []).some((i) => Number(i.delivered_qty ?? 0) < Number(i.quantity));
+        if (!canShip || o.status === "cancelled" || !open) return null;
+        return (
+          <Button variant="outline" size="sm" onClick={() => router.push(`/siparisler/sevkiyat/yeni?siparis=${o.id}`)}>
+            <Truck className="mr-1.5 h-4 w-4" />
+            Sevk et
+          </Button>
+        );
       },
     },
   ];

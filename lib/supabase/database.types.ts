@@ -1500,6 +1500,103 @@ export type Database = {
         }
         Relationships: []
       }
+      shipments: {
+        Row: {
+          id: string
+          no: string
+          order_id: string
+          partner_id: string
+          warehouse_id: string
+          document_id: string | null
+          ship_date: string
+          delivery_address: string | null
+          vehicle_plate: string | null
+          driver_name: string | null
+          note: string | null
+          created_by: string | null
+          created_at: string
+          cancelled_at: string | null
+          cancelled_by: string | null
+        }
+        Insert: {
+          id?: string
+          no: string
+          order_id: string
+          partner_id: string
+          warehouse_id: string
+          document_id?: string | null
+          ship_date?: string
+          delivery_address?: string | null
+          vehicle_plate?: string | null
+          driver_name?: string | null
+          note?: string | null
+          created_by?: string | null
+          created_at?: string
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+        }
+        Update: {
+          id?: string
+          no?: string
+          order_id?: string
+          partner_id?: string
+          warehouse_id?: string
+          document_id?: string | null
+          ship_date?: string
+          delivery_address?: string | null
+          vehicle_plate?: string | null
+          driver_name?: string | null
+          note?: string | null
+          created_by?: string | null
+          created_at?: string
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipments_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipments_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "stock_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipments_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipments_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_documents: {
         Row: {
           id: string
@@ -1950,6 +2047,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      cancel_shipment: {
+        Args: {
+          p_id: string
+        }
+        Returns: undefined
+      }
       cancel_stock_document: {
         Args: {
           p_id: string
@@ -1983,6 +2086,19 @@ export type Database = {
           p_quarantine_warehouse_id?: string
         }
         Returns: Json
+      }
+      create_shipment: {
+        Args: {
+          p_order_id: string
+          p_warehouse_id: string
+          p_date: string
+          p_lines: Json
+          p_address?: string
+          p_vehicle?: string
+          p_driver?: string
+          p_note?: string
+        }
+        Returns: string
       }
       delete_bom: {
         Args: {

@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { ListChecks, ShoppingBag } from "lucide-react";
+import { ListChecks, ShoppingBag, Truck } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { getOrders } from "@/app/actions/orders";
 import { PageHeader } from "@/components/shared/page-header";
@@ -22,6 +22,10 @@ export default async function OrdersPage() {
         description="Müşterilerden gelen üretim veya sevkiyat siparişlerinin listesi"
         actions={
           <div className="flex flex-wrap gap-2">
+            <Link href="/siparisler/sevkiyat" className={buttonVariants({ variant: "outline" })}>
+              <Truck className="mr-2 h-4 w-4" />
+              Sevkiyatlar
+            </Link>
             <Link href="/siparisler/satin-alma" className={buttonVariants({ variant: "outline" })}>
               <ShoppingBag className="mr-2 h-4 w-4" />
               Satın Alma
