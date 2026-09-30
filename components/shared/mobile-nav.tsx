@@ -8,11 +8,14 @@ import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { NAV_ITEMS } from "@/components/shared/nav-items";
 import { useCan } from "@/components/shared/role-provider";
+import { useWorkspaceNav } from "@/components/shared/workspace-nav";
 
 // ─── Mobil Navigasyon (Sheet) ──────────────────────
 
 export const MobileNav = () => {
-  const pathname = usePathname();
+  const routePath = usePathname();
+  const ws = useWorkspaceNav();
+  const pathname = ws?.path ?? routePath;
   const can = useCan();
   const [open, setOpen] = useState(false);
 
@@ -44,7 +47,12 @@ export const MobileNav = () => {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setOpen(false)}
+                onClick={(e) => {
+                  setOpen(false);
+                  if (!ws) return;
+                  e.preventDefault();
+                  ws.navigate(item.href);
+                }}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium",
                   "transition-colors duration-150",

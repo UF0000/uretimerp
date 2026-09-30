@@ -48,5 +48,22 @@ export const updateSession = async (request: NextRequest) => {
     return NextResponse.redirect(url);
   }
 
+  // Uygulama sayfası tarayıcıda doğrudan açıldıysa (sekme/iframe değil) sekmeli çalışma alanında aç
+  const path = request.nextUrl.pathname;
+  if (
+    user &&
+    request.method === "GET" &&
+    request.headers.get("sec-fetch-dest") === "document" &&
+    path !== "/" &&
+    !/^\/(calisma|login|auth|api)(\/|$)/.test(path)
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/calisma";
+    url.search = `?ac=${encodeURIComponent(path + request.nextUrl.search)}`;
+    const redirect = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((c) => redirect.cookies.set(c));
+    return redirect;
+  }
+
   return supabaseResponse;
 };

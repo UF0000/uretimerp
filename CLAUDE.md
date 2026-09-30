@@ -102,6 +102,8 @@ supabase/
 - [x] Supabase bağlantısı, Auth + proxy; profil yoksa/pasifse uygulamaya giriş yok
 - [x] DB tipleri `lib/supabase/database.types.ts` (`npm run db:types`), migration CI
 
+- [x] **Sekmeli çalışma alanı** `/calisma` (`components/shared/workspace.tsx`): menü + üst bar + sekme çubuğu; her sekme bir sayfayı iframe'de açık tutar (form durumu korunur), "+" → menü kartları, sekmeler sessionStorage'da. Sayfalar `(app)` yerleşiminde yalnızca içerik + `EmbedBridge` (adres/başlık bildirir, başka bölüme giden bağlantı ve Ctrl+tık yeni sekme, sekmeye dönünce `router.refresh`). Doğrudan açılan sayfa `proxy` (Sec-Fetch-Dest: document) ile `/calisma?ac=…`'ya yönlenir
+
 **Faz 1 — Omurga**
 - [x] Ana veri CRUD (ürün/hammadde/kalıp/hat/cari/depo/neden kodları) + Excel içe aktarım
 - [x] Ürün kartı: liste filtreleri (tür/aile/grup kodu/malzeme/varyant), görsel (Storage `product-images`), çift tık → `/ana-veri/urunler/[id]`: genel bilgi, stok, boyut (çap/et/SDR), teknik veri (reçete/kalıptan; düzenleme `save_bom` + kalıp güncelleme), hammadde, 12 ay hareket grafiği, varyantlar (+ toplamlar), otomatik standart maliyet (`lib/product-cost.ts`). Türler + Ticari mal/Hizmet; aile = `category` (boru, baglanti_parcasi=Fitting, metal…), sabitler `lib/product-meta.ts`

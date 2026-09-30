@@ -1,9 +1,13 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { Sidebar } from "@/components/shared/sidebar";
-import { Topbar } from "@/components/shared/topbar";
 import { getCurrentUser } from "@/lib/auth";
 import { RoleProvider } from "@/components/shared/role-provider";
+import { EmbedBridge } from "@/components/shared/embed-bridge";
 
+/**
+ * Uygulama sayfaları çalışma alanındaki (/calisma) sekmelerin içinde açılır;
+ * menü ve üst bar çalışma alanındadır, burada yalnızca sayfa içeriği var.
+ */
 export default async function AppLayout({
   children,
 }: {
@@ -13,26 +17,14 @@ export default async function AppLayout({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const userName = user.name;
-  const userRole = user.role;
-
   return (
-    <RoleProvider role={userRole}>
-      <div className="flex h-screen overflow-hidden print:block print:h-auto print:overflow-visible">
-        {/* Sol Yan Menü */}
-        <Sidebar />
-
-        {/* Ana İçerik Alanı */}
-        <div className="flex flex-1 flex-col overflow-hidden print:overflow-visible">
-          {/* Üst Bar */}
-          <Topbar userName={userName} userRole={userRole} />
-
-          {/* Sayfa İçeriği */}
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 print:overflow-visible print:p-0">
-            {children}
-          </main>
-        </div>
-      </div>
+    <RoleProvider role={user.role}>
+      <Suspense fallback={null}>
+        <EmbedBridge />
+      </Suspense>
+      <main className="h-screen overflow-y-auto p-4 md:p-6 lg:p-8 print:h-auto print:overflow-visible print:p-0">
+        {children}
+      </main>
     </RoleProvider>
   );
 }

@@ -68,7 +68,8 @@ export default function LoginPage() {
       description: "Panel'e yönlendiriliyorsunuz...",
     });
 
-    router.push("/dashboard");
+    // Sekme içinde (oturum süresi dolmuşsa) sayfaya dön; değilse çalışma alanını aç
+    router.push(window.parent !== window ? "/dashboard" : "/calisma");
     router.refresh();
   };
 
