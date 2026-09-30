@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/auth";
 import { one } from "@/lib/utils";
+import { isNotFound, isUuid } from "@/lib/ids";
 import { inChunks, readAll } from "@/lib/supabase/read-all";
 import {
   draftsFromSuggestionSchema,
@@ -62,11 +63,13 @@ export type PurchaseOrderRow = Awaited<ReturnType<typeof getPurchaseOrders>>[num
 
 export async function getPurchaseOrder(id: string) {
   await requirePermission("order:read");
+  if (!isUuid(id)) return null;
   const supabase = await createClient();
   const [poRes, itemsRes] = await Promise.all([
     supabase.from("purchase_orders").select("*, partner:partners(id, name), creator:profiles!purchase_orders_created_by_fkey(name)").eq("id", id).single(),
     supabase.from("v_purchase_order_items").select("id, product_id, quantity, unit_price, note, received_qty, remaining_qty").eq("purchase_order_id", id),
   ]);
+  if (isNotFound(poRes.error)) return null;
   if (poRes.error) throw new Error("Satın alma siparişi getirilemedi: " + poRes.error.message);
   if (itemsRes.error) throw new Error("Sipariş kalemleri getirilemedi: " + itemsRes.error.message);
   // Görünümden ürün ilişkisi kurulamadığı için ürün kartları ayrı okunur
@@ -88,7 +91,7 @@ export async function getPurchaseOrder(id: string) {
   if (moves.error) throw new Error("Teslim kayıtları getirilemedi: " + moves.error.message);
   return { po: poRes.data, items, receipts: moves.data ?? [] };
 }
-export type PurchaseOrderDetail = Awaited<ReturnType<typeof getPurchaseOrder>>;
+export type PurchaseOrderDetail = NonNullable<Awaited<ReturnType<typeof getPurchaseOrder>>>;
 
 /** Taslak sipariş oluşturur / taslağı günceller (kalemler baştan yazılır) */
 export async function savePurchaseOrder(values: PurchaseOrderValues) {

@@ -6,6 +6,7 @@ import { requirePermission } from "@/lib/auth";
 import { readAll } from "@/lib/supabase/read-all";
 import { z } from "@/lib/zod";
 import { one } from "@/lib/utils";
+import { isNotFound, isUuid } from "@/lib/ids";
 import { CATEGORY_LABELS, PRODUCT_TYPE_LABELS, type ProductType } from "@/lib/product-meta";
 
 const createSchema = z.object({
@@ -138,6 +139,7 @@ export async function createStockCount(values: CreateCountValues) {
 
 export async function getStockCount(id: string) {
   await requirePermission("master-data:read");
+  if (!isUuid(id)) return null;
   const supabase = await createClient();
   const [countRes, lines] = await Promise.all([
     supabase
@@ -156,6 +158,7 @@ export async function getStockCount(id: string) {
       "Sayım satırları okunamadı",
     ),
   ]);
+  if (isNotFound(countRes.error)) return null;
   if (countRes.error) throw new Error("Sayım getirilemedi: " + countRes.error.message);
   const c = countRes.data;
   return {
@@ -165,7 +168,7 @@ export async function getStockCount(id: string) {
       .sort((a, b) => (a.product?.code ?? "").localeCompare(b.product?.code ?? "", "tr", { numeric: true }) || (a.lot_no ?? "").localeCompare(b.lot_no ?? "")),
   };
 }
-export type StockCountDetail = Awaited<ReturnType<typeof getStockCount>>;
+export type StockCountDetail = NonNullable<Awaited<ReturnType<typeof getStockCount>>>;
 
 /** Sayılan miktar (boş = sayılmadı) */
 export async function saveCountedQty(lineId: string, qty: number | null) {

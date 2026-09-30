@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { getStockCount } from "@/app/actions/stock-counts";
@@ -27,6 +28,7 @@ export default async function StockCountPage({ params }: { params: Promise<{ id:
   await requirePermission("master-data:read");
   const { id } = await params;
   const data = await getStockCount(id);
+  if (!data) notFound();
   const supabase = await createClient();
   // Kalem eklemede seçilecek ürünler
   const products = data.count.status === "open" ? await readAll((from, to) => supabase.from("products").select("id, code, name").eq("active", true).order("code").order("id").range(from, to), "Ürünler okunamadı") : [];

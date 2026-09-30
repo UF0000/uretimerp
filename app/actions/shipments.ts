@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/auth";
 import { z } from "@/lib/zod";
 import { one } from "@/lib/utils";
+import { isNotFound, isUuid } from "@/lib/ids";
 
 const shipmentSchema = z.object({
   order_id: z.string().uuid(),
@@ -91,12 +92,14 @@ export async function getShipments() {
 /** İrsaliye: başlık + satırlar (fişin çıkış hareketleri) */
 export async function getShipment(id: string) {
   await requirePermission("order:read");
+  if (!isUuid(id)) return null;
   const supabase = await createClient();
   const { data: s, error } = await supabase
     .from("shipments")
     .select("*, order:orders(id, no, order_date), partner:partners(name, address, phone), warehouse:warehouses(name), creator:profiles!shipments_created_by_fkey(name)")
     .eq("id", id)
     .single();
+  if (isNotFound(error)) return null;
   if (error) throw new Error("İrsaliye getirilemedi: " + error.message);
   const lines = s.document_id
     ? await supabase
@@ -112,4 +115,4 @@ export async function getShipment(id: string) {
     lines: (lines.data ?? []).map((l) => ({ ...l, product: one(l.product) })),
   };
 }
-export type ShipmentDetail = Awaited<ReturnType<typeof getShipment>>;
+export type ShipmentDetail = NonNullable<Awaited<ReturnType<typeof getShipment>>>;

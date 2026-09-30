@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { getProducts } from "@/app/actions/master-data/products";
 import { getLines, getMolds } from "@/app/actions/master-data/equipment";
 import { getBomById } from "@/app/actions/bom";
@@ -20,6 +21,7 @@ export default async function EditBomPage(props: { params: Promise<{ id: string 
     getMolds(),
     getBomById(params.id),
   ]);
+  if (!bom) notFound();
 
   return (
     <div className="space-y-6">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { isUuid } from "@/lib/ids";
 import { ArrowLeft, Info } from "lucide-react";
 
 import { getProductDetail } from "@/app/actions/product-detail";
@@ -64,6 +65,7 @@ const Count = ({ n }: { n: number }) => (n > 0 ? <span className="ml-1.5 rounded
 
 export default async function ProductDetailPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ sekme?: string }> }) {
   const [{ id }, sp] = await Promise.all([props.params, props.searchParams]);
+  if (!isUuid(id)) notFound();
   const [detail, groups] = await Promise.all([getProductDetail(id), getProductGroups()]);
   if (!detail) notFound();
   const [insights, extras] = await Promise.all([getProductInsights(id), getProductExtras(id)]);

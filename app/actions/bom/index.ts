@@ -1,5 +1,6 @@
 "use server";
 
+import { isNotFound, isUuid } from "@/lib/ids";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { bomSchema, BomFormValues } from "@/lib/validations/bom";
@@ -23,6 +24,7 @@ export async function getBoms() {
 }
 
 export async function getBomById(id: string) {
+  if (!isUuid(id)) return null;
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("boms")
@@ -36,6 +38,7 @@ export async function getBomById(id: string) {
     .eq("id", id)
     .single();
 
+  if (isNotFound(error)) return null;
   if (error) throw new Error("Reçete detayı getirilirken hata oluştu: " + error.message);
   
   // Reçete detayları bire bir ilişki: veritabanı tek nesne döndürür

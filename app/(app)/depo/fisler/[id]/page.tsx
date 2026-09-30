@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { getStockDocumentById } from "@/app/actions/stock";
@@ -24,6 +25,7 @@ export default async function StockDocumentPage({ params }: { params: Promise<{ 
   await requirePermission("master-data:read");
   const { id } = await params;
   const doc = await getStockDocumentById(id);
+  if (!doc) notFound();
   const supabase = await createClient();
   const { data: shipment } = await supabase.from("shipments").select("id").eq("document_id", id).maybeSingle();
 
@@ -55,8 +57,8 @@ export default async function StockDocumentPage({ params }: { params: Promise<{ 
         </div>
       )}
 
-      <article className="mx-auto max-w-[210mm] space-y-6 rounded-md border border-border bg-card p-8 text-sm print:max-w-none print:border-0 print:p-0">
-        <header className="flex items-start justify-between gap-6 border-b border-border pb-4">
+      <article className="mx-auto max-w-[210mm] space-y-6 rounded-md border border-border bg-card p-4 text-sm sm:p-8 print:max-w-none print:border-0 print:p-0">
+        <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4">
           <div className="rounded-md bg-logo-surface p-1">
             <Image src="/logo-sifonik.png" alt="Sifonik" width={319} height={89} className="h-12 w-auto" />
           </div>
@@ -68,7 +70,7 @@ export default async function StockDocumentPage({ params }: { params: Promise<{ 
           </div>
         </header>
 
-        <dl className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-4 gap-y-1">
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 sm:grid-cols-[auto_1fr_auto_1fr] print:grid-cols-[auto_1fr_auto_1fr]">
           <dt className="text-muted-foreground">Fiş tarihi</dt>
           <dd className="font-medium">{trDate(doc.document_date)}</dd>
           <dt className="text-muted-foreground">Düzenleyen</dt>
@@ -89,6 +91,7 @@ export default async function StockDocumentPage({ params }: { params: Promise<{ 
           <dd>{formatDateTime(doc.created_at ?? "")}</dd>
         </dl>
 
+        <div className="overflow-x-auto print:overflow-visible">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-y border-border text-left">
@@ -125,6 +128,7 @@ export default async function StockDocumentPage({ params }: { params: Promise<{ 
             </tr>
           </tfoot>
         </table>
+        </div>
 
         {doc.note && (
           <p>
@@ -132,7 +136,7 @@ export default async function StockDocumentPage({ params }: { params: Promise<{ 
           </p>
         )}
 
-        <footer className="grid grid-cols-3 gap-6 pt-10">
+        <footer className="grid grid-cols-3 gap-3 pt-10 sm:gap-6">
           {print.signatures.map((t) => (
             <div key={t} className="space-y-10 text-center">
               <p className="font-semibold">{t}</p>

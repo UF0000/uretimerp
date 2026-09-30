@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { getPurchaseFormData, getPurchaseOrder } from "@/app/actions/purchase";
@@ -24,7 +25,9 @@ const qtyText = (v: number, unit: string) => formatTR(v, unit === "kg" ? 2 : 0);
 export default async function PurchaseOrderPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requirePermission("order:read");
   const { id } = await params;
-  const [{ po, items, receipts }, formData] = await Promise.all([getPurchaseOrder(id), getPurchaseFormData()]);
+  const [detail, formData] = await Promise.all([getPurchaseOrder(id), getPurchaseFormData()]);
+  if (!detail) notFound();
+  const { po, items, receipts } = detail;
   const partner = one(po.partner);
   const creator = one(po.creator);
 

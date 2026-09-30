@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { getShipment } from "@/app/actions/shipments";
@@ -20,7 +21,9 @@ const qtyText = (v: number, unit: string) => formatTR(v, unit === "kg" ? 2 : 0);
 export default async function ShipmentPage({ params }: { params: Promise<{ id: string }> }) {
   await requirePermission("order:read");
   const { id } = await params;
-  const { shipment: s, lines } = await getShipment(id);
+  const detail = await getShipment(id);
+  if (!detail) notFound();
+  const { shipment: s, lines } = detail;
   const cancelled = Boolean(s.cancelled_at);
 
   return (
@@ -40,7 +43,7 @@ export default async function ShipmentPage({ params }: { params: Promise<{ id: s
       )}
 
       {/* Belge */}
-      <article className="mx-auto max-w-[210mm] space-y-6 rounded-md border border-border bg-card p-8 text-sm print:max-w-none print:border-0 print:p-0">
+      <article className="mx-auto max-w-[210mm] space-y-6 rounded-md border border-border bg-card p-4 text-sm sm:p-8 print:max-w-none print:border-0 print:p-0">
         <header className="flex items-start justify-between gap-6 border-b border-border pb-4">
           <div className="rounded-md bg-logo-surface p-1">
             <Image src="/logo-sifonik.png" alt="Sifonik" width={319} height={89} className="h-12 w-auto" />
@@ -52,7 +55,7 @@ export default async function ShipmentPage({ params }: { params: Promise<{ id: s
           </div>
         </header>
 
-        <section className="grid grid-cols-2 gap-6">
+        <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 print:grid-cols-2">
           <div className="space-y-1">
             <p className="text-xs font-semibold uppercase text-muted-foreground">Alıcı</p>
             <p className="font-semibold">{s.partner?.name}</p>
@@ -75,6 +78,7 @@ export default async function ShipmentPage({ params }: { params: Promise<{ id: s
           </div>
         </section>
 
+        <div className="overflow-x-auto print:overflow-visible">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-y border-border text-left">
@@ -99,6 +103,7 @@ export default async function ShipmentPage({ params }: { params: Promise<{ id: s
             ))}
           </tbody>
         </table>
+        </div>
 
         {s.note && (
           <p>
@@ -106,7 +111,7 @@ export default async function ShipmentPage({ params }: { params: Promise<{ id: s
           </p>
         )}
 
-        <footer className="grid grid-cols-3 gap-6 pt-10">
+        <footer className="grid grid-cols-3 gap-3 pt-10 sm:gap-6">
           {["Teslim eden", "Taşıyan", "Teslim alan"].map((t) => (
             <div key={t} className="space-y-10 text-center">
               <p className="font-semibold">{t}</p>

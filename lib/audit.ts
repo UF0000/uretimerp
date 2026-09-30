@@ -36,6 +36,12 @@ export const AUDIT_TABLE_LABELS: Record<string, string> = {
   reference_capacities: "Referans kapasite",
   calendar_holidays: "Tatil günü",
   profiles: "Kullanıcı",
+  mold_maintenances: "Kalıp bakımı",
+  purchase_orders: "Satın alma siparişi",
+  purchase_order_items: "Satın alma kalemi",
+  shipments: "Sevk irsaliyesi",
+  stock_counts: "Stok sayımı",
+  stock_count_lines: "Sayım kalemi",
 };
 
 export const AUDIT_OPERATIONS = ["insert", "update", "deactivate", "restore", "delete"] as const;
@@ -107,6 +113,17 @@ const FIELD_LABELS: Record<string, string> = {
   cavity_count: "Göz sayısı",
   kg_per_meter: "Metre ağırlığı (kg/m)",
   target_m_per_hour: "Hedef hız (m/sa)",
+  maintenance_interval_shots: "Bakım aralığı (atış)",
+  shots_at_last_maintenance: "Son bakımdaki atış",
+  last_maintenance: "Son bakım",
+  counted_qty: "Sayılan miktar",
+  system_qty: "Sistem miktarı",
+  adjusted_qty: "İşlenen fark",
+  unit_price: "Birim fiyat",
+  expected_date: "Beklenen teslim",
+  delivered_qty: "Teslim edilen",
+  vehicle_plate: "Araç plakası",
+  driver_name: "Şoför",
 };
 
 export const auditFieldLabel = (field: string) => FIELD_LABELS[field] ?? field;

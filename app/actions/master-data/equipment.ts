@@ -313,7 +313,8 @@ export async function bulkImportMolds(moldsData: ExcelRow[]) {
     };
   }).filter(m => m._hasProductCode).map(m => {
     // Veritabanına göndermeden önce geçici işareti siliyoruz ki SQL hata vermesin
-    const { _hasProductCode, ...rest } = m;
+    const { _hasProductCode: _flag, ...rest } = m;
+    void _flag;
     return rest;
   });
 

@@ -1,5 +1,6 @@
 "use server";
 
+import { isNotFound, isUuid } from "@/lib/ids";
 import { createClient } from "@/lib/supabase/server";
 import { readAll } from "@/lib/supabase/read-all";
 import { revalidatePath } from "next/cache";
@@ -163,6 +164,7 @@ export async function getStockDocuments(limit = 100) {
 }
 
 export async function getStockDocumentById(id: string) {
+  if (!isUuid(id)) return null;
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("stock_documents")
@@ -179,6 +181,7 @@ export async function getStockDocumentById(id: string) {
     .eq("id", id)
     .single();
 
+  if (isNotFound(error)) return null;
   if (error) throw new Error("Stok fişi getirilirken hata oluştu: " + error.message);
   return data;
 }
