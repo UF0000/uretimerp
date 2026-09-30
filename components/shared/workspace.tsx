@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { House, Plus, X } from "lucide-react";
+import Image from "next/image";
 import { toast } from "sonner";
 
 import { UserMenu } from "@/components/shared/user-menu";
@@ -177,9 +178,9 @@ export default function Workspace({ initialPath, userName, userRole }: Workspace
           onClick={() => openNew(null)}
           title="Ana sayfa"
           aria-label="Ana sayfa"
-          className="mb-1.5 flex h-8 shrink-0 items-center rounded-md px-1 hover:bg-background"
+          className="mb-1 flex h-10 shrink-0 items-center rounded-md border border-border bg-logo-surface px-2 transition-shadow hover:shadow-sm"
         >
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground">ÜE</span>
+          <Image src="/logo-sifonik.png" alt="Sifonik" width={319} height={89} priority className="h-7 w-auto sm:h-8" />
         </button>
 
         <div className="flex min-w-0 flex-1 items-end gap-1 overflow-x-auto" role="tablist" aria-label="Açık sayfalar">
