@@ -202,6 +202,20 @@ export function MoldForm({
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="maintenance_interval_shots">Bakım aralığı (atış)</Label>
+            <Input
+              id="maintenance_interval_shots"
+              type="number"
+              step="1"
+              min="1"
+              placeholder="Örn: 50000 — boş bırakılırsa bakım uyarısı verilmez"
+              {...register("maintenance_interval_shots", { setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)) })}
+            />
+            {errors.maintenance_interval_shots && <p className="text-xs text-danger">{errors.maintenance_interval_shots.message}</p>}
+            <p className="text-xs text-muted-foreground">Bu kadar atışta bir periyodik bakım; aralığın %80&apos;inde panelde uyarı çıkar.</p>
+          </div>
+
+          <div className="space-y-2">
             <Label>Çalışma Tipi</Label>
             <Select
               value={watchMode ?? "none"}

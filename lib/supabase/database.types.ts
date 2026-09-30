@@ -439,6 +439,63 @@ export type Database = {
           },
         ]
       }
+      mold_maintenances: {
+        Row: {
+          id: string
+          mold_id: string
+          done_on: string
+          kind: string
+          shots_at: number
+          description: string | null
+          performed_by: string | null
+          downtime_hours: number | null
+          cost: number | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          mold_id: string
+          done_on?: string
+          kind?: string
+          shots_at?: number
+          description?: string | null
+          performed_by?: string | null
+          downtime_hours?: number | null
+          cost?: number | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          mold_id?: string
+          done_on?: string
+          kind?: string
+          shots_at?: number
+          description?: string | null
+          performed_by?: string | null
+          downtime_hours?: number | null
+          cost?: number | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mold_maintenances_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mold_maintenances_mold_id_fkey"
+            columns: ["mold_id"]
+            isOneToOne: false
+            referencedRelation: "molds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       molds: {
         Row: {
           id: string
@@ -454,6 +511,8 @@ export type Database = {
           product_weight_g: number | null
           sprue_weight_g: number | null
           operation_mode: string | null
+          maintenance_interval_shots: number | null
+          shots_at_last_maintenance: number
         }
         Insert: {
           id?: string
@@ -469,6 +528,8 @@ export type Database = {
           product_weight_g?: number | null
           sprue_weight_g?: number | null
           operation_mode?: string | null
+          maintenance_interval_shots?: number | null
+          shots_at_last_maintenance?: number
         }
         Update: {
           id?: string
@@ -484,6 +545,8 @@ export type Database = {
           product_weight_g?: number | null
           sprue_weight_g?: number | null
           operation_mode?: string | null
+          maintenance_interval_shots?: number | null
+          shots_at_last_maintenance?: number
         }
         Relationships: [
           {
@@ -1652,6 +1715,21 @@ export type Database = {
       }
     }
     Views: {
+      v_mold_maintenance: {
+        Row: {
+          mold_id: string | null
+          code: string | null
+          name: string | null
+          status: Database["public"]["Enums"]["equipment_status"] | null
+          total_shots: number | null
+          interval_shots: number | null
+          last_maintenance: string | null
+          shots_since: number | null
+          used_pct: number | null
+          state: string | null
+        }
+        Relationships: []
+      }
       v_oee_entries: {
         Row: {
           entry_id: string | null

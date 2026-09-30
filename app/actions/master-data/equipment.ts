@@ -3,7 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { ExcelRow } from "@/lib/excel";
-import { lineSchema, moldSchema, LineFormValues, MoldFormValues } from "@/lib/validations/master-data";
+import { lineSchema, moldSchema, moldMaintenanceSchema, LineFormValues, MoldFormValues, MoldMaintenanceValues } from "@/lib/validations/master-data";
+import { requirePermission } from "@/lib/auth";
 
 // --- Production Lines ---
 export async function getLines() {
@@ -115,6 +116,7 @@ export async function saveMold(data: MoldFormValues) {
         sprue_weight_g: payload.sprue_weight_g || null,
         product_weight_g: payload.product_weight_g || null,
         maintenance_plan: payload.maintenance_plan || null,
+        maintenance_interval_shots: payload.maintenance_interval_shots ?? null,
         status: payload.status,
         operation_mode: payload.operation_mode || null,
       })
@@ -133,6 +135,7 @@ export async function saveMold(data: MoldFormValues) {
         sprue_weight_g: payload.sprue_weight_g || null,
         product_weight_g: payload.product_weight_g || null,
         maintenance_plan: payload.maintenance_plan || null,
+        maintenance_interval_shots: payload.maintenance_interval_shots ?? null,
         status: payload.status,
         operation_mode: payload.operation_mode || null,
       }]);
@@ -164,6 +167,63 @@ export async function bulkDeleteMolds(ids: string[]) {
     .in("id", ids);
   if (error) throw new Error("Toplu silme işlemi başarısız: " + error.message);
   revalidatePath("/ana-veri");
+}
+
+// --- Kalıp bakımı ---
+/** Kalıbın bakım kayıtları (en yeni önce) */
+export async function getMoldMaintenances(moldId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("mold_maintenances")
+    .select("id, done_on, kind, shots_at, description, performed_by, downtime_hours, cost, created_at, creator:profiles(name)")
+    .eq("mold_id", moldId)
+    .order("done_on", { ascending: false })
+    .order("created_at", { ascending: false });
+  if (error) throw new Error("Bakım kayıtları getirilemedi: " + error.message);
+  return data;
+}
+export type MoldMaintenanceRow = Awaited<ReturnType<typeof getMoldMaintenances>>[number];
+
+/** Bakım kaydı: atış sayacı sıfır noktası ve son bakım tarihi veritabanında güncellenir */
+export async function recordMoldMaintenance(values: MoldMaintenanceValues) {
+  await requirePermission("production:write");
+  const parsed = moldMaintenanceSchema.safeParse(values);
+  if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Geçersiz bakım bilgisi.");
+  const v = parsed.data;
+  const supabase = await createClient();
+  const { error } = await supabase.from("mold_maintenances").insert({
+    mold_id: v.mold_id,
+    done_on: v.done_on,
+    kind: v.kind,
+    description: v.description || null,
+    performed_by: v.performed_by || null,
+    downtime_hours: v.downtime_hours ?? null,
+    cost: v.cost ?? null,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/ana-veri");
+  revalidatePath("/dashboard");
+}
+
+/** Yanlış girilen bakım kaydını siler (yalnız yönetici; işlem geçmişinde kalır). Sayaç sıfır noktası geri alınmaz. */
+export async function deleteMoldMaintenance(id: string) {
+  await requirePermission("admin:all");
+  const supabase = await createClient();
+  const { error } = await supabase.from("mold_maintenances").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/ana-veri");
+}
+
+/** Bakımı yaklaşan / geciken kalıplar (panel) */
+export async function getMoldMaintenanceAlerts() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("v_mold_maintenance")
+    .select("mold_id, code, name, total_shots, interval_shots, shots_since, used_pct, state, last_maintenance")
+    .in("state", ["yaklasiyor", "gecikti"])
+    .order("used_pct", { ascending: false });
+  if (error) throw new Error("Kalıp bakım durumu getirilemedi: " + error.message);
+  return data;
 }
 
 // --- Bulk Import Molds ---

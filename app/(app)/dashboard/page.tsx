@@ -1,11 +1,14 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { Factory, ShoppingCart, TrendingUp, AlertTriangle, Flame } from "lucide-react";
+import { Factory, ShoppingCart, TrendingUp, AlertTriangle, Flame, Wrench } from "lucide-react";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 
 import { getDashboardMetrics } from "@/app/actions/dashboard";
 import { getScrapSummary } from "@/app/actions/scrap";
+import { getMoldMaintenanceAlerts } from "@/app/actions/master-data/equipment";
+import { MAINTENANCE_STATE_BADGE, MAINTENANCE_STATE_LABELS, asMaintenanceState } from "@/lib/mold-maintenance";
+import { Badge } from "@/components/ui/badge";
 import { formatTR } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/shared/page-header";
@@ -18,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardPage() {
-  const [{ metrics, productionTrend, recentCompletedOrders }, scrap] = await Promise.all([getDashboardMetrics(), getScrapSummary()]);
+  const [{ metrics, productionTrend, recentCompletedOrders }, scrap, moldAlerts] = await Promise.all([getDashboardMetrics(), getScrapSummary(), getMoldMaintenanceAlerts()]);
   const scrapOver = scrap.scrapPct !== null && scrap.scrapPct * 100 > scrap.targetScrapPct;
 
   return (
@@ -104,6 +107,41 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </Link>
+
+      {/* Kalıp bakımı: aralığın %80'ine gelen ve geçen kalıplar */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Kalıp Bakımı</CardTitle>
+          <Wrench className={cn("h-4 w-4", moldAlerts.some((m) => m.state === "gecikti") ? "text-danger" : "text-muted-foreground")} />
+        </CardHeader>
+        <CardContent>
+          {moldAlerts.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Bakımı yaklaşan kalıp yok. Bakım aralığı Ana Veri → Kalıp &amp; Hatlar&apos;da kalıp kartından girilir.</p>
+          ) : (
+            <div className="space-y-2">
+              {moldAlerts.slice(0, 6).map((m) => {
+                const st = asMaintenanceState(m.state);
+                return (
+                  <div key={m.mold_id} className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2 text-sm last:border-0 last:pb-0">
+                    <div className="min-w-0">
+                      <span className="font-medium">{m.code}</span> <span className="text-muted-foreground">{m.name}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="tabular-nums text-muted-foreground">
+                        {formatTR(Number(m.shots_since ?? 0), 0)} / {formatTR(Number(m.interval_shots ?? 0), 0)} atış · %{formatTR(Number(m.used_pct ?? 0), 0)}
+                      </span>
+                      <Badge variant={MAINTENANCE_STATE_BADGE[st]}>{MAINTENANCE_STATE_LABELS[st]}</Badge>
+                    </div>
+                  </div>
+                );
+              })}
+              <Link href="/ana-veri" className="inline-block text-xs text-primary">
+                {moldAlerts.length > 6 ? `${moldAlerts.length - 6} kalıp daha · ` : ""}Bakım kaydı için Ana Veri → Kalıp &amp; Hatlar →
+              </Link>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Grafik Bölümü (Sol - 2 Sütun) */}

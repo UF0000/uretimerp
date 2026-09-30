@@ -1,5 +1,6 @@
 import { z } from "@/lib/zod";
 import { CATEGORY_LABELS, PRODUCT_TYPES } from "@/lib/product-meta";
+import { MAINTENANCE_KINDS } from "@/lib/mold-maintenance";
 
 export const productSchema = z.object({
   id: z.string().optional(),
@@ -98,12 +99,25 @@ export const moldSchema = z.object({
   sprue_weight_g: z.number().min(0).optional().nullable(),
   product_weight_g: z.number().min(0).optional().nullable(),
   maintenance_plan: z.string().optional().nullable(),
+  /** Kaç atışta bir periyodik bakım (boş = takip yok) */
+  maintenance_interval_shots: z.number().int("Tam sayı girin").positive("0'dan büyük olmalıdır").optional().nullable(),
   status: z.enum(["active", "maintenance", "down"]),
   /** Kalıp çalışma tipi: otomatik / yarı otomatik (analiz panosu) */
   operation_mode: z.enum(["otomatik", "yari_otomatik"]).optional().nullable(),
 });
 
 export type MoldFormValues = z.infer<typeof moldSchema>;
+
+export const moldMaintenanceSchema = z.object({
+  mold_id: z.string().uuid(),
+  done_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Tarih geçersiz"),
+  kind: z.enum(MAINTENANCE_KINDS),
+  description: z.string().trim().max(1000).optional().nullable(),
+  performed_by: z.string().trim().max(120).optional().nullable(),
+  downtime_hours: z.number().min(0, "0 veya daha büyük olmalıdır").optional().nullable(),
+  cost: z.number().min(0, "0 veya daha büyük olmalıdır").optional().nullable(),
+});
+export type MoldMaintenanceValues = z.infer<typeof moldMaintenanceSchema>;
 export type MoldFormInput = z.input<typeof moldSchema>;
 
 export const reasonCodeSchema = z.object({

@@ -2,7 +2,8 @@
 
 import { useState, useRef } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Plus, Edit2, Trash2, Upload } from "lucide-react";
+import { Plus, Edit2, Trash2, Upload, Wrench } from "lucide-react";
+import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
@@ -20,6 +21,8 @@ import {
 } from "@/app/actions/master-data/equipment";
 import { LineForm } from "./line-form";
 import { MoldForm } from "./mold-form";
+import { MoldMaintenanceDialog, type MaintenanceMold } from "./mold-maintenance-dialog";
+import { MAINTENANCE_STATE_BADGE, MAINTENANCE_STATE_LABELS, moldMaintenance } from "@/lib/mold-maintenance";
 
 import { getErrorMessage } from "@/lib/utils";
 import { usePermission } from "@/components/shared/role-provider";
@@ -48,6 +51,12 @@ interface EquipmentTabProps {
 
 export function EquipmentTab({ lines, molds, products }: EquipmentTabProps) {
   const canWrite = usePermission("master-data:write");
+  // Bakım kaydını operatör de girebilir
+  const canMaintain = usePermission("production:write");
+  const router = useRouter();
+  // Bakım penceresi: kalıp her zaman güncel listeden (kayıttan sonra durum yenilensin)
+  const [maintMoldId, setMaintMoldId] = useState<string | null>(null);
+  const maintMold: MaintenanceMold | undefined = molds.find((m) => m.id === maintMoldId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
 
@@ -259,12 +268,36 @@ export function EquipmentTab({ lines, molds, products }: EquipmentTabProps) {
       },
     },
     {
+      id: "maintenance",
+      header: "Bakım",
+      accessorFn: (r) => moldMaintenance(r.total_shots, r.shots_at_last_maintenance, r.maintenance_interval_shots).pct ?? -1,
+      cell: ({ row }) => {
+        const m = row.original;
+        const st = moldMaintenance(m.total_shots, m.shots_at_last_maintenance, m.maintenance_interval_shots);
+        return (
+          <div className="flex flex-col items-start gap-0.5">
+            <Badge variant={MAINTENANCE_STATE_BADGE[st.state]}>{MAINTENANCE_STATE_LABELS[st.state]}</Badge>
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {m.maintenance_interval_shots ? `${formatTR(st.since, 0)} / ${formatTR(m.maintenance_interval_shots, 0)} atış` : `${formatTR(st.since, 0)} atış`}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
       id: "actions",
       header: "İşlemler",
       cell: ({ row }) => {
         const item = row.original;
         return (
           <div className="flex items-center justify-end gap-2">
+            {canMaintain && (
+              <Button variant="ghost" size="icon" onClick={() => setMaintMoldId(item.id)} aria-label="Bakım" title="Bakım kaydı / geçmişi">
+                <Wrench className="w-4 h-4 text-muted-foreground" />
+              </Button>
+            )}
+            {canWrite && (
+            <>
             <Button
               variant="ghost"
               size="icon"
@@ -282,6 +315,8 @@ export function EquipmentTab({ lines, molds, products }: EquipmentTabProps) {
             >
               <Trash2 className="w-4 h-4 text-danger" />
             </Button>
+            </>
+            )}
           </div>
         );
       },
@@ -367,7 +402,7 @@ export function EquipmentTab({ lines, molds, products }: EquipmentTabProps) {
         </div>
         <DataTable
           columns={
-            canWrite
+            canWrite || canMaintain
               ? moldColumns
               : moldColumns.filter((c) => c.id !== "actions")
           }
@@ -395,6 +430,7 @@ export function EquipmentTab({ lines, molds, products }: EquipmentTabProps) {
           products={products}
         />
       )}
+      {maintMold && <MoldMaintenanceDialog mold={maintMold} onClose={() => setMaintMoldId(null)} onSaved={() => router.refresh()} />}
     </div>
   );
 }
