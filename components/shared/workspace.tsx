@@ -129,6 +129,61 @@ export default function Workspace({ initialPath, userName, userRole }: Workspace
     if (id === activeId) setActiveId(rest[Math.min(idx, rest.length - 1)].id);
   };
 
+  // Sekmeye tıklama (kutunun her yeri) ve tutup sürükleyerek yer değiştirme
+  const drag = useRef<{ id: string; startX: number; moved: boolean; touch: boolean } | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+
+  const dragStart = (e: React.PointerEvent<HTMLDivElement>, id: string) => {
+    if (e.button !== 0 || (e.target as Element).closest("[data-tab-close]")) return;
+    const touch = e.pointerType === "touch";
+    drag.current = { id, startX: e.clientX, moved: false, touch };
+    // Dokunmatikte sürükleme yok: yatay kaydırma sekme çubuğunu kaydırır
+    if (!touch) {
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        // yakalama desteklenmiyorsa sürükleme yine sekme üzerinde çalışır
+      }
+    }
+  };
+
+  const dragMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d || d.touch) return;
+    if (!d.moved && Math.abs(e.clientX - d.startX) < 6) return;
+    if (!d.moved) {
+      d.moved = true;
+      setDraggingId(d.id);
+    }
+    const over = [...document.querySelectorAll<HTMLElement>("[data-tab-id]")].find((el) => {
+      const r = el.getBoundingClientRect();
+      return e.clientX >= r.left && e.clientX <= r.right;
+    });
+    const targetId = over?.dataset.tabId;
+    if (!targetId || targetId === d.id) return;
+    setTabs((ts) => {
+      const from = ts.findIndex((t) => t.id === d.id);
+      const to = ts.findIndex((t) => t.id === targetId);
+      if (from < 0 || to < 0) return ts;
+      const next = [...ts];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  };
+
+  const dragEnd = () => {
+    const d = drag.current;
+    drag.current = null;
+    setDraggingId(null);
+    if (d && !d.moved) setActiveId(d.id);
+  };
+
+  const dragCancel = () => {
+    drag.current = null;
+    setDraggingId(null);
+  };
+
   // Sayfalardan gelen mesajlar: adres/başlık değişti, yeni sekmede aç
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
@@ -190,28 +245,38 @@ export default function Workspace({ initialPath, userName, userRole }: Workspace
               <div
                 key={t.id}
                 data-tab-id={t.id}
+                role="tab"
+                tabIndex={0}
+                aria-selected={isActive}
+                title={t.title}
+                onPointerDown={(e) => dragStart(e, t.id)}
+                onPointerMove={dragMove}
+                onPointerUp={dragEnd}
+                onPointerCancel={dragCancel}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setActiveId(t.id);
+                  }
+                }}
+                onAuxClick={(e) => e.button === 1 && closeTab(t.id)}
                 className={cn(
-                  "group flex h-11 max-w-[260px] shrink-0 items-center gap-1.5 rounded-t-md border border-b-0 pl-4 pr-1.5 text-base",
+                  "group flex h-11 max-w-[260px] shrink-0 cursor-pointer select-none items-center gap-1.5 rounded-t-md border border-b-0 pl-4 pr-1.5 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   isActive ? "border-border bg-background font-medium text-foreground" : "border-transparent text-muted-foreground hover:bg-background/60",
+                  draggingId === t.id && "cursor-grabbing opacity-70 shadow-sm",
                 )}
               >
+                {!t.path && <House className="h-4 w-4 shrink-0" />}
+                <span className="truncate">{t.title}</span>
                 <button
                   type="button"
-                  role="tab"
-                  aria-selected={isActive}
-                  className="flex min-w-0 items-center gap-1.5 text-left"
-                  title={t.title}
-                  onClick={() => setActiveId(t.id)}
-                  onAuxClick={(e) => e.button === 1 && closeTab(t.id)}
-                >
-                  {!t.path && <House className="h-4 w-4 shrink-0" />}
-                  <span className="truncate">{t.title}</span>
-                </button>
-                <button
-                  type="button"
+                  data-tab-close
                   aria-label={`${t.title} sekmesini kapat`}
-                  className={cn("rounded p-1 hover:bg-muted", isActive ? "opacity-100" : "opacity-60 group-hover:opacity-100")}
-                  onClick={() => closeTab(t.id)}
+                  className={cn("ml-auto shrink-0 rounded p-1 hover:bg-muted", isActive ? "opacity-100" : "opacity-60 group-hover:opacity-100")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    closeTab(t.id);
+                  }}
                 >
                   <X className="h-4 w-4" />
                 </button>
