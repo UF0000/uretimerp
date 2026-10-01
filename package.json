@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:types": "node scripts/gen-db-types.mjs"
+    "db:types": "node scripts/gen-db-types.mjs",
+    "dev:sim": "node scripts/sim/dev.mjs",
+    "sim:run": "node scripts/sim/run.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

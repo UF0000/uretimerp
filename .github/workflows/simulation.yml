@@ -1,0 +1,37 @@
+# Fabrika simülasyonu: test (simülasyon) veritabanında her bölüm kendi rol hesabıyla iş yapar
+# (satış, planlama, satın alma, depo, üretim, kalite). Canlı veritabanına dokunmaz.
+# Gerekli secret: SIM_ENV (.env.local'daki SIM_ ile başlayan satırların hepsi, olduğu gibi).
+# Durdurmak için: Actions → Simülasyon → "Disable workflow". Sıklık: aşağıdaki cron.
+name: Simülasyon
+
+on:
+  schedule:
+    - cron: "17 * * * *" # saat başı (UTC; GitHub birkaç dakika geciktirebilir)
+  workflow_dispatch:
+    inputs:
+      hours:
+        description: "Tur aralığı (saat) — satış sıklığı bunu kullanır"
+        default: "1"
+
+concurrency:
+  group: simulation
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SIM_ENV: ${{ secrets.SIM_ENV }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Simülasyon turu
+        run: node scripts/sim/run.mjs --hours=${{ inputs.hours || '1' }}

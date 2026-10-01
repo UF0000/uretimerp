@@ -154,6 +154,8 @@ supabase/
 
 **Güvenlik / rol testleri (2026-10-01):** yeni kayıt olan hesap PASİF başlar (`20261001130000`, yönetici aktif eder); doğrudan stok hareketi yalnız depo/yönetici (`20261001140000`, üretim/NCR fonksiyonları SECURITY DEFINER). Rol test hesapları `.env.local`: `TEST_OPERATOR_*`, `TEST_WAREHOUSE_*`, `TEST_QUALITY_*` (erp-test-*@example.com). Siparişler kartı/sayfası `order:read` (kalite göremez); sipariş bildirimi de öyle. Maliyet sayfası/kartı, ürün listesi birim fiyat sütunu ve ürün kartı maliyet/fiyat/tedarikçi bölümleri `cost:read` (yalnız yönetici; ekran düzeyinde). Alt sayfalarda `PageHeader back` / `BackLink` ile üst sayfaya dönüş.
 
+**Simülasyon (2026-10-01):** ayrı Supabase test projesi (`.env.local` `SIM_*`; GitHub'da tek secret `SIM_ENV` = tüm SIM_ satırları). `scripts/sim/`: `apply-migrations.mjs` (test DB'ye migration; CI'da `migrate-sim` işi de uygular), `copy-master-data.mjs` (test DB'yi sıfırlar, canlıdan yalnız ana veri okur), `setup-users.mjs` (sim-admin/operator/warehouse/quality@example.com), `prepare.mjs` (karantina deposu, sim müşteri/tedarikçi, hammadde fiyatı, katalog reçeteleri; katalog `catalog.mjs`), `run.mjs` = bir tur: satış → planlama (iş emri) → satın alma → mal kabul → üretim (son girişten şimdiye, vardiya sınırında bölünür, hafta tatili yok, hammadde yoksa duruş) → kalite (final/giriş, %4 red → NCR, 6 sa sonra kapatır) → sevkiyat → haftalık sayım; her bölüm kendi rol hesabıyla. `.github/workflows/simulation.yml` saat başı. Uygulamayı test DB ile açmak: `npm run dev:sim` (port 3001). İlk bulgu: depocu sevkiyat yapamıyordu (`create_shipment` FOR UPDATE + INVOKER → `20261001160000` DEFINER).
+
 **Test verisi temizlendi (2026-10-01):** test/deneme ürünleri stok sıfırlanıp pasif (V9TEST01, A9TEST01.HENQ, D.990.063.99, TEST-HAM-PPR, TEST-MTL-01, bb, rp2400, ZZ-TEST-*), TEST-RCT-* reçeteler ve TEST cariler pasif, KLP-TEST-01 arızalı, TEST-SIP-001 ve asasas siparişleri iptal, deneme iş emirleri (asdasdasd, aaa, SAADDASADD, ZZ-TEST-IE-01, TEST-YETKI-01) girişleri iptal + iş emri İptal. Geçmiş kayıtları (iptal fişler, SAY-2026-0001, IRS-2026-0002) duruyor.
 
 **Alınan kararlar (kalıcı):**
@@ -168,4 +170,5 @@ supabase/
 - **Şema değişikliği yalnızca migration ile:** `supabase/migrations/<YYYYMMDDHHMMSS>_ad.sql`
   yazılır, `main`'e push edilince GitHub Actions (`supabase-migrations.yml`) canlıya uygular.
   Supabase panelinden elle tablo/politika değiştirilmez. Şema değişince `npm run db:types`.
+- **Önce test, sonra canlı:** CI migration'ı önce simülasyon DB'sine uygular + `run.mjs --strict` turu; hata yoksa canlıya. Push'tan önce yerelde `node scripts/sim/apply-migrations.mjs` + `npm run sim:run`; ekran değişikliği `npm run dev:sim` ile denenir.
 - Repo: github.com/UF0000/uretimerp (private). Secret'lar GitHub Actions'ta; `.env.local` repoya girmez.
