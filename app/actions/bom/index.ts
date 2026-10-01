@@ -62,10 +62,11 @@ export async function saveBom(data: BomFormValues) {
   if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Geçersiz form verisi.");
   const payload = parsed.data;
 
-  // Kalıp elle seçilmez: enjeksiyonda kalıp kartında bu ürüne bağlı aktif kalıp kullanılır (atış sayacı)
+  // Kalıp elle seçilmez: enjeksiyonda kalıp kartında bu ürüne bağlı aktif kalıp kullanılır (atış sayacı);
+  // yoksa aynı genel stok kodlu (renk/müşteri varyantı) ürünün kalıbı — aynı kalıpta basılır
   let injection = payload.injection ?? null;
   if (payload.production_type === "injection" && injection && !injection.mold_id) {
-    const { data: mold } = await supabase
+    const { data: own } = await supabase
       .from("molds")
       .select("id")
       .eq("product_id", payload.product_id)
@@ -73,7 +74,22 @@ export async function saveBom(data: BomFormValues) {
       .order("code")
       .limit(1)
       .maybeSingle();
-    injection = { ...injection, mold_id: mold?.id ?? null };
+    let moldId = own?.id ?? null;
+    if (!moldId) {
+      const { data: product } = await supabase.from("products").select("variant_code").eq("id", payload.product_id).maybeSingle();
+      if (product?.variant_code) {
+        const { data: shared } = await supabase
+          .from("molds")
+          .select("id, product:products!inner(variant_code)")
+          .eq("product.variant_code", product.variant_code)
+          .eq("status", "active")
+          .order("code")
+          .limit(1)
+          .maybeSingle();
+        moldId = shared?.id ?? null;
+      }
+    }
+    injection = { ...injection, mold_id: moldId };
   }
 
   const { data: result, error } = await supabase.rpc("save_bom", {

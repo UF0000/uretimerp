@@ -1,7 +1,9 @@
 // DIA 2026 üretim verisini (boru + fitting "İş Emirleri") TEST veritabanına yükler.
 // Rol hesaplarıyla, sistemin kendi işlemleriyle: eksik ürün/kalıp/neden kodu/reçete (yönetici),
 // açılış hammadde stoğu (satın alma + mal kabul), iş emri + vardiya girişleri (operatör).
-//  - Fire/duruş iş emri bazında nedensiz → "Nedeni Bilinmeyen" / "Nedeni Tespit Edilemeyen"
+//  - Fire/duruş iş emri bazında nedensiz → yalnız TEST'te açılan "DIA aktarımı — neden kaydı yok" kodları
+//    (DIA'daki "Nedeni Bilinmeyen" kodları kullanıcı kararıyla sisteme alınmaz)
+//  - Kalıp: ürüne bağlı, yoksa aynı genel koddaki kalıp (uygulamadaki saveBom kuralı)
 //  - Uzun iş emri brüt süreyi koruyarak ≤ 12 saatlik ardışık girişlere bölünür (miktarlar orantılı)
 //  - Reçete değerleri DIA'dan: kg/m = sağlam/metre, hedef hız = hat hızı, parça g = sağlam/adet,
 //    çevrim = standart çevrim (parça başı) × göz, yolluk = DIA yolluğu / atış
@@ -32,8 +34,8 @@ async function reason(kind, code, label) {
   log.ok(A, `Neden kodu açıldı: ${code} ${label}`);
   return row.id;
 }
-const SCRAP_REASON = await reason("scrap", "F2999", "Nedeni Bilinmeyen");
-const DOWN_REASON = await reason("downtime", "D1999", "Nedeni Tespit Edilemeyen");
+const SCRAP_REASON = await reason("scrap", "AKT-F", "DIA aktarımı — fire nedeni kaydı yok");
+const DOWN_REASON = await reason("downtime", "AKT-D", "DIA aktarımı — duruş nedeni kaydı yok");
 
 // ── 2. Ürünler (eksikler DIA adıyla açılır) ──
 const codes = [...new Set(W.map((w) => w.productCode))];
@@ -50,15 +52,15 @@ for (const w of W) {
 const rawAndScrap = new Map(must(await admin.from("products").select("id, code").in("code", [...Object.values(RAW), ...Object.values(SCRAP)]), "hammadde/fire").map((p) => [p.code, p.id]));
 const lines = new Map(must(await admin.from("production_lines").select("id, code"), "hatlar").map((l) => [l.code, l.id]));
 
-// ── 3. Kalıplar (fitting): ürüne ya da genel koda bağlı kalıp; yoksa DIA değerleriyle açılır ──
-const molds = must(await admin.from("molds").select("id, code, product_id, cavity_count, cycle_time_sec, sprue_weight_g, operation_mode, product:products(code, variant_code)"), "kalıplar");
+// ── 3. Kalıplar (fitting): ürüne bağlı, yoksa aynı genel koddaki aktif kalıp; hiç yoksa DIA değerleriyle açılır ──
+const molds = must(await admin.from("molds").select("id, code, product_id, status, cavity_count, cycle_time_sec, sprue_weight_g, operation_mode, product:products(code, variant_code)").eq("status", "active").order("code"), "kalıplar");
 const moldOf = new Map();
 const modeMismatch = [];
 for (const code of [...new Set(W.filter((w) => w.type === "injection").map((w) => w.productCode))]) {
   const p = products.get(code);
   const rows = W.filter((w) => w.productCode === code);
   const mode = rows[0].moldType === "Semi" ? "yari_otomatik" : "otomatik";
-  let m = molds.find((x) => x.product_id === p.id) ?? molds.find((x) => p.variant_code && (x.product?.code === p.variant_code || x.product?.variant_code === p.variant_code));
+  let m = molds.find((x) => x.product_id === p.id) ?? molds.find((x) => p.variant_code && x.product?.variant_code === p.variant_code);
   if (!m) {
     const std = median(rows.map((w) => w.stdCycleSecPerPart).filter(Boolean));
     m = must(
