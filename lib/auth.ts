@@ -3,6 +3,7 @@
  * Rol → yetki matrisi lib/permissions.ts içindedir (tarayıcıda da kullanılır).
  */
 
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { hasPermission, type Permission, type UserRole } from "@/lib/permissions";
@@ -17,9 +18,10 @@ export interface UserProfile {
 
 /**
  * Giriş yapmış kullanıcının profil bilgilerini getirir.
+ * Aynı istek içinde (yerleşim + sayfa + yetki denetimi) bir kez sorgulanır.
  * @returns Aktif kullanıcı profili veya null
  */
-export const getCurrentUser = async (): Promise<UserProfile | null> => {
+export const getCurrentUser = cache(async (): Promise<UserProfile | null> => {
   const supabase = await createClient();
 
   const {
@@ -37,7 +39,7 @@ export const getCurrentUser = async (): Promise<UserProfile | null> => {
   if (!profile || !profile.active) return null;
 
   return profile;
-};
+});
 
 /**
  * Sayfa koruması: kullanıcı yetkili değilse "yetkisiz" sayfasına yönlendirir.
