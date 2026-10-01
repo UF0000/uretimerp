@@ -2,11 +2,13 @@
  * Tek üretim girişinin göstergeleri (v_oee_entries / v_production_analytics ile aynı formüller).
  *   Planlı süre      = bitiş − başlangıç (dk);  çalışma = planlı − duruş
  *   Fire %           = fire kg / kullanılan hammadde kg
- *   Overweight       = sağlam kg / nominal − 1
+ *   Sağlam kg        = teorik: ekstrüzyon m × kg/m · enjeksiyon adet × parça g (yolluk hariç); yoksa hammadde − fire
+ *   Overweight       = (hammadde − fire) / nominal − 1
  *     nominal: ekstrüzyon üretilen m × kg/m · enjeksiyon adet × (parça g + yolluk g / göz) / 1000
+ *   Materyal verim   = (sağlam + yolluk) / hammadde
  *   OEE              = (planlı − duruş) / planlı  (fabrika tanımı: çalışma oranı)
  *   Hız performansı  = ideal süre / çalışma süresi (ayrı gösterge)
- *     enjeksiyon ideal = çevrim × atış (atış: ağırlık biliniyorsa kullanılan kütleden, yoksa adet / göz)
+ *     enjeksiyon ideal = çevrim × sağlam adet / göz (DIA çevrim performansı)
  *     ekstrüzyon ideal = (sağlam m + fire m) / hedef hız
  *   Gerçekleşen      = enjeksiyon: çalışma sn / atış · ekstrüzyon: üretilen m / çalışma dk
  *   Kapasite kullanımı = kullanılan kg / (makine kapasitesi kg/sa × çalışma sa)
@@ -42,10 +44,11 @@ export const injectionKgPerPart = (t: Pick<EntryTech, "productWeightG" | "runner
 
 export function entryMetrics(e: EntryInput, t: EntryTech) {
   const runMin = Math.max(0, e.plannedMin - e.downtimeMin);
-  const goodKg = Math.max(0, e.usedKg - e.scrapKg);
+  const outKg = Math.max(0, e.usedKg - e.scrapKg);
   const cavity = Math.max(1, t.cavityCount ?? 1);
 
   let nominalKg: number | null = null;
+  let runnerKg = 0;
   let idealSec: number | null = null;
   let actualCycleSec: number | null = null;
   let actualSpeedMPerMin: number | null = null;
@@ -59,21 +62,17 @@ export function entryMetrics(e: EntryInput, t: EntryTech) {
     actualSpeedMPerMin = runMin > 0 && e.producedQty > 0 ? e.producedQty / runMin : null;
   } else {
     const perPart = injectionKgPerPart(t);
-    if (perPart) nominalKg = e.producedQty * perPart;
-    if (t.cycleTimeSec && t.cycleTimeSec > 0) {
-      const shots =
-        t.productWeightG && t.productWeightG > 0 && e.usedKg > 0
-          ? (e.usedKg * 1000) / (cavity * t.productWeightG + (t.runnerWeightG ?? 0))
-          : e.producedQty / cavity;
-      idealSec = t.cycleTimeSec * shots;
-    }
     const shots = e.producedQty / cavity;
+    if (perPart) nominalKg = e.producedQty * perPart;
+    runnerKg = (shots * (t.runnerWeightG ?? 0)) / 1000;
+    if (t.cycleTimeSec && t.cycleTimeSec > 0) idealSec = t.cycleTimeSec * shots;
     actualCycleSec = runMin > 0 && shots > 0 ? (runMin * 60) / shots : null;
   }
 
+  const goodKg = nominalKg !== null && nominalKg > 0 ? Math.max(0, nominalKg - runnerKg) : outKg;
   const availability = ratio(runMin, e.plannedMin);
   const performance = idealSec !== null ? ratio(idealSec, runMin * 60) : null;
-  const quality = ratio(goodKg, e.usedKg);
+  const quality = ratio(goodKg + runnerKg, e.usedKg);
   const oee = availability; // fabrika tanımı: çalışma / planlı süre
   const expectedKg = t.capacityKgPerHour && t.capacityKgPerHour > 0 ? (t.capacityKgPerHour * runMin) / 60 : null;
 
@@ -81,7 +80,7 @@ export function entryMetrics(e: EntryInput, t: EntryTech) {
     runMin,
     goodKg,
     scrapPct: ratio(e.scrapKg, e.usedKg),
-    overweightPct: nominalKg && nominalKg > 0 ? goodKg / nominalKg - 1 : null,
+    overweightPct: nominalKg && nominalKg > 0 ? outKg / nominalKg - 1 : null,
     availability,
     performance,
     quality,

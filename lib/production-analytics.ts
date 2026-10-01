@@ -1,20 +1,22 @@
 /**
  * Üretim analiz panosu hesapları (saf fonksiyon; veritabanından bağımsız, test edilebilir).
  *
- * Tanımlar (kütle bazlı):
- *   Sağlam kg        = hammadde − fire
+ * Tanımlar (kütle bazlı; DIA boru/fitting raporlarıyla satır satır doğrulandı, 2026):
+ *   Sağlam kg        = teorik ağırlık: boru üretilen m × kg/m · fitting adet × parça g (yolluk hariç);
+ *                      reçetede ağırlık yoksa hammadde − fire
+ *   Çıkan kg         = hammadde − fire (ürüne giren malzeme; fazla ağırlık dahil)
  *   Fire %           = fire / hammadde
- *   Overweight %     = sağlam / nominal − 1   (nominal = üretilen × reçete birim ağırlığı)
- *   Materyal verim   = sağlam / hammadde
- *   OEE              = (vardiya süresi − duruş) / vardiya süresi  (fabrika tanımı: çalışma oranı)
- *   Hız performansı  = ideal süre / gerçek çalışma süresi (ayrı gösterge)
+ *   Overweight %     = çıkan / nominal − 1   (nominal = sağlam + yolluk payı)
+ *   Materyal verim   = (sağlam + yolluk) / hammadde
+ *   OEE              = (vardiya süresi − duruş) / vardiya süresi  (fabrika tanımı: çalışma oranı; toplamda Σnet / Σbrüt)
+ *   Hız/çevrim perf. = ideal süre / gerçek çalışma süresi (enjeksiyon ideal = çevrim × sağlam adet / göz)
  * Kapasite (makine kapasitesi giriş gününde geçerli kayıttan):
  *   NŞA kapasite     = Σ gün Σ makine (o gün geçerli kapasite × kullanılabilir saat); tatil/kapalı gün düşülür
  *   Kapasite verimi  = hammadde / NŞA kapasite
- *   Aktif sürede kap.= hammadde / Σ(kapasite × çalışma saati)
- *   Zaman kullanımı  = Σ çalışma saati / Σ makine kullanılabilir saati
+ *   Zaman kullanımı  = Σ brüt (dolu) saat / Σ makine kullanılabilir saati
+ *   Aktif sürede kap.= kapasite verimi / zaman kullanımı (grupta: hammadde / Σ(kapasite × brüt saat))
  *   Beklenen üretim  = Σ(kapasite × çalışma saati)
- * Referans (ürün grup × çap × SDR kg/saat):
+ * Referans (ürün grup × çap × SDR kg/saat; yoksa makine kapasitesi):
  *   Hız performansı  = hammadde / Σ(referans × çalışma saati)
  */
 
@@ -35,7 +37,10 @@ export interface AnalyticsEntry {
   operator: string | null;
   usedKg: number;
   scrapKg: number;
+  /** Teorik sağlam ağırlık (yoksa hammadde − fire) */
   goodKg: number;
+  /** Hammadde − fire (overweight hesabı) */
+  outKg: number;
   producedQty: number;
   nominalKg: number | null;
   plannedMin: number;
@@ -58,6 +63,17 @@ export interface AnalyticsEntry {
 }
 
 export type ReasonPart = { reasonId: string; value: number };
+
+/**
+ * v_production_analytics satırından sağlam (teorik) ve çıkan kg.
+ * Sağlam = nominal − yolluk (boruda yolluk yok); nominal yoksa hammadde − fire.
+ */
+export function soundKg(r: { used_kg: number | null; scrap_kg: number | null; nominal_kg: number | null; runner_kg?: number | null }) {
+  const outKg = Math.max(0, Number(r.used_kg ?? 0) - Number(r.scrap_kg ?? 0));
+  const nominal = r.nominal_kg === null ? null : Number(r.nominal_kg);
+  const goodKg = nominal !== null && nominal > 0 ? Math.max(0, nominal - Number(r.runner_kg ?? 0)) : outKg;
+  return { goodKg, outKg };
+}
 
 /** Girişin fire (kg) ya da duruş (dk) nedenleri: satırlar varsa onlar, yoksa tek neden alanı */
 export function reasonParts(e: AnalyticsEntry, kind: "scrap" | "downtime"): ReasonPart[] {
@@ -111,9 +127,10 @@ export function measure(entries: AnalyticsEntry[]) {
   const usedKg = sum(entries, (e) => e.usedKg);
   const scrapKg = sum(entries, (e) => e.scrapKg);
   const goodKg = sum(entries, (e) => e.goodKg);
+  const runnerKg = sum(entries, (e) => e.runnerKg ?? 0);
   const withNominal = entries.filter((e) => e.nominalKg && e.nominalKg > 0);
   const nominalKg = sum(withNominal, (e) => e.nominalKg!);
-  const goodForNominal = sum(withNominal, (e) => e.goodKg);
+  const outForNominal = sum(withNominal, (e) => e.outKg);
   const plannedMin = sum(entries, (e) => e.plannedMin);
   const runMin = sum(entries, (e) => e.runMin);
   const withIdeal = entries.filter((e) => e.idealSec !== null);
@@ -122,14 +139,19 @@ export function measure(entries: AnalyticsEntry[]) {
 
   const availability = ratio(runMin, plannedMin);
   const performance = ratio(idealSec, perfRunSec);
-  const quality = ratio(goodKg, usedKg);
+  // Materyal verim: yolluk geri kazanılır, sağlam sayılır (DIA)
+  const quality = ratio(goodKg + runnerKg, usedKg);
   // OEE fabrika tanımı: çalışma süresi / vardiya (planlı) süresi — 11 sa çalışma / 12 sa = %91,7
   const oee = availability;
 
   const withCap = entries.filter((e) => e.capacityKgPerHour && e.capacityKgPerHour > 0);
   const expectedKg = sum(withCap, (e) => (e.capacityKgPerHour! * e.runMin) / 60);
+  const fullCapacityKg = sum(withCap, (e) => (e.capacityKgPerHour! * e.plannedMin) / 60);
+  // Ürüne özel referans yoksa makine kapasitesi (DIA "genel makine standardı")
+  const refRate = (e: AnalyticsEntry) => (e.referenceKgPerHour && e.referenceKgPerHour > 0 ? e.referenceKgPerHour : e.capacityKgPerHour && e.capacityKgPerHour > 0 ? e.capacityKgPerHour : null);
+  const withRate = entries.filter((e) => refRate(e) !== null);
   const withRef = entries.filter((e) => e.referenceKgPerHour && e.referenceKgPerHour > 0);
-  const referenceExpectedKg = sum(withRef, (e) => (e.referenceKgPerHour! * e.runMin) / 60);
+  const referenceExpectedKg = sum(withRate, (e) => (refRate(e)! * e.runMin) / 60);
 
   return {
     entries: entries.length,
@@ -139,7 +161,7 @@ export function measure(entries: AnalyticsEntry[]) {
     producedM: sum(entries.filter((e) => e.productUnit === "metre"), (e) => e.producedQty),
     producedPcs: sum(entries.filter((e) => e.productUnit === "adet"), (e) => e.producedQty),
     scrapPct: ratio(scrapKg, usedKg),
-    overweightPct: nominalKg > 0 ? goodForNominal / nominalKg - 1 : null,
+    overweightPct: nominalKg > 0 ? outForNominal / nominalKg - 1 : null,
     materialYield: quality,
     availability,
     performance,
@@ -147,14 +169,14 @@ export function measure(entries: AnalyticsEntry[]) {
     runHours: runMin / 60,
     /** Brüt üretim süresi (planlı / vardiya süresi, saat) */
     plannedHours: plannedMin / 60,
-    runnerKg: sum(entries, (e) => e.runnerKg ?? 0),
+    runnerKg,
     downtimeHours: sum(entries, (e) => e.downtimeMin) / 60,
     expectedKg,
-    /** Hammadde / (kapasite × çalışma saati), kapasitesi bilinen girişlerde */
-    activeCapacityPct: ratio(sum(withCap, (e) => e.usedKg), expectedKg),
+    /** Hammadde / (kapasite × brüt saat), kapasitesi bilinen girişlerde (= kapasite verimi ÷ zaman kullanımı) */
+    activeCapacityPct: ratio(sum(withCap, (e) => e.usedKg), fullCapacityKg),
     referenceExpectedKg,
-    /** Hız performansı: referans kapasiteye göre (referansı olan girişlerde) */
-    speedPerformance: ratio(sum(withRef, (e) => e.usedKg), referenceExpectedKg),
+    /** Hız performansı: referans kapasiteye (yoksa makine kapasitesine) göre */
+    speedPerformance: ratio(sum(withRate, (e) => e.usedKg), referenceExpectedKg),
     referenceCoverage: entries.length ? withRef.length / entries.length : 0,
   };
 }
@@ -175,19 +197,25 @@ function groupBy<T>(xs: T[], key: (x: T) => string) {
 export function computeProductionAnalytics(input: AnalyticsInput) {
   const { entries, materials, scrapTargets, reasons, capacityScope, targets, lineNames, trendBucket } = input;
   const total = measure(entries);
+  // Çevrim performansı DIA'da yalnız yarı otomatik kalıplar için hesaplanır
+  const semiAutoPerformance = measure(entries.filter((e) => e.moldMode === "yari_otomatik")).performance;
 
   // ── Kapasite ──
   const capEntries = entries.filter((e) => e.capacityKgPerHour && e.capacityKgPerHour > 0);
   const capRunHours = sum(capEntries, (e) => e.runMin / 60);
+  const capacityEfficiency = ratio(sum(capEntries, (e) => e.usedKg), capacityScope.nsaCapacityKg);
+  // Zaman kullanımı: dolu (brüt) makine saati / kullanılabilir saat (DIA)
+  const timeUtilization = ratio(total.plannedHours, capacityScope.availableLineHours);
   const capacity = {
     linesWithCapacity: capacityScope.linesWithCapacity,
     linesWithoutCapacity: capacityScope.lineCount - capacityScope.linesWithCapacity,
     availableLineHours: capacityScope.availableLineHours,
     weightedCapacityKgPerHour: capRunHours > 0 ? sum(capEntries, (e) => (e.capacityKgPerHour! * e.runMin) / 60) / capRunHours : null,
     nsaCapacityKg: capacityScope.nsaCapacityKg,
-    capacityEfficiency: ratio(sum(capEntries, (e) => e.usedKg), capacityScope.nsaCapacityKg),
-    activeCapacityPct: total.activeCapacityPct,
-    timeUtilization: ratio(total.runHours, capacityScope.availableLineHours),
+    capacityEfficiency,
+    // Aktif sürede kapasite verimi = kapasite verimi ÷ zaman kullanımı (DIA)
+    activeCapacityPct: capacityEfficiency !== null && timeUtilization ? capacityEfficiency / timeUtilization : null,
+    timeUtilization,
     expectedKg: total.expectedKg,
   };
 
@@ -204,7 +232,8 @@ export function computeProductionAnalytics(input: AnalyticsInput) {
       const share = entryMatKg > 0 ? m.kg / entryMatKg : 0;
       const row = rawSummary.get(m.productId) ?? { code: m.code, name: m.name, usedKg: 0, goodKg: 0, scrapKg: 0, regrindKg: 0, lostKg: 0, workOrders: new Set<string>() };
       row.usedKg += m.kg;
-      row.goodKg += e.goodKg * share;
+      // Sağlam çıktı: sağlam + yolluk (DIA hammadde tablosu)
+      row.goodKg += (e.goodKg + (e.runnerKg ?? 0)) * share;
       row.scrapKg += e.scrapKg * share;
       row.regrindKg += regrind * share;
       row.lostKg += (e.scrapKg - regrind) * share;
@@ -331,6 +360,7 @@ export function computeProductionAnalytics(input: AnalyticsInput) {
 
   return {
     total,
+    semiAutoPerformance,
     capacity,
     scrapRecovery,
     byLine,

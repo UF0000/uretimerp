@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/auth";
 import { inChunks, readAll } from "@/lib/supabase/read-all";
 import { one } from "@/lib/utils";
-import { measure, reasonParts, type AnalyticsEntry } from "@/lib/production-analytics";
+import { measure, reasonParts, soundKg, type AnalyticsEntry } from "@/lib/production-analytics";
 import { loadReasonParts } from "@/lib/supabase/entry-reasons";
 import { getCompletedWorkOrdersForCosting } from "@/app/actions/cost";
 
@@ -116,7 +116,7 @@ export async function getProductInsights(productId: string) {
     (f, t) =>
       supabase
         .from("v_production_analytics")
-        .select("entry_id, day, shift, work_order_id, work_order_no, product_unit, line_id, operator, used_kg, scrap_kg, good_kg, produced_qty, nominal_kg, planned_min, run_min, downtime_min, scrap_reason_code_id, downtime_reason_code_id, capacity_kg_per_hour, reference_kg_per_hour")
+        .select("entry_id, day, shift, work_order_id, work_order_no, product_unit, line_id, operator, used_kg, scrap_kg, good_kg, produced_qty, nominal_kg, runner_kg, planned_min, run_min, downtime_min, scrap_reason_code_id, downtime_reason_code_id, capacity_kg_per_hour, reference_kg_per_hour")
         .eq("product_id", productId)
         .gte("day", since365)
         .order("entry_time")
@@ -145,7 +145,7 @@ export async function getProductInsights(productId: string) {
     operator: r.operator,
     usedKg: Number(r.used_kg ?? 0),
     scrapKg: Number(r.scrap_kg ?? 0),
-    goodKg: Number(r.good_kg ?? 0),
+    ...soundKg(r),
     producedQty: Number(r.produced_qty ?? 0),
     nominalKg: r.nominal_kg === null ? null : Number(r.nominal_kg),
     plannedMin: Number(r.planned_min ?? 0),
@@ -158,6 +158,7 @@ export async function getProductInsights(productId: string) {
     idealSec: idealBy.get(r.entry_id!) ?? null,
     scrapParts: parts.scrap.get(r.entry_id!),
     downtimeParts: parts.downtime.get(r.entry_id!),
+    runnerKg: r.runner_kg === null ? null : Number(r.runner_kg),
   }));
   const reasonLabel = new Map((reasonsRes.data ?? []).map((r) => [r.id, r.label]));
   const topReasons = (kind: "scrap" | "downtime") => {

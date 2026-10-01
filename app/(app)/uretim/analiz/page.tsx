@@ -147,7 +147,7 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
         <>
           <Section title="Üretim ve kalite özeti" description="Hedeflere göre renkli: yeşil hedefte, turuncu sınırda, kırmızı hedef dışı">
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-5">
-              <Kpi title="Sağlam (kg)" value={formatTR(t.goodKg, 0)} accent="border-l-[var(--cat-1)]" />
+              <Kpi title="Sağlam (kg)" value={formatTR(t.goodKg, 0)} hint="metre × reçete kg/m (teorik)" accent="border-l-[var(--cat-1)]" />
               <Kpi title="Tüketim (kg)" value={formatTR(t.usedKg, 0)} accent="border-l-[var(--cat-1)]" />
               <Kpi title={isExtrusion ? "Üretim (m)" : "Üretim (adet)"} value={formatTR(isExtrusion ? t.producedM : t.producedPcs, 0)} accent="border-l-[var(--cat-2)]" />
               <Kpi title="Fire (kg)" value={formatTR(t.scrapKg, 0)} hint={`${formatTR(a.scrapRecovery.regrindKg, 0)} kg regrind · ${formatTR(a.scrapRecovery.lostKg, 0)} kg kayıp`} accent="border-l-[var(--cat-3)]" />
@@ -177,13 +177,13 @@ export default async function ProductionAnalyticsPage(props: { searchParams: Pro
                 <Kpi title="Makine-saat ağırlıklı kapasite" value={a.capacity.weightedCapacityKgPerHour === null ? "—" : `${formatTR(a.capacity.weightedCapacityKgPerHour, 1)} kg/sa`} accent="border-l-[var(--cat-4)]" />
                 <Kpi title="Makine bazlı NŞA kapasite" value={kg(a.capacity.nsaCapacityKg)} hint={`${a.capacity.linesWithCapacity} makine × ${formatTR(lineCount ? a.capacity.availableLineHours / lineCount : 0, 0)} kullanılabilir saat`} accent="border-l-[var(--cat-4)]" />
                 <Kpi title="Kapasite verimi" value={pct(a.capacity.capacityEfficiency)} hint="tüketim / NŞA kapasite" accent="border-l-[var(--cat-4)]" />
-                <Kpi title="Aktif sürede kapasite" value={pct(a.capacity.activeCapacityPct)} hint="çalışılan sürede" accent="border-l-[var(--cat-4)]" />
-                <Kpi title="Zaman kullanımı" value={pct(a.capacity.timeUtilization)} hint="çalışma / kullanılabilir süre" accent="border-l-[var(--cat-4)]" />
+                <Kpi title="Aktif sürede kapasite" value={pct(a.capacity.activeCapacityPct)} hint="kapasite verimi ÷ zaman kullanımı" accent="border-l-[var(--cat-4)]" />
+                <Kpi title="Zaman kullanımı" value={pct(a.capacity.timeUtilization)} hint="dolu (brüt) süre / kullanılabilir süre" accent="border-l-[var(--cat-4)]" />
                 <Kpi title="Hız performansı" value={pct(t.performance)} hint="ideal / gerçek çalışma süresi" accent="border-l-[var(--cat-6)]" />
                 <Kpi
                   title="Referansa göre hız"
                   value={pct(t.speedPerformance)}
-                  hint={t.speedPerformance === null ? "referans kapasite yok (Yönetim)" : `girişlerin ${pct(t.referenceCoverage, 0)}'inde referans var`}
+                  hint={t.speedPerformance === null ? "referans kapasite yok (Yönetim)" : `girişlerin ${pct(t.referenceCoverage, 0)}'inde ürün referansı var, kalanında makine kapasitesi`}
                   accent="border-l-[var(--cat-6)]"
                 />
                 <Kpi title="Referansa göre beklenen" value={kg(t.referenceExpectedKg)} hint="referans × çalışma saati" accent="border-l-[var(--cat-6)]" />

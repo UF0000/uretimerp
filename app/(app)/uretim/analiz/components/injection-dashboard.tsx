@@ -14,8 +14,6 @@ import { ChartCard, Kpi, Section, pct, statusHigh, statusOf } from "./dashboard-
  */
 
 const kg3 = (v: number) => formatTR(v, 3);
-/** Enjeksiyonda sağlam ürün = tüketim − fire − yolluk (yolluk ürüne girmez) */
-const net = (m: { usedKg: number; scrapKg: number; runnerKg: number }) => Math.max(0, m.usedKg - m.scrapKg - m.runnerKg);
 const hours = (v: number) => `${formatTR(v, 1)} sa`;
 const shareOf = (part: number, whole: number) => (whole > 0 ? `%${formatTR((part / whole) * 100, 1)}` : "—");
 const SHIFT_NAME = { day: "GÜNDÜZ", night: "GECE" } as const;
@@ -25,8 +23,8 @@ export function InjectionDashboard({ report, from, to }: { report: ProductionAna
   const t = a.total;
   const tg = a.targets;
   const rec = a.scrapRecovery;
-  // Materyal verim = (tüketim − fire) / tüketim = 1 − fire oranı (referans panodaki tanım)
-  const materialYield = t.scrapPct === null ? null : 1 - t.scrapPct;
+  // Materyal verim = (sağlam + yolluk) / tüketim (DIA)
+  const materialYield = t.materialYield;
   const families = [...new Set(a.shifts.flatMap((s) => Object.keys(s.materialsKg)))];
   const noMode = a.workOrders.filter((w) => !w.moldMode && w.performance !== null).length;
 
@@ -34,7 +32,7 @@ export function InjectionDashboard({ report, from, to }: { report: ProductionAna
     {
       name: "Özet",
       rows: [
-        { Gösterge: "Sağlam (kg)", Değer: net(t) },
+        { Gösterge: "Sağlam (kg)", Değer: t.goodKg },
         { Gösterge: "Tüketim (kg)", Değer: t.usedKg },
         ...a.rawMaterials.map((m) => ({ Gösterge: `Tüketim — ${m.name} (kg)`, Değer: m.usedKg })),
         { Gösterge: "Üretim (adet)", Değer: t.producedPcs },
@@ -44,7 +42,7 @@ export function InjectionDashboard({ report, from, to }: { report: ProductionAna
         { Gösterge: "Ort. fire (%)", Değer: t.scrapPct === null ? null : t.scrapPct * 100 },
         { Gösterge: "Materyal verim (%)", Değer: materialYield === null ? null : materialYield * 100 },
         { Gösterge: "Ort. OE (%)", Değer: t.oee === null ? null : t.oee * 100 },
-        { Gösterge: "Çevrim performansı (%)", Değer: t.performance === null ? null : t.performance * 100 },
+        { Gösterge: "Çevrim performansı — yarı otomatik (%)", Değer: a.semiAutoPerformance === null ? null : a.semiAutoPerformance * 100 },
         { Gösterge: "Yolluk (kg)", Değer: t.runnerKg },
         { Gösterge: "Brüt üretim süresi (sa)", Değer: t.plannedHours },
         { Gösterge: "Duruş süresi (sa)", Değer: t.downtimeHours },
@@ -57,7 +55,7 @@ export function InjectionDashboard({ report, from, to }: { report: ProductionAna
         Ürün: p.label,
         Açıklama: p.productName,
         "Üretim (adet)": p.producedPcs,
-        "Sağlam (kg)": net(p),
+        "Sağlam (kg)": p.goodKg,
         "Fire (%)": p.scrapPct === null ? null : p.scrapPct * 100,
         "Çevrim perf. (%)": p.performance === null ? null : p.performance * 100,
         "OE (%)": p.oee === null ? null : p.oee * 100,
@@ -71,7 +69,7 @@ export function InjectionDashboard({ report, from, to }: { report: ProductionAna
         "Kalıp çalışma": w.moldMode ? MOLD_MODE_LABELS[w.moldMode] : null,
         "Üretim (adet)": w.producedPcs,
         "Tüketim (kg)": w.usedKg,
-        "Sağlam (kg)": net(w),
+        "Sağlam (kg)": w.goodKg,
         "Fire (%)": w.scrapPct === null ? null : w.scrapPct * 100,
         "Çevrim perf. (%)": w.performance === null ? null : w.performance * 100,
         "OE (%)": w.oee === null ? null : w.oee * 100,
@@ -89,7 +87,7 @@ export function InjectionDashboard({ report, from, to }: { report: ProductionAna
         "Fire (%)": m.scrapPct === null ? null : m.scrapPct * 100,
       })),
     },
-    { name: "Makine", rows: a.byLine.map((r) => ({ Makine: r.label, "Sağlam (kg)": net(r), "Üretim (adet)": r.producedPcs, "Fire (%)": r.scrapPct === null ? null : r.scrapPct * 100, "Duruş (dk)": r.downtimeMin })) },
+    { name: "Makine", rows: a.byLine.map((r) => ({ Makine: r.label, "Sağlam (kg)": r.goodKg, "Üretim (adet)": r.producedPcs, "Fire (%)": r.scrapPct === null ? null : r.scrapPct * 100, "Duruş (dk)": r.downtimeMin })) },
     { name: "Fire nedenleri", rows: a.scrapReasons.map((r) => ({ Kod: r.code, Neden: r.label, "Fire (kg)": r.value, "Pay (%)": r.share * 100 })) },
     { name: "Duruş nedenleri", rows: a.downtimeReasons.map((r) => ({ Kod: r.code, Neden: r.label, "Duruş (dk)": r.value, "Pay (%)": r.share * 100 })) },
   ];
@@ -113,7 +111,7 @@ export function InjectionDashboard({ report, from, to }: { report: ProductionAna
         <>
           <Section title="Üretim ve kalite özeti" description="Hedeflere göre renkli: yeşil hedefte, turuncu sınırda, kırmızı hedef dışı">
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              <Kpi title="Sağlam (kg)" value={kg3(net(t))} hint="tüketim − fire − yolluk" accent="border-l-[var(--cat-2)]" />
+              <Kpi title="Sağlam (kg)" value={kg3(t.goodKg)} hint="adet × parça ağırlığı (yolluk hariç)" accent="border-l-[var(--cat-2)]" />
               <Kpi
                 title="Tüketim (kg)"
                 value={kg3(t.usedKg)}
@@ -135,14 +133,14 @@ export function InjectionDashboard({ report, from, to }: { report: ProductionAna
                 title="Materyal verim"
                 value={pct(materialYield, 1)}
                 status={statusHigh(materialYield === null ? null : materialYield * 100, 100)}
-                hint="(tüketim − fire) / tüketim · hedef %100"
+                hint="(sağlam + yolluk) / tüketim · hedef %100"
               />
               <Kpi title="Ort. OE" value={pct(t.oee, 2)} status={statusHigh(t.oee === null ? null : t.oee * 100, tg.oeePct)} hint={`hedef ≥ %${formatTR(tg.oeePct, 0)}`} />
               <Kpi
                 title="Çevrim perf."
-                value={pct(t.performance, 2)}
-                status={statusHigh(t.performance === null ? null : t.performance * 100, 100)}
-                hint={t.performance === null ? "reçete/kalıpta çevrim yok" : "ideal / gerçek çevrim · hedef %100"}
+                value={pct(a.semiAutoPerformance, 2)}
+                status={statusHigh(a.semiAutoPerformance === null ? null : a.semiAutoPerformance * 100, 100)}
+                hint={a.semiAutoPerformance === null ? "yarı otomatik kalıpta çevrim yok" : "yarı otomatik · standart çevrim × sağlam adet / net süre · hedef %100"}
               />
               <Kpi title="Yolluk (kg)" value={kg3(t.runnerKg)} hint="atış × atış başı yolluk" accent="border-l-[var(--cat-3)]" />
               <Kpi title="İş emri brüt üretim süresi" value={hours(t.plannedHours)} hint="girişlerin saat aralığı" accent="border-l-[var(--cat-5)]" />
@@ -171,7 +169,7 @@ export function InjectionDashboard({ report, from, to }: { report: ProductionAna
               />
             </ChartCard>
             <ChartCard title="Vardiya Bazlı Üretim">
-              <ShiftProduction data={a.shifts.map((s) => ({ name: SHIFT_NAME[s.shift], kg: net(s), qty: s.producedPcs }))} />
+              <ShiftProduction data={a.shifts.map((s) => ({ name: SHIFT_NAME[s.shift], kg: s.goodKg, qty: s.producedPcs }))} />
             </ChartCard>
             <ChartCard title="Fire Türü Dağılımı (KG)">
               <DistributionDonut
@@ -191,7 +189,7 @@ export function InjectionDashboard({ report, from, to }: { report: ProductionAna
               families={families}
               data={a.shifts.map((s) => ({
                 name: SHIFT_NAME[s.shift],
-                kg: net(s),
+                kg: s.goodKg,
                 qty: s.producedPcs,
                 scrapPct: (s.scrapPct ?? 0) * 100,
                 oeePct: (s.oee ?? 0) * 100,
@@ -203,7 +201,7 @@ export function InjectionDashboard({ report, from, to }: { report: ProductionAna
 
           <div className="grid gap-4 lg:grid-cols-3">
             <ChartCard title="Makine Bazlı Üretim (Sağlam KG)">
-              <DistributionDonut data={a.byLine.map((r) => ({ name: r.label, value: net(r) }))} unit="kg" empty="Makine kaydı yok." />
+              <DistributionDonut data={a.byLine.map((r) => ({ name: r.label, value: r.goodKg }))} unit="kg" empty="Makine kaydı yok." />
             </ChartCard>
             <ChartCard title="Fire Nedenleri (KG)">
               <DistributionDonut data={a.scrapReasons.map((r) => ({ name: r.label, value: r.value }))} unit="kg" empty="Nedeni girilmiş fire yok." />

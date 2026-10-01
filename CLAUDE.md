@@ -158,6 +158,8 @@ supabase/
 
 **Test verisi temizlendi (2026-10-01):** test/deneme ürünleri stok sıfırlanıp pasif (V9TEST01, A9TEST01.HENQ, D.990.063.99, TEST-HAM-PPR, TEST-MTL-01, bb, rp2400, ZZ-TEST-*), TEST-RCT-* reçeteler ve TEST cariler pasif, KLP-TEST-01 arızalı, TEST-SIP-001 ve asasas siparişleri iptal, deneme iş emirleri (asdasdasd, aaa, SAADDASADD, ZZ-TEST-IE-01, TEST-YETKI-01) girişleri iptal + iş emri İptal. Geçmiş kayıtları (iptal fişler, SAY-2026-0001, IRS-2026-0002) duruyor.
 
+**DIA hizalaması (2026-10-01):** DIA boru/fitting üretim raporları (`sifonik-boru-*.xlsx`, `sifonik-fittings-*.xlsx`, git dışı) satır satır doğrulandı; `scripts/sim/import-dia.mjs` 203 iş emrini test DB'ye yükler (nedensiz fire/duruş → F2999/D1999, ≤12 sa girişlere bölünür) ve panolar DIA ile birebir tutar (sağlam, tüketim, fire, materyal verimi, süreler, yolluk, aktif süre kapasite). Tanımlar: sağlam = teorik (m × kg/m · adet × parça g, `soundKg`), materyal verim = (sağlam + yolluk) / tüketim, zaman kullanımı = brüt / kullanılabilir, aktif kapasite = kapasite verimi ÷ zaman kullanımı, çevrim perf. = çevrim × sağlam adet / göz ÷ net (KPI yalnız yarı otomatik), referans yoksa makine kapasitesi, analiz günü = `start_at`. Bilerek farklı: ortalama OE bizde Σnet/Σbrüt (DIA net ağırlıklı ortalama, ~1 puan yüksek); vardiya kırılımı giriş bazında (DIA iş emri bazında).
+
 **Alınan kararlar (kalıcı):**
 - **OEE fabrika tanımı:** (vardiya/planlı süre − duruş) ÷ vardiya süresi (11 sa / 12 sa = %91,7). Klasik K×P×Q kullanılmaz; hız performansı (ideal/gerçek süre) ve kalite ayrı gösterge (`measure()` ve `entryMetrics()`).
 - Sektör: **plastik imalat** (ekstrüzyon + enjeksiyon).

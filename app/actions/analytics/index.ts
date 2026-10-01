@@ -7,6 +7,7 @@ import { inChunks, readAll } from "@/lib/supabase/read-all";
 import { loadReasonParts } from "@/lib/supabase/entry-reasons";
 import {
   computeProductionAnalytics,
+  soundKg,
   type AnalyticsEntry,
   type EntryMaterial,
   type EntryScrapTarget,
@@ -114,7 +115,7 @@ export async function getProductionAnalytics(filters: AnalyticsFilters) {
     operator: r.operator,
     usedKg: Number(r.used_kg ?? 0),
     scrapKg: Number(r.scrap_kg ?? 0),
-    goodKg: Number(r.good_kg ?? 0),
+    ...soundKg(r),
     producedQty: Number(r.produced_qty ?? 0),
     nominalKg: r.nominal_kg === null ? null : Number(r.nominal_kg),
     plannedMin: Number(r.planned_min ?? 0),
