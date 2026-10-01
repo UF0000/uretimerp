@@ -65,8 +65,12 @@ try {
     }
     process.stdout.write(`${table}: ${rows.length}\n`);
   }
+  // Canlıya henüz gitmemiş migration'lar (veri değişiklikleri dahil) kopyadan sonra yeniden uygulanmalı:
+  // test kayıtlarından silinir, ardından apply-migrations.mjs çalıştırılır
+  const liveVersions = (await live.query("SELECT version FROM supabase_migrations.schema_migrations")).rows.map((r) => r.version);
+  const pending = await test.query("DELETE FROM supabase_migrations.schema_migrations WHERE NOT (version = ANY($1)) RETURNING version", [liveVersions]);
   await test.query("COMMIT");
-  process.stdout.write("Ana veri kopyalandı.\n");
+  process.stdout.write(`Ana veri kopyalandı. Canlıda olmayan ${pending.rowCount} migration yeniden uygulanacak: node scripts/sim/apply-migrations.mjs\n`);
 } catch (error) {
   await test.query("ROLLBACK");
   process.stdout.write("Hata: " + error.message + "\n");

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { ExcelRow } from "@/lib/excel";
 import { lineSchema, moldSchema, moldMaintenanceSchema, LineFormValues, MoldFormValues, MoldMaintenanceValues } from "@/lib/validations/master-data";
 import { requirePermission } from "@/lib/auth";
+import { variantBaseFromCode } from "@/lib/product-meta";
 
 // --- Production Lines ---
 export async function getLines() {
@@ -257,8 +258,8 @@ export async function bulkImportMolds(moldsData: ExcelRow[]) {
     const product_id = productMap.get(productCode) || null;
     
     // Kalıp Kodu ve Adı Otomatik Oluşturma
-    // Kalıp Kodu: KLP-STOK_KODU
-    const code = productCode ? `KLP-${productCode}` : `KLP-NOCODE-${Math.floor(Math.random() * 10000)}`;
+    // Kalıp Kodu: KLP-ANA_KOD (PP renk harfi ve firma eki atılır: V1C032520.HENQ → KLP-1C032520), diğerleri KLP-STOK_KODU
+    const code = productCode ? `KLP-${variantBaseFromCode(productCode) ?? productCode}` : `KLP-NOCODE-${Math.floor(Math.random() * 10000)}`;
     const name = productName ? `Kalıp - ${productName}` : `Kalıp - ${code}`;
     
     const cavity_count = Number(p["GÖZ SAYISI"] || p.GözSayısı || p.Cavity || p.GOZSAYISI) || 1;

@@ -64,7 +64,7 @@ for (const code of [...new Set(W.filter((w) => w.type === "injection").map((w) =
   if (!m) {
     const std = median(rows.map((w) => w.stdCycleSecPerPart).filter(Boolean));
     m = must(
-      await admin.from("molds").insert({ code: `KLP-${code}`, name: `Kalıp - ${p.name}`, product_id: p.id, cavity_count: 1, cycle_time_sec: std, product_weight_g: round(median(rows.map((w) => (w.goodKg / w.produced) * 1000)), 3), status: "active", operation_mode: mode }).select("id, code, product_id, cavity_count, cycle_time_sec, sprue_weight_g, operation_mode").single(),
+      await admin.from("molds").insert({ code: `KLP-${p.variant_code || code}`, name: `Kalıp - ${p.name}`, product_id: p.id, cavity_count: 1, cycle_time_sec: std, product_weight_g: round(median(rows.map((w) => (w.goodKg / w.produced) * 1000)), 3), status: "active", operation_mode: mode }).select("id, code, product_id, cavity_count, cycle_time_sec, sprue_weight_g, operation_mode").single(),
       `kalıp ${code}`,
     );
     molds.push(m);
