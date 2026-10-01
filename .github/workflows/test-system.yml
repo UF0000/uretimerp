@@ -1,0 +1,39 @@
+# TEST: gelistirme dalına her push'ta migration'ları YALNIZCA simülasyon (test) veritabanına uygular
+# ve bir simülasyon turu çalıştırır (bir bölüm hata alırsa iş kırmızı olur). Canlıya dokunmaz.
+# Onaylanan değişiklik gelistirme → main birleştirilince canlıya geçer (supabase-migrations.yml).
+# Gerekli secret: SIM_ENV
+name: Test sistemi
+
+on:
+  push:
+    branches: [gelistirme]
+  workflow_dispatch:
+
+concurrency:
+  group: test-system
+  cancel-in-progress: false
+
+jobs:
+  test-db:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SIM_ENV: ${{ secrets.SIM_ENV }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Tip ve kod denetimi
+        run: npx tsc --noEmit -p . && npx eslint scripts/sim
+
+      - name: Test veritabanına uygula
+        run: node scripts/sim/apply-migrations.mjs
+
+      - name: Simülasyon turu
+        run: node scripts/sim/run.mjs --hours=1 --strict

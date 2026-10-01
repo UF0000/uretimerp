@@ -170,5 +170,5 @@ supabase/
 - **Şema değişikliği yalnızca migration ile:** `supabase/migrations/<YYYYMMDDHHMMSS>_ad.sql`
   yazılır, `main`'e push edilince GitHub Actions (`supabase-migrations.yml`) canlıya uygular.
   Supabase panelinden elle tablo/politika değiştirilmez. Şema değişince `npm run db:types`.
-- **Önce test, sonra canlı:** CI migration'ı önce simülasyon DB'sine uygular + `run.mjs --strict` turu; hata yoksa canlıya. Push'tan önce yerelde `node scripts/sim/apply-migrations.mjs` + `npm run sim:run`; ekran değişikliği `npm run dev:sim` ile denenir.
+- **Önce test, kullanıcı onayıyla canlı:** tüm işler `gelistirme` dalında; push → `test-system.yml` migration'ı YALNIZ test DB'ye uygular + `run.mjs --strict` turu. Ekran değişikliği `npm run dev:sim` ile denenir. Kullanıcı "tamam" deyince `gelistirme` → `main` birleştirilip push edilir (canlı DB migration + Vercel). Reddedilen değişiklik test DB'de kaldıysa geri alan yeni migration yazılır. Saatlik simülasyon (cron) `main`'deki kodla çalışır.
 - Repo: github.com/UF0000/uretimerp (private). Secret'lar GitHub Actions'ta; `.env.local` repoya girmez.
