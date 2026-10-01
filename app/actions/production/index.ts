@@ -126,7 +126,7 @@ export async function getWorkOrderEntries(workOrderId: string) {
       .is("cancelled_at", null)
       .order("entry_time"),
     supabase.from("operators").select("id, name").eq("active", true).order("name"),
-    supabase.from("cost_parameters").select("shift_minutes, target_scrap_pct, overweight_tolerance_pct, target_oee_pct").limit(1).maybeSingle(),
+    supabase.from("cost_parameters").select("shift_minutes, target_scrap_pct, overweight_tolerance_pct, target_oee_pct, day_shift_start, night_shift_start").limit(1).maybeSingle(),
   ]);
   if (woRes.error) throw new Error("İş emri getirilirken hata oluştu: " + woRes.error.message);
   if (entriesRes.error) throw new Error("Girişler getirilirken hata oluştu: " + entriesRes.error.message);
@@ -208,6 +208,11 @@ export async function getWorkOrderEntries(workOrderId: string) {
       scrapPct: Number(paramsRes.data?.target_scrap_pct ?? 3),
       overweightTolerancePct: Number(paramsRes.data?.overweight_tolerance_pct ?? 2.5),
       oeePct: Number(paramsRes.data?.target_oee_pct ?? 85),
+    },
+    // Vardiya başlangıçları (SS:DD) — yeni girişin varsayılan saatleri
+    shifts: {
+      dayStart: (paramsRes.data?.day_shift_start ?? "08:00").slice(0, 5),
+      nightStart: (paramsRes.data?.night_shift_start ?? "20:00").slice(0, 5),
     },
   };
 }

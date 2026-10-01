@@ -1,5 +1,7 @@
 import { z } from "@/lib/zod";
 
+const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 /** Maliyet ve üretim parametreleri (cost_parameters tek satır). */
 export const parametersSchema = z.object({
   labor_per_unit: z.number().min(0, "Negatif olamaz"),
@@ -11,6 +13,11 @@ export const parametersSchema = z.object({
   target_scrap_pct: z.number().min(0, "Negatif olamaz").max(100, "En fazla %100"),
   overweight_tolerance_pct: z.number().min(0, "Negatif olamaz").max(50, "En fazla %50"),
   target_oee_pct: z.number().min(0, "Negatif olamaz").max(100, "En fazla %100"),
+  day_shift_start: z.string().regex(HHMM, "Saat SS:DD olmalı"),
+  night_shift_start: z.string().regex(HHMM, "Saat SS:DD olmalı"),
+}).refine((v) => v.day_shift_start !== v.night_shift_start, {
+  message: "Gündüz ve gece vardiyası aynı saatte başlayamaz",
+  path: ["night_shift_start"],
 });
 
 export type ParametersFormValues = z.infer<typeof parametersSchema>;

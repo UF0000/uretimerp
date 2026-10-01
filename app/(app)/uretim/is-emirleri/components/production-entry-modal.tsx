@@ -25,6 +25,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 type Option = { id: string; code: string; name?: string; label?: string };
 type Entry = WorkOrderEntries["entries"][number];
 type Targets = WorkOrderEntries["targets"];
+type Shifts = WorkOrderEntries["shifts"];
+const DEFAULT_SHIFTS: Shifts = { dayStart: "08:00", nightStart: "20:00" };
 type Tone = "ok" | "warn" | "bad" | "none";
 
 interface ProductionEntryModalProps {
@@ -85,17 +87,18 @@ const Kpi = ({ label, value, hint, tone = "none" }: { label: string; value: stri
 );
 
 /** Yeni girişin varsayılan saatleri: son girişin bitişinden ya da şu anki vardiyadan */
-function defaultTimes(entries: Entry[]) {
+function defaultTimes(entries: Entry[], shifts: Shifts) {
   const last = [...entries].filter((e) => e.endAt).sort((a, b) => (a.endAt ?? "").localeCompare(b.endAt ?? "")).pop();
   if (last?.endAt) {
     const start = new Date(last.endAt);
     return { date: localDate(start), start_time: localTime(start), end_time: localTime(new Date(start.getTime() + 12 * 3600000)) };
   }
+  // Şu anki vardiya (Yönetim → Parametreler'deki başlangıç saatleri; SS:DD metin olarak karşılaştırılır)
   const now = new Date();
-  const hour = Number(localTime(now).slice(0, 2));
-  const isDay = hour >= 8 && hour < 20;
-  const date = hour < 8 ? localDate(new Date(now.getTime() - 86400000)) : localDate(now);
-  return { date, start_time: isDay ? "08:00" : "20:00", end_time: isDay ? "20:00" : "08:00" };
+  const time = localTime(now);
+  const isDay = time >= shifts.dayStart && time < shifts.nightStart;
+  const date = time < shifts.dayStart ? localDate(new Date(now.getTime() - 86400000)) : localDate(now);
+  return { date, start_time: isDay ? shifts.dayStart : shifts.nightStart, end_time: isDay ? shifts.nightStart : shifts.dayStart };
 }
 
 const blankForm = (): FormState => ({
@@ -115,9 +118,9 @@ const blankForm = (): FormState => ({
 });
 
 /** Yeni giriş formu: saatler son girişten, depo ve hurda ürünü varsayılanlardan */
-const newEntryForm = (entries: Entry[], scrapProductId: string, warehouseId: string): FormState => ({
+const newEntryForm = (entries: Entry[], shifts: Shifts, scrapProductId: string, warehouseId: string): FormState => ({
   ...blankForm(),
-  ...defaultTimes(entries),
+  ...defaultTimes(entries, shifts),
   scrap_product_id: scrapProductId,
   target_warehouse_id: warehouseId,
 });
@@ -136,7 +139,7 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
   const defaultScrapProduct = (bom?.production_type === "injection" ? one(bom?.bom_injection)?.scrap_product_id : one(bom?.bom_extrusion)?.scrap_product_id) ?? "";
 
   const defaultWarehouse = targetWarehouses[0]?.id ?? "";
-  const emptyForm = (list: Entry[]) => newEntryForm(list, defaultScrapProduct, defaultWarehouse);
+  const emptyForm = (list: Entry[]) => newEntryForm(list, data?.shifts ?? DEFAULT_SHIFTS, defaultScrapProduct, defaultWarehouse);
 
   const { register, control, reset, setValue, getValues } = useForm<FormState>({ defaultValues: blankForm() });
   const scrapRows = useFieldArray({ control, name: "scraps" });
@@ -152,7 +155,7 @@ export function ProductionEntryModal({ workOrder, isOpen, onClose, scrapProducts
       .then((d) => {
         if (!alive) return;
         setData(d);
-        reset(newEntryForm(d.entries, defaultScrapProduct, defaultWarehouse));
+        reset(newEntryForm(d.entries, d.shifts, defaultScrapProduct, defaultWarehouse));
         setUsedManual(false);
       })
       .catch((error) => toast.error("Girişler yüklenemedi", { description: getErrorMessage(error) }));

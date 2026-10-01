@@ -13,7 +13,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getErrorMessage } from "@/lib/utils";
 
-const FIELDS: { name: keyof ParametersFormValues; label: string; hint: string; step: string }[] = [
+type NumberField = Exclude<keyof ParametersFormValues, "day_shift_start" | "night_shift_start">;
+
+const TIME_FIELDS: { name: "day_shift_start" | "night_shift_start"; label: string; hint: string }[] = [
+  { name: "day_shift_start", label: "Gündüz vardiyası başlangıcı", hint: "Bu saatten gece başlangıcına kadar gündüz sayılır" },
+  { name: "night_shift_start", label: "Gece vardiyası başlangıcı", hint: "Bu saatten ertesi gün gündüz başlangıcına kadar gece" },
+];
+
+const FIELDS: { name: NumberField; label: string; hint: string; step: string }[] = [
   { name: "labor_per_unit", label: "İşçilik (₺ / birim)", hint: "Üretilen her birim için işçilik maliyeti", step: "0.001" },
   { name: "energy_per_unit", label: "Enerji (₺ / birim)", hint: "Üretilen her birim için enerji maliyeti", step: "0.001" },
   { name: "overhead_pct", label: "Genel gider (%)", hint: "Hammadde + işçilik + enerji üzerine eklenir", step: "0.001" },
@@ -60,6 +67,17 @@ export function ParametersForm({ initial }: { initial: ParametersFormValues }) {
               {...register(f.name, { valueAsNumber: true })}
               className={errors[f.name] ? "border-danger" : ""}
             />
+            {errors[f.name] ? (
+              <p className="text-xs text-danger">{errors[f.name]?.message}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">{f.hint}</p>
+            )}
+          </div>
+        ))}
+        {TIME_FIELDS.map((f) => (
+          <div key={f.name} className="space-y-1">
+            <Label htmlFor={f.name}>{f.label}</Label>
+            <Input id={f.name} type="time" {...register(f.name)} className={errors[f.name] ? "border-danger" : ""} />
             {errors[f.name] ? (
               <p className="text-xs text-danger">{errors[f.name]?.message}</p>
             ) : (

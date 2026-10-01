@@ -49,6 +49,8 @@ const DEFAULT_PARAMETERS: ParametersFormValues = {
   target_scrap_pct: 3,
   overweight_tolerance_pct: 2.5,
   target_oee_pct: 85,
+  day_shift_start: "08:00",
+  night_shift_start: "20:00",
 };
 
 export async function getParameters(): Promise<ParametersFormValues & { id: string | null }> {
@@ -68,6 +70,8 @@ export async function getParameters(): Promise<ParametersFormValues & { id: stri
     target_scrap_pct: Number(data.target_scrap_pct),
     overweight_tolerance_pct: Number(data.overweight_tolerance_pct),
     target_oee_pct: Number(data.target_oee_pct),
+    day_shift_start: (data.day_shift_start ?? "08:00").slice(0, 5),
+    night_shift_start: (data.night_shift_start ?? "20:00").slice(0, 5),
   };
 }
 
